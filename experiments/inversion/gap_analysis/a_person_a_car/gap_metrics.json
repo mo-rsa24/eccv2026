@@ -1,0 +1,33 @@
+{
+  "pair": [
+    "a person",
+    "a car"
+  ],
+  "slug": "a_person_a_car",
+  "n_seeds": 16,
+  "gap_and_pstar": {
+    "clip_cos": 0.6013964414596558,
+    "lpips": 0.5086720585823059,
+    "lat_mse": 0.201171875,
+    "traj_mse_mean": 0.08348081446535104,
+    "traj_cos_mean": 0.9491130889207123
+  },
+  "gap_and_mono": {
+    "clip_cos": 0.5808559656143188,
+    "lpips": 0.6243121027946472
+  },
+  "decoded_p_star": [
+    {
+      "prompt": "a person",
+      "cos_sim": 0.9472
+    },
+    {
+      "prompt": "a person with a bicycle",
+      "cos_sim": 0.7146
+    },
+    {
+      "prompt": "a horse",
+      "cos_sim": 0.6934
+    }
+  ]
+}

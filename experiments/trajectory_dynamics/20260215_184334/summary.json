@@ -1,0 +1,96 @@
+{
+  "pca_variance_explained": {
+    "PC1": 0.8037968277931213,
+    "PC2": 0.1345890462398529
+  },
+  "pca_total_variance_top2": 0.9383858442306519,
+  "endpoint_distances_l2": {
+    "\"cat on top of the couch\" vs \"dog sitting on the floor\"": 396.9190673828125,
+    "\"cat on top of the couch\" vs CLIP AND: \"cat on top of the couch and dog sitting on the floor\"": 317.7864685058594,
+    "\"cat on top of the couch\" vs SuperDIFF (FM-ODE): \"cat on top of the couch\" \u2227 \"dog sitting on the floor\"": 353.9219970703125,
+    "\"dog sitting on the floor\" vs CLIP AND: \"cat on top of the couch and dog sitting on the floor\"": 443.8572692871094,
+    "\"dog sitting on the floor\" vs SuperDIFF (FM-ODE): \"cat on top of the couch\" \u2227 \"dog sitting on the floor\"": 168.29286193847656,
+    "CLIP AND: \"cat on top of the couch and dog sitting on the floor\" vs SuperDIFF (FM-ODE): \"cat on top of the couch\" \u2227 \"dog sitting on the floor\"": 425.28515625
+  },
+  "endpoint_distances_projected": {
+    "\"cat on top of the couch\" vs \"dog sitting on the floor\"": 328.387939453125,
+    "\"cat on top of the couch\" vs CLIP AND: \"cat on top of the couch and dog sitting on the floor\"": 97.13818359375,
+    "\"cat on top of the couch\" vs SuperDIFF (FM-ODE): \"cat on top of the couch\" \u2227 \"dog sitting on the floor\"": 297.9811096191406,
+    "\"dog sitting on the floor\" vs CLIP AND: \"cat on top of the couch and dog sitting on the floor\"": 425.38232421875,
+    "\"dog sitting on the floor\" vs SuperDIFF (FM-ODE): \"cat on top of the couch\" \u2227 \"dog sitting on the floor\"": 30.59126853942871,
+    "CLIP AND: \"cat on top of the couch and dog sitting on the floor\" vs SuperDIFF (FM-ODE): \"cat on top of the couch\" \u2227 \"dog sitting on the floor\"": 395.0231628417969
+  },
+  "divergence_onset_step": {
+    "\"cat on top of the couch\" vs \"dog sitting on the floor\"": 3,
+    "\"cat on top of the couch\" vs CLIP AND: \"cat on top of the couch and dog sitting on the floor\"": 3,
+    "\"cat on top of the couch\" vs SuperDIFF (FM-ODE): \"cat on top of the couch\" \u2227 \"dog sitting on the floor\"": 0,
+    "\"dog sitting on the floor\" vs CLIP AND: \"cat on top of the couch and dog sitting on the floor\"": 2,
+    "\"dog sitting on the floor\" vs SuperDIFF (FM-ODE): \"cat on top of the couch\" \u2227 \"dog sitting on the floor\"": 0,
+    "CLIP AND: \"cat on top of the couch and dog sitting on the floor\" vs SuperDIFF (FM-ODE): \"cat on top of the couch\" \u2227 \"dog sitting on the floor\"": 0
+  },
+  "total_path_length": {
+    "\"cat on top of the couch\"": 683.8277587890625,
+    "\"dog sitting on the floor\"": 735.4312744140625,
+    "CLIP AND: \"cat on top of the couch and dog sitting on the floor\"": 681.8455810546875,
+    "SuperDIFF (FM-ODE): \"cat on top of the couch\" \u2227 \"dog sitting on the floor\"": 718.771728515625
+  },
+  "final_tangent_cosine_similarity": {
+    "\"cat on top of the couch\" vs \"dog sitting on the floor\"": 0.7372094392776489,
+    "\"cat on top of the couch\" vs CLIP AND: \"cat on top of the couch and dog sitting on the floor\"": 0.7926235795021057,
+    "\"cat on top of the couch\" vs SuperDIFF (FM-ODE): \"cat on top of the couch\" \u2227 \"dog sitting on the floor\"": 0.0,
+    "\"dog sitting on the floor\" vs CLIP AND: \"cat on top of the couch and dog sitting on the floor\"": 0.6666114926338196,
+    "\"dog sitting on the floor\" vs SuperDIFF (FM-ODE): \"cat on top of the couch\" \u2227 \"dog sitting on the floor\"": 0.0,
+    "CLIP AND: \"cat on top of the couch and dog sitting on the floor\" vs SuperDIFF (FM-ODE): \"cat on top of the couch\" \u2227 \"dog sitting on the floor\"": 0.0
+  },
+  "config": {
+    "prompts": [
+      "cat on top of the couch",
+      "dog sitting on the floor"
+    ],
+    "num_prompts": 2,
+    "prompt_a": "cat on top of the couch",
+    "prompt_b": "dog sitting on the floor",
+    "monolithic_prompt": "cat on top of the couch and dog sitting on the floor",
+    "model_id": "stabilityai/stable-diffusion-3.5-medium",
+    "num_inference_steps": 50,
+    "guidance_scale": 4.5,
+    "seed": 42,
+    "projection": "pca",
+    "lift": 0.0,
+    "no_poe": true
+  },
+  "clip_classifier": {
+    "cosine_similarities": {
+      "\"cat on top of the couch\"": {
+        "[1] cat on top of the couch": 0.2186385840177536,
+        "[2] dog sitting on the floor": 0.13538208603858948,
+        "[ALL] cat on top of the couch and dog sitting on the floor": 0.19480764865875244
+      },
+      "\"dog sitting on the floor\"": {
+        "[1] cat on top of the couch": 0.10363321751356125,
+        "[2] dog sitting on the floor": 0.21170732378959656,
+        "[ALL] cat on top of the couch and dog sitting on the floor": 0.13863715529441833
+      },
+      "CLIP AND: \"cat on top of the couch and dog sitting on the floor\"": {
+        "[1] cat on top of the couch": 0.21869459748268127,
+        "[2] dog sitting on the floor": 0.189138263463974,
+        "[ALL] cat on top of the couch and dog sitting on the floor": 0.2868424952030182
+      },
+      "SuperDIFF (FM-ODE): \"cat on top of the couch\" \u2227 \"dog sitting on the floor\"": {
+        "[1] cat on top of the couch": 0.22477340698242188,
+        "[2] dog sitting on the floor": 0.13809259235858917,
+        "[ALL] cat on top of the couch and dog sitting on the floor": 0.19331270456314087
+      }
+    },
+    "predictions": {
+      "\"cat on top of the couch\"": "[1] cat on top of the couch",
+      "\"dog sitting on the floor\"": "[2] dog sitting on the floor",
+      "CLIP AND: \"cat on top of the couch and dog sitting on the floor\"": "[ALL] cat on top of the couch and dog sitting on the floor",
+      "SuperDIFF (FM-ODE): \"cat on top of the couch\" \u2227 \"dog sitting on the floor\"": "[1] cat on top of the couch"
+    },
+    "clip_pca_variance_explained": {
+      "PC1": 0.6378503441810608,
+      "PC2": 0.16961655020713806
+    }
+  }
+}

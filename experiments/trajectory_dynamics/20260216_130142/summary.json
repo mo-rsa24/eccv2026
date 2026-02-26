@@ -1,0 +1,44 @@
+{
+  "pca_variance_explained": {
+    "PC1": 0.9991378784179688,
+    "PC2": 0.0007064916426315904
+  },
+  "pca_total_variance_top2": 0.9998443722724915,
+  "endpoint_distances_l2": {},
+  "endpoint_distances_projected": {},
+  "divergence_onset_step": {},
+  "total_path_length": {
+    "SD3.5: \"A blue cube to the left of a red sphere, both on a white table.\"": 873.5551147460938
+  },
+  "final_tangent_cosine_similarity": {},
+  "config": {
+    "prompts": [
+      "A blue cube to the left of a red sphere, both on a white table."
+    ],
+    "num_prompts": 1,
+    "prompt_a": "A blue cube to the left of a red sphere, both on a white table.",
+    "prompt_b": "",
+    "monolithic_prompt": "A blue cube to the left of a red sphere, both on a white table.",
+    "model_id": "stabilityai/stable-diffusion-3.5-medium",
+    "num_inference_steps": 50,
+    "guidance_scale": 4.5,
+    "seed": 42,
+    "projection": "pca",
+    "lift": 0.0,
+    "no_poe": false
+  },
+  "clip_classifier": {
+    "cosine_similarities": {
+      "SD3.5: \"A blue cube to the left of a red sphere, both on a white table.\"": {
+        "[1] A blue cube to the left of a red sphere, both on a white table.": 0.32141703367233276
+      }
+    },
+    "predictions": {
+      "SD3.5: \"A blue cube to the left of a red sphere, both on a white table.\"": "[1] A blue cube to the left of a red sphere, both on a white table."
+    },
+    "clip_pca_variance_explained": {
+      "PC1": 1.0,
+      "PC2": 1.3752447260411554e-14
+    }
+  }
+}

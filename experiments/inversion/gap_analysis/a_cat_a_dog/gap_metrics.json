@@ -1,0 +1,33 @@
+{
+  "pair": [
+    "a cat",
+    "a dog"
+  ],
+  "slug": "a_cat_a_dog",
+  "n_seeds": 16,
+  "gap_and_pstar": {
+    "clip_cos": 0.774272084236145,
+    "lpips": 0.611138105392456,
+    "lat_mse": 0.17333984375,
+    "traj_mse_mean": 0.06888592377088855,
+    "traj_cos_mean": 0.9508727480471134
+  },
+  "gap_and_mono": {
+    "clip_cos": 0.7921929955482483,
+    "lpips": 0.5889825224876404
+  },
+  "decoded_p_star": [
+    {
+      "prompt": "a dog",
+      "cos_sim": 0.8925
+    },
+    {
+      "prompt": "a cat",
+      "cos_sim": 0.8107
+    },
+    {
+      "prompt": "a horse",
+      "cos_sim": 0.7008
+    }
+  ]
+}

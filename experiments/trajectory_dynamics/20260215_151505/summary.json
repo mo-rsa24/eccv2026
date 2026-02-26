@@ -1,0 +1,56 @@
+{
+  "pca_variance_explained": {
+    "PC1": 0.6490781903266907,
+    "PC2": 0.18671467900276184
+  },
+  "pca_total_variance_top2": 0.8357928991317749,
+  "endpoint_distances_l2": {
+    "\"a dog\" vs \"a cat\"": 254.07138061523438,
+    "\"a dog\" vs CLIP AND: \"a dog and a cat\"": 267.40838623046875,
+    "\"a dog\" vs SuperDIFF AND: \"a dog\" \u2227 \"a cat\"": 459.6142883300781,
+    "\"a cat\" vs CLIP AND: \"a dog and a cat\"": 292.11279296875,
+    "\"a cat\" vs SuperDIFF AND: \"a dog\" \u2227 \"a cat\"": 501.9057922363281,
+    "CLIP AND: \"a dog and a cat\" vs SuperDIFF AND: \"a dog\" \u2227 \"a cat\"": 496.42529296875
+  },
+  "endpoint_distances_projected": {
+    "\"a dog\" vs \"a cat\"": 38.92007064819336,
+    "\"a dog\" vs CLIP AND: \"a dog and a cat\"": 58.942718505859375,
+    "\"a dog\" vs SuperDIFF AND: \"a dog\" \u2227 \"a cat\"": 354.1496276855469,
+    "\"a cat\" vs CLIP AND: \"a dog and a cat\"": 34.7506217956543,
+    "\"a cat\" vs SuperDIFF AND: \"a dog\" \u2227 \"a cat\"": 388.2344970703125,
+    "CLIP AND: \"a dog and a cat\" vs SuperDIFF AND: \"a dog\" \u2227 \"a cat\"": 382.93975830078125
+  },
+  "divergence_onset_step": {
+    "\"a dog\" vs \"a cat\"": 3,
+    "\"a dog\" vs CLIP AND: \"a dog and a cat\"": 3,
+    "\"a dog\" vs SuperDIFF AND: \"a dog\" \u2227 \"a cat\"": 1,
+    "\"a cat\" vs CLIP AND: \"a dog and a cat\"": 3,
+    "\"a cat\" vs SuperDIFF AND: \"a dog\" \u2227 \"a cat\"": 1,
+    "CLIP AND: \"a dog and a cat\" vs SuperDIFF AND: \"a dog\" \u2227 \"a cat\"": 1
+  },
+  "total_path_length": {
+    "\"a dog\"": 730.78955078125,
+    "\"a cat\"": 724.7808227539062,
+    "CLIP AND: \"a dog and a cat\"": 695.2210693359375,
+    "SuperDIFF AND: \"a dog\" \u2227 \"a cat\"": 3763.456298828125
+  },
+  "final_tangent_cosine_similarity": {
+    "\"a dog\" vs \"a cat\"": 0.8969742655754089,
+    "\"a dog\" vs CLIP AND: \"a dog and a cat\"": 0.8812359571456909,
+    "\"a dog\" vs SuperDIFF AND: \"a dog\" \u2227 \"a cat\"": 0.15402525663375854,
+    "\"a cat\" vs CLIP AND: \"a dog and a cat\"": 0.8561794757843018,
+    "\"a cat\" vs SuperDIFF AND: \"a dog\" \u2227 \"a cat\"": 0.14511841535568237,
+    "CLIP AND: \"a dog and a cat\" vs SuperDIFF AND: \"a dog\" \u2227 \"a cat\"": 0.16956043243408203
+  },
+  "config": {
+    "prompt_a": "a dog",
+    "prompt_b": "a cat",
+    "monolithic_prompt": "a dog and a cat",
+    "model_id": "stabilityai/stable-diffusion-3.5-medium",
+    "num_inference_steps": 50,
+    "guidance_scale": 4.5,
+    "seed": 42,
+    "projection": "pca",
+    "lift": 0.0
+  }
+}

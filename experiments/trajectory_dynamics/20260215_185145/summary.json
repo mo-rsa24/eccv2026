@@ -1,0 +1,125 @@
+{
+  "pca_variance_explained": {
+    "PC1": 0.8263058662414551,
+    "PC2": 0.09665720909833908
+  },
+  "pca_total_variance_top2": 0.9229630827903748,
+  "endpoint_distances_l2": {
+    "\"a cat on the left\" vs \"a dog on the right\"": 298.9586486816406,
+    "\"a cat on the left\" vs \"a cat on the left and a dog on the right\"": 318.2374267578125,
+    "\"a cat on the left\" vs CLIP AND: \"a cat on the left and a dog on the right and a cat on the left and a dog on the right\"": 430.73419189453125,
+    "\"a cat on the left\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a cat on the left and a dog on the right\"": 282.8553771972656,
+    "\"a dog on the right\" vs \"a cat on the left and a dog on the right\"": 351.19134521484375,
+    "\"a dog on the right\" vs CLIP AND: \"a cat on the left and a dog on the right and a cat on the left and a dog on the right\"": 423.0032043457031,
+    "\"a dog on the right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a cat on the left and a dog on the right\"": 182.05960083007812,
+    "\"a cat on the left and a dog on the right\" vs CLIP AND: \"a cat on the left and a dog on the right and a cat on the left and a dog on the right\"": 289.8824157714844,
+    "\"a cat on the left and a dog on the right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a cat on the left and a dog on the right\"": 351.50384521484375,
+    "CLIP AND: \"a cat on the left and a dog on the right and a cat on the left and a dog on the right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a cat on the left and a dog on the right\"": 406.5167541503906
+  },
+  "endpoint_distances_projected": {
+    "\"a cat on the left\" vs \"a dog on the right\"": 56.818992614746094,
+    "\"a cat on the left\" vs \"a cat on the left and a dog on the right\"": 226.85479736328125,
+    "\"a cat on the left\" vs CLIP AND: \"a cat on the left and a dog on the right and a cat on the left and a dog on the right\"": 350.01776123046875,
+    "\"a cat on the left\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a cat on the left and a dog on the right\"": 68.50006103515625,
+    "\"a dog on the right\" vs \"a cat on the left and a dog on the right\"": 278.16583251953125,
+    "\"a dog on the right\" vs CLIP AND: \"a cat on the left and a dog on the right and a cat on the left and a dog on the right\"": 396.82183837890625,
+    "\"a dog on the right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a cat on the left and a dog on the right\"": 27.88682746887207,
+    "\"a cat on the left and a dog on the right\" vs CLIP AND: \"a cat on the left and a dog on the right and a cat on the left and a dog on the right\"": 130.42044067382812,
+    "\"a cat on the left and a dog on the right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a cat on the left and a dog on the right\"": 274.5594482421875,
+    "CLIP AND: \"a cat on the left and a dog on the right and a cat on the left and a dog on the right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a cat on the left and a dog on the right\"": 388.340576171875
+  },
+  "divergence_onset_step": {
+    "\"a cat on the left\" vs \"a dog on the right\"": 3,
+    "\"a cat on the left\" vs \"a cat on the left and a dog on the right\"": 2,
+    "\"a cat on the left\" vs CLIP AND: \"a cat on the left and a dog on the right and a cat on the left and a dog on the right\"": 2,
+    "\"a cat on the left\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a cat on the left and a dog on the right\"": 0,
+    "\"a dog on the right\" vs \"a cat on the left and a dog on the right\"": 3,
+    "\"a dog on the right\" vs CLIP AND: \"a cat on the left and a dog on the right and a cat on the left and a dog on the right\"": 2,
+    "\"a dog on the right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a cat on the left and a dog on the right\"": 0,
+    "\"a cat on the left and a dog on the right\" vs CLIP AND: \"a cat on the left and a dog on the right and a cat on the left and a dog on the right\"": 3,
+    "\"a cat on the left and a dog on the right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a cat on the left and a dog on the right\"": 0,
+    "CLIP AND: \"a cat on the left and a dog on the right and a cat on the left and a dog on the right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a cat on the left and a dog on the right\"": 0
+  },
+  "total_path_length": {
+    "\"a cat on the left\"": 696.1626586914062,
+    "\"a dog on the right\"": 709.7349243164062,
+    "\"a cat on the left and a dog on the right\"": 725.7536010742188,
+    "CLIP AND: \"a cat on the left and a dog on the right and a cat on the left and a dog on the right\"": 807.5245361328125,
+    "SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a cat on the left and a dog on the right\"": 726.03857421875
+  },
+  "final_tangent_cosine_similarity": {
+    "\"a cat on the left\" vs \"a dog on the right\"": 0.827178955078125,
+    "\"a cat on the left\" vs \"a cat on the left and a dog on the right\"": 0.8192300200462341,
+    "\"a cat on the left\" vs CLIP AND: \"a cat on the left and a dog on the right and a cat on the left and a dog on the right\"": 0.7047475576400757,
+    "\"a cat on the left\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a cat on the left and a dog on the right\"": 0.0,
+    "\"a dog on the right\" vs \"a cat on the left and a dog on the right\"": 0.789871096611023,
+    "\"a dog on the right\" vs CLIP AND: \"a cat on the left and a dog on the right and a cat on the left and a dog on the right\"": 0.7202382683753967,
+    "\"a dog on the right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a cat on the left and a dog on the right\"": 0.0,
+    "\"a cat on the left and a dog on the right\" vs CLIP AND: \"a cat on the left and a dog on the right and a cat on the left and a dog on the right\"": 0.8434054255485535,
+    "\"a cat on the left and a dog on the right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a cat on the left and a dog on the right\"": 0.0,
+    "CLIP AND: \"a cat on the left and a dog on the right and a cat on the left and a dog on the right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a cat on the left and a dog on the right\"": 0.0
+  },
+  "config": {
+    "prompts": [
+      "a cat on the left",
+      "a dog on the right",
+      "a cat on the left and a dog on the right"
+    ],
+    "num_prompts": 3,
+    "prompt_a": "a cat on the left",
+    "prompt_b": "a dog on the right",
+    "monolithic_prompt": "a cat on the left and a dog on the right and a cat on the left and a dog on the right",
+    "model_id": "stabilityai/stable-diffusion-3.5-medium",
+    "num_inference_steps": 40,
+    "guidance_scale": 4.5,
+    "seed": 42,
+    "projection": "pca",
+    "lift": 0.0,
+    "no_poe": true
+  },
+  "clip_classifier": {
+    "cosine_similarities": {
+      "\"a cat on the left\"": {
+        "[1] a cat on the left": 0.20951898396015167,
+        "[2] a dog on the right": 0.12858211994171143,
+        "[3] a cat on the left and a dog on the right": 0.1913522481918335,
+        "[ALL] a cat on the left and a dog on the right and a cat on the left and a dog on the right": 0.19904839992523193
+      },
+      "\"a dog on the right\"": {
+        "[1] a cat on the left": 0.12417040020227432,
+        "[2] a dog on the right": 0.1763085275888443,
+        "[3] a cat on the left and a dog on the right": 0.1705363690853119,
+        "[ALL] a cat on the left and a dog on the right and a cat on the left and a dog on the right": 0.16764813661575317
+      },
+      "\"a cat on the left and a dog on the right\"": {
+        "[1] a cat on the left": 0.22473996877670288,
+        "[2] a dog on the right": 0.20709164440631866,
+        "[3] a cat on the left and a dog on the right": 0.24277961254119873,
+        "[ALL] a cat on the left and a dog on the right and a cat on the left and a dog on the right": 0.21835657954216003
+      },
+      "CLIP AND: \"a cat on the left and a dog on the right and a cat on the left and a dog on the right\"": {
+        "[1] a cat on the left": 0.22488757967948914,
+        "[2] a dog on the right": 0.20201660692691803,
+        "[3] a cat on the left and a dog on the right": 0.23853519558906555,
+        "[ALL] a cat on the left and a dog on the right and a cat on the left and a dog on the right": 0.23015230894088745
+      },
+      "SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a cat on the left and a dog on the right\"": {
+        "[1] a cat on the left": 0.17897455394268036,
+        "[2] a dog on the right": 0.1701330989599228,
+        "[3] a cat on the left and a dog on the right": 0.21782279014587402,
+        "[ALL] a cat on the left and a dog on the right and a cat on the left and a dog on the right": 0.2240283489227295
+      }
+    },
+    "predictions": {
+      "\"a cat on the left\"": "[1] a cat on the left",
+      "\"a dog on the right\"": "[2] a dog on the right",
+      "\"a cat on the left and a dog on the right\"": "[3] a cat on the left and a dog on the right",
+      "CLIP AND: \"a cat on the left and a dog on the right and a cat on the left and a dog on the right\"": "[3] a cat on the left and a dog on the right",
+      "SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a cat on the left and a dog on the right\"": "[ALL] a cat on the left and a dog on the right and a cat on the left and a dog on the right"
+    },
+    "clip_pca_variance_explained": {
+      "PC1": 0.6945183873176575,
+      "PC2": 0.09527557343244553
+    }
+  }
+}

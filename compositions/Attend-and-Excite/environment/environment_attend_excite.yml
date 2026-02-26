@@ -1,0 +1,28 @@
+name: attend_excite
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+    # PyTorch — CUDA 12.8 wheels (sm_120 Blackwell / RTX 5090 support)
+    - --extra-index-url https://download.pytorch.org/whl/cu128
+    - torch==2.7.0
+    - torchvision==0.22.0
+    # Diffusion core — STRICTLY PINNED (see requirements_harmonized.txt for why)
+    - diffusers==0.12.1
+    # HuggingFace ecosystem (pinned to diffusers 0.12.1 era)
+    - transformers==4.26.0
+    - huggingface-hub==0.11.1
+    - accelerate==0.15.0
+    # Repo-specific
+    - pyrallis
+    - ftfy
+    - opencv-python
+    - matplotlib
+    - ipywidgets
+    # Implicit
+    - numpy
+    - Pillow
+    - packaging

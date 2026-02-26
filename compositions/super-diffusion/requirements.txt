@@ -1,0 +1,71 @@
+# ============================================================
+# Requirements for super-diffusion — CIFAR / image experiments + LDM composition
+# Python 3.10 (PyTorch 2.6 requires Python ≥ 3.9)
+#
+# NOTE: Proteins sub-module has its own environment:
+#   applications/proteins/environment.yml  (Python 3.9, PyTorch 1.11, CUDA 10.2)
+#
+# Install order:
+#   1. conda activate superdiff
+#   2. pip install -r requirements.txt
+#
+# RTX 5090 / Blackwell (sm_120) note:
+#   JAX 0.4.28 (original paper version) predates RTX 5090 — no sm_120 support.
+#   Upgraded to 0.5.3 (first version with Blackwell support, same as superdiff-ldm).
+#   The CIFAR/image code uses standard JAX/Flax APIs unaffected by this bump.
+#   No system CUDA toolkit required — JAX wheels bundle their own CUDA 12 runtime.
+# ============================================================
+
+# --- PyTorch — CUDA 12.4 GPU wheels (needed by scripts/compose_and.py) ---
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch==2.7.0
+torchvision==0.22.0
+
+# --- HuggingFace ecosystem (needed by scripts/compose_and.py) ---
+diffusers==0.35.1
+transformers==4.55.4
+huggingface-hub==0.34.4
+accelerate==1.10.1
+safetensors==0.6.2
+tokenizers==0.21.4
+
+# --- JAX ecosystem — CUDA 12 (bundles jaxlib + cuda12 plugins automatically) ---
+--find-links https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+jax[cuda12]==0.5.3
+
+# --- JAX ML libraries (aligned to jax 0.5.3) ---
+flax==0.10.5
+optax==0.2.4
+chex==0.1.89
+equinox==0.11.6
+diffrax==0.6.0
+lineax==0.0.5
+optimistix==0.0.7
+orbax-checkpoint==0.11.12
+jaxtyping==0.2.34
+
+# --- TensorFlow (CIFAR data pipeline only — GPU not required for data loading) ---
+# TF bundles its own CUDA runtime; no system nvcc needed.
+tensorflow==2.17.0
+tensorflow-datasets==4.9.6
+tensorflow-io-gcs-filesystem==0.37.1
+tensorflow-metadata==1.15.0
+
+# --- Core scientific stack ---
+numpy==1.26.4
+scipy==1.14.1
+matplotlib==3.9.2
+
+# --- ML utilities ---
+ml_collections==0.1.1
+simple-parsing==0.1.6
+absl-py==2.1.0
+
+# --- Experiment tracking ---
+wandb==0.18.1
+tensorboard==2.17.1
+
+# --- General utilities ---
+tqdm==4.66.5
+Pillow==10.4.0
+PyYAML==6.0.2

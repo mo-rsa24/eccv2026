@@ -1,0 +1,99 @@
+{
+  "pca_variance_explained": {
+    "PC1": 0.9466941952705383,
+    "PC2": 0.03772702068090439
+  },
+  "pca_total_variance_top2": 0.9844211935997009,
+  "endpoint_distances_l2": {
+    "SD3.5: \"a woman without glasses wearing a hat\" vs SD3.5: \"a woman without glasses wearing a hat without glasses\"": 133.29898071289062,
+    "SD3.5: \"a woman without glasses wearing a hat\" vs Composable NOT: \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 95.08323669433594,
+    "SD3.5: \"a woman without glasses wearing a hat\" vs SuperDIFF NOT (\u03bb=1.0): \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 238.7150115966797,
+    "SD3.5: \"a woman without glasses wearing a hat without glasses\" vs Composable NOT: \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 132.67477416992188,
+    "SD3.5: \"a woman without glasses wearing a hat without glasses\" vs SuperDIFF NOT (\u03bb=1.0): \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 242.14866638183594,
+    "Composable NOT: \"a woman without glasses wearing a hat\" \u00ac\"glasses\" vs SuperDIFF NOT (\u03bb=1.0): \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 223.64735412597656
+  },
+  "endpoint_distances_projected": {
+    "SD3.5: \"a woman without glasses wearing a hat\" vs SD3.5: \"a woman without glasses wearing a hat without glasses\"": 4.83600378036499,
+    "SD3.5: \"a woman without glasses wearing a hat\" vs Composable NOT: \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 18.20653533935547,
+    "SD3.5: \"a woman without glasses wearing a hat\" vs SuperDIFF NOT (\u03bb=1.0): \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 229.04751586914062,
+    "SD3.5: \"a woman without glasses wearing a hat without glasses\" vs Composable NOT: \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 20.0762996673584,
+    "SD3.5: \"a woman without glasses wearing a hat without glasses\" vs SuperDIFF NOT (\u03bb=1.0): \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 228.7659454345703,
+    "Composable NOT: \"a woman without glasses wearing a hat\" \u00ac\"glasses\" vs SuperDIFF NOT (\u03bb=1.0): \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 212.010009765625
+  },
+  "divergence_onset_step": {
+    "SD3.5: \"a woman without glasses wearing a hat\" vs SD3.5: \"a woman without glasses wearing a hat without glasses\"": 5,
+    "SD3.5: \"a woman without glasses wearing a hat\" vs Composable NOT: \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 2,
+    "SD3.5: \"a woman without glasses wearing a hat\" vs SuperDIFF NOT (\u03bb=1.0): \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 1,
+    "SD3.5: \"a woman without glasses wearing a hat without glasses\" vs Composable NOT: \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 3,
+    "SD3.5: \"a woman without glasses wearing a hat without glasses\" vs SuperDIFF NOT (\u03bb=1.0): \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 1,
+    "Composable NOT: \"a woman without glasses wearing a hat\" \u00ac\"glasses\" vs SuperDIFF NOT (\u03bb=1.0): \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 1
+  },
+  "total_path_length": {
+    "SD3.5: \"a woman without glasses wearing a hat\"": 733.7728881835938,
+    "SD3.5: \"a woman without glasses wearing a hat without glasses\"": 730.7230834960938,
+    "Composable NOT: \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 735.6731567382812,
+    "SuperDIFF NOT (\u03bb=1.0): \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 711.3355712890625
+  },
+  "final_tangent_cosine_similarity": {
+    "SD3.5: \"a woman without glasses wearing a hat\" vs SD3.5: \"a woman without glasses wearing a hat without glasses\"": 0.9653961658477783,
+    "SD3.5: \"a woman without glasses wearing a hat\" vs Composable NOT: \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 0.9819350242614746,
+    "SD3.5: \"a woman without glasses wearing a hat\" vs SuperDIFF NOT (\u03bb=1.0): \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 0.9004135131835938,
+    "SD3.5: \"a woman without glasses wearing a hat without glasses\" vs Composable NOT: \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 0.9652154445648193,
+    "SD3.5: \"a woman without glasses wearing a hat without glasses\" vs SuperDIFF NOT (\u03bb=1.0): \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 0.8992381691932678,
+    "Composable NOT: \"a woman without glasses wearing a hat\" \u00ac\"glasses\" vs SuperDIFF NOT (\u03bb=1.0): \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": 0.911384642124176
+  },
+  "config": {
+    "prompts": [
+      "a woman without glasses wearing a hat"
+    ],
+    "num_prompts": 1,
+    "prompt_a": "a woman without glasses wearing a hat",
+    "prompt_b": "",
+    "monolithic_prompt": "a woman without glasses wearing a hat",
+    "model_id": "stabilityai/stable-diffusion-3.5-medium",
+    "num_inference_steps": 50,
+    "guidance_scale": 4.5,
+    "seed": 42,
+    "projection": "pca",
+    "lift": 0.0,
+    "no_poe": false
+  },
+  "clip_classifier": {
+    "cosine_similarities": {
+      "SD3.5: \"a woman without glasses wearing a hat\"": {
+        "[1] a woman without glasses wearing a hat": 0.23862355947494507,
+        "[+] a woman without glasses wearing a hat": 0.23862355947494507,
+        "[-] glasses": 0.17793764173984528,
+        "[without] a woman without glasses wearing a hat without glasses": 0.2305336892604828
+      },
+      "SD3.5: \"a woman without glasses wearing a hat without glasses\"": {
+        "[1] a woman without glasses wearing a hat": 0.2588435411453247,
+        "[+] a woman without glasses wearing a hat": 0.2588435411453247,
+        "[-] glasses": 0.1848364919424057,
+        "[without] a woman without glasses wearing a hat without glasses": 0.24946229159832
+      },
+      "Composable NOT: \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": {
+        "[1] a woman without glasses wearing a hat": 0.25069987773895264,
+        "[+] a woman without glasses wearing a hat": 0.25069987773895264,
+        "[-] glasses": 0.1744784116744995,
+        "[without] a woman without glasses wearing a hat without glasses": 0.24282337725162506
+      },
+      "SuperDIFF NOT (\u03bb=1.0): \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": {
+        "[1] a woman without glasses wearing a hat": 0.22598318755626678,
+        "[+] a woman without glasses wearing a hat": 0.22598318755626678,
+        "[-] glasses": 0.17808213829994202,
+        "[without] a woman without glasses wearing a hat without glasses": 0.21881809830665588
+      }
+    },
+    "predictions": {
+      "SD3.5: \"a woman without glasses wearing a hat\"": "[1] a woman without glasses wearing a hat",
+      "SD3.5: \"a woman without glasses wearing a hat without glasses\"": "[1] a woman without glasses wearing a hat",
+      "Composable NOT: \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": "[1] a woman without glasses wearing a hat",
+      "SuperDIFF NOT (\u03bb=1.0): \"a woman without glasses wearing a hat\" \u00ac\"glasses\"": "[1] a woman without glasses wearing a hat"
+    },
+    "clip_pca_variance_explained": {
+      "PC1": 0.7557429075241089,
+      "PC2": 0.1522807478904724
+    }
+  }
+}

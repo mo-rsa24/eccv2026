@@ -1,0 +1,113 @@
+{
+  "pca_variance_explained": {
+    "PC1": 0.6649810671806335,
+    "PC2": 0.13815690577030182
+  },
+  "pca_total_variance_top2": 0.8031379580497742,
+  "endpoint_distances_l2": {
+    "\"A person\" vs \"An umbrella\"": 601.0714721679688,
+    "\"A person\" vs CLIP AND: \"a dog and a cat\"": 408.2655334472656,
+    "\"A person\" vs PoE: \"A person\" \u00d7 \"An umbrella\"": 531.4614868164062,
+    "\"A person\" vs SuperDIFF AND: \"A person\" \u2227 \"An umbrella\"": 665.493896484375,
+    "\"An umbrella\" vs CLIP AND: \"a dog and a cat\"": 569.9554443359375,
+    "\"An umbrella\" vs PoE: \"A person\" \u00d7 \"An umbrella\"": 286.8245849609375,
+    "\"An umbrella\" vs SuperDIFF AND: \"A person\" \u2227 \"An umbrella\"": 475.0828552246094,
+    "CLIP AND: \"a dog and a cat\" vs PoE: \"A person\" \u00d7 \"An umbrella\"": 491.4556579589844,
+    "CLIP AND: \"a dog and a cat\" vs SuperDIFF AND: \"A person\" \u2227 \"An umbrella\"": 615.9225463867188,
+    "PoE: \"A person\" \u00d7 \"An umbrella\" vs SuperDIFF AND: \"A person\" \u2227 \"An umbrella\"": 434.923828125
+  },
+  "endpoint_distances_projected": {
+    "\"A person\" vs \"An umbrella\"": 430.931884765625,
+    "\"A person\" vs CLIP AND: \"a dog and a cat\"": 68.53990936279297,
+    "\"A person\" vs PoE: \"A person\" \u00d7 \"An umbrella\"": 379.68316650390625,
+    "\"A person\" vs SuperDIFF AND: \"A person\" \u2227 \"An umbrella\"": 571.4664306640625,
+    "\"An umbrella\" vs CLIP AND: \"a dog and a cat\"": 396.1525573730469,
+    "\"An umbrella\" vs PoE: \"A person\" \u00d7 \"An umbrella\"": 52.16887283325195,
+    "\"An umbrella\" vs SuperDIFF AND: \"A person\" \u2227 \"An umbrella\"": 258.8228759765625,
+    "CLIP AND: \"a dog and a cat\" vs PoE: \"A person\" \u00d7 \"An umbrella\"": 344.01708984375,
+    "CLIP AND: \"a dog and a cat\" vs SuperDIFF AND: \"A person\" \u2227 \"An umbrella\"": 513.3851318359375,
+    "PoE: \"A person\" \u00d7 \"An umbrella\" vs SuperDIFF AND: \"A person\" \u2227 \"An umbrella\"": 272.11077880859375
+  },
+  "divergence_onset_step": {
+    "\"A person\" vs \"An umbrella\"": 3,
+    "\"A person\" vs CLIP AND: \"a dog and a cat\"": 2,
+    "\"A person\" vs PoE: \"A person\" \u00d7 \"An umbrella\"": 3,
+    "\"A person\" vs SuperDIFF AND: \"A person\" \u2227 \"An umbrella\"": 1,
+    "\"An umbrella\" vs CLIP AND: \"a dog and a cat\"": 2,
+    "\"An umbrella\" vs PoE: \"A person\" \u00d7 \"An umbrella\"": 2,
+    "\"An umbrella\" vs SuperDIFF AND: \"A person\" \u2227 \"An umbrella\"": 1,
+    "CLIP AND: \"a dog and a cat\" vs PoE: \"A person\" \u00d7 \"An umbrella\"": 2,
+    "CLIP AND: \"a dog and a cat\" vs SuperDIFF AND: \"A person\" \u2227 \"An umbrella\"": 1,
+    "PoE: \"A person\" \u00d7 \"An umbrella\" vs SuperDIFF AND: \"A person\" \u2227 \"An umbrella\"": 1
+  },
+  "total_path_length": {
+    "\"A person\"": 728.0738525390625,
+    "\"An umbrella\"": 941.4715576171875,
+    "CLIP AND: \"a dog and a cat\"": 695.2210693359375,
+    "PoE: \"A person\" \u00d7 \"An umbrella\"": 890.2557373046875,
+    "SuperDIFF AND: \"A person\" \u2227 \"An umbrella\"": 3852.21630859375
+  },
+  "final_tangent_cosine_similarity": {
+    "\"A person\" vs \"An umbrella\"": 0.6092621088027954,
+    "\"A person\" vs CLIP AND: \"a dog and a cat\"": 0.708778977394104,
+    "\"A person\" vs PoE: \"A person\" \u00d7 \"An umbrella\"": 0.6673237085342407,
+    "\"A person\" vs SuperDIFF AND: \"A person\" \u2227 \"An umbrella\"": 0.15326225757598877,
+    "\"An umbrella\" vs CLIP AND: \"a dog and a cat\"": 0.6266319751739502,
+    "\"An umbrella\" vs PoE: \"A person\" \u00d7 \"An umbrella\"": 0.8898150324821472,
+    "\"An umbrella\" vs SuperDIFF AND: \"A person\" \u2227 \"An umbrella\"": 0.1662675440311432,
+    "CLIP AND: \"a dog and a cat\" vs PoE: \"A person\" \u00d7 \"An umbrella\"": 0.6927871704101562,
+    "CLIP AND: \"a dog and a cat\" vs SuperDIFF AND: \"A person\" \u2227 \"An umbrella\"": 0.18078798055648804,
+    "PoE: \"A person\" \u00d7 \"An umbrella\" vs SuperDIFF AND: \"A person\" \u2227 \"An umbrella\"": 0.19244760274887085
+  },
+  "config": {
+    "prompt_a": "A person",
+    "prompt_b": "An umbrella",
+    "monolithic_prompt": "a dog and a cat",
+    "model_id": "stabilityai/stable-diffusion-3.5-medium",
+    "num_inference_steps": 50,
+    "guidance_scale": 4.5,
+    "seed": 42,
+    "projection": "pca",
+    "lift": 0.0
+  },
+  "clip_classifier": {
+    "cosine_similarities": {
+      "\"A person\"": {
+        "dog": 0.13928447663784027,
+        "cat": 0.1282290369272232,
+        "dog+cat": 0.0885026752948761
+      },
+      "\"An umbrella\"": {
+        "dog": 0.13691967725753784,
+        "cat": 0.1322154551744461,
+        "dog+cat": 0.08341272920370102
+      },
+      "CLIP AND: \"a dog and a cat\"": {
+        "dog": 0.16022513806819916,
+        "cat": 0.17623071372509003,
+        "dog+cat": 0.21405617892742157
+      },
+      "PoE: \"A person\" \u00d7 \"An umbrella\"": {
+        "dog": 0.15131935477256775,
+        "cat": 0.14823155105113983,
+        "dog+cat": 0.08987363427877426
+      },
+      "SuperDIFF AND: \"A person\" \u2227 \"An umbrella\"": {
+        "dog": 0.16507452726364136,
+        "cat": 0.15321771800518036,
+        "dog+cat": 0.1100568175315857
+      }
+    },
+    "predictions": {
+      "\"A person\"": "dog",
+      "\"An umbrella\"": "dog",
+      "CLIP AND: \"a dog and a cat\"": "dog+cat",
+      "PoE: \"A person\" \u00d7 \"An umbrella\"": "dog",
+      "SuperDIFF AND: \"A person\" \u2227 \"An umbrella\"": "dog"
+    },
+    "clip_pca_variance_explained": {
+      "PC1": 0.592217206954956,
+      "PC2": 0.1506822258234024
+    }
+  }
+}

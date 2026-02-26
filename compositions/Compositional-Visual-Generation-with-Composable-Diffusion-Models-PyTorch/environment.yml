@@ -1,0 +1,32 @@
+name: compose_diff
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+    # PyTorch — CUDA 12.8 wheels (cu128 = first with compiled sm_120 kernels)
+    - --extra-index-url https://download.pytorch.org/whl/cu128
+    - torch==2.7.0
+    - torchvision==0.22.0
+    # Diffusion core (pinned — required by repo README)
+    - diffusers==0.10.2
+    # HuggingFace ecosystem (compatible with diffusers==0.10.2)
+    - transformers==4.25.1
+    - huggingface-hub==0.11.1
+    - accelerate==0.15.0
+    # Image processing
+    - Pillow==9.0.0
+    - scikit-image==0.19.2
+    # 3D visualisation (pinned — required by repo README)
+    - open3d==0.16.0
+    # Mapping — if this fails, replace with folium==0.14.0 (Jinja2 3.x safe)
+    - folium==0.9.1
+    # Git-based dependencies
+    - git+https://github.com/openai/CLIP.git
+    - git+https://github.com/openai/glide-text2im
+    # Local editable install — run manually after env creation:
+    #   pip install -e .

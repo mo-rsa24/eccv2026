@@ -1,0 +1,125 @@
+{
+  "pca_variance_explained": {
+    "PC1": 0.8095537424087524,
+    "PC2": 0.07339467108249664
+  },
+  "pca_total_variance_top2": 0.8829483985900879,
+  "endpoint_distances_l2": {
+    "\"a cat on the left\" vs \"a dog on the right\"": 298.9586486816406,
+    "\"a cat on the left\" vs \"a balanced split composition with a cat left and dog right\"": 434.2680358886719,
+    "\"a cat on the left\" vs CLIP AND: \"a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right\"": 418.78466796875,
+    "\"a cat on the left\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a balanced split composition with a cat left and dog right\"": 390.5720520019531,
+    "\"a dog on the right\" vs \"a balanced split composition with a cat left and dog right\"": 426.28387451171875,
+    "\"a dog on the right\" vs CLIP AND: \"a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right\"": 418.071533203125,
+    "\"a dog on the right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a balanced split composition with a cat left and dog right\"": 351.83245849609375,
+    "\"a balanced split composition with a cat left and dog right\" vs CLIP AND: \"a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right\"": 409.5854187011719,
+    "\"a balanced split composition with a cat left and dog right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a balanced split composition with a cat left and dog right\"": 294.3371887207031,
+    "CLIP AND: \"a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a balanced split composition with a cat left and dog right\"": 365.41845703125
+  },
+  "endpoint_distances_projected": {
+    "\"a cat on the left\" vs \"a dog on the right\"": 29.821327209472656,
+    "\"a cat on the left\" vs \"a balanced split composition with a cat left and dog right\"": 388.2326965332031,
+    "\"a cat on the left\" vs CLIP AND: \"a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right\"": 285.6405944824219,
+    "\"a cat on the left\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a balanced split composition with a cat left and dog right\"": 305.6523132324219,
+    "\"a dog on the right\" vs \"a balanced split composition with a cat left and dog right\"": 359.62872314453125,
+    "\"a dog on the right\" vs CLIP AND: \"a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right\"": 257.5050048828125,
+    "\"a dog on the right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a balanced split composition with a cat left and dog right\"": 276.9293518066406,
+    "\"a balanced split composition with a cat left and dog right\" vs CLIP AND: \"a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right\"": 103.65393829345703,
+    "\"a balanced split composition with a cat left and dog right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a balanced split composition with a cat left and dog right\"": 82.78382110595703,
+    "CLIP AND: \"a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a balanced split composition with a cat left and dog right\"": 26.98595428466797
+  },
+  "divergence_onset_step": {
+    "\"a cat on the left\" vs \"a dog on the right\"": 3,
+    "\"a cat on the left\" vs \"a balanced split composition with a cat left and dog right\"": 3,
+    "\"a cat on the left\" vs CLIP AND: \"a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right\"": 2,
+    "\"a cat on the left\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a balanced split composition with a cat left and dog right\"": 0,
+    "\"a dog on the right\" vs \"a balanced split composition with a cat left and dog right\"": 3,
+    "\"a dog on the right\" vs CLIP AND: \"a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right\"": 2,
+    "\"a dog on the right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a balanced split composition with a cat left and dog right\"": 0,
+    "\"a balanced split composition with a cat left and dog right\" vs CLIP AND: \"a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right\"": 3,
+    "\"a balanced split composition with a cat left and dog right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a balanced split composition with a cat left and dog right\"": 0,
+    "CLIP AND: \"a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a balanced split composition with a cat left and dog right\"": 0
+  },
+  "total_path_length": {
+    "\"a cat on the left\"": 696.1626586914062,
+    "\"a dog on the right\"": 709.7349243164062,
+    "\"a balanced split composition with a cat left and dog right\"": 835.3865356445312,
+    "CLIP AND: \"a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right\"": 798.2901000976562,
+    "SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a balanced split composition with a cat left and dog right\"": 789.8868408203125
+  },
+  "final_tangent_cosine_similarity": {
+    "\"a cat on the left\" vs \"a dog on the right\"": 0.827178955078125,
+    "\"a cat on the left\" vs \"a balanced split composition with a cat left and dog right\"": 0.6806830167770386,
+    "\"a cat on the left\" vs CLIP AND: \"a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right\"": 0.730292022228241,
+    "\"a cat on the left\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a balanced split composition with a cat left and dog right\"": 0.0,
+    "\"a dog on the right\" vs \"a balanced split composition with a cat left and dog right\"": 0.6984512209892273,
+    "\"a dog on the right\" vs CLIP AND: \"a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right\"": 0.7333483695983887,
+    "\"a dog on the right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a balanced split composition with a cat left and dog right\"": 0.0,
+    "\"a balanced split composition with a cat left and dog right\" vs CLIP AND: \"a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right\"": 0.7540953159332275,
+    "\"a balanced split composition with a cat left and dog right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a balanced split composition with a cat left and dog right\"": 0.0,
+    "CLIP AND: \"a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right\" vs SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a balanced split composition with a cat left and dog right\"": 0.0
+  },
+  "config": {
+    "prompts": [
+      "a cat on the left",
+      "a dog on the right",
+      "a balanced split composition with a cat left and dog right"
+    ],
+    "num_prompts": 3,
+    "prompt_a": "a cat on the left",
+    "prompt_b": "a dog on the right",
+    "monolithic_prompt": "a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right",
+    "model_id": "stabilityai/stable-diffusion-3.5-medium",
+    "num_inference_steps": 40,
+    "guidance_scale": 4.5,
+    "seed": 42,
+    "projection": "pca",
+    "lift": 0.0,
+    "no_poe": true
+  },
+  "clip_classifier": {
+    "cosine_similarities": {
+      "\"a cat on the left\"": {
+        "[1] a cat on the left": 0.20951898396015167,
+        "[2] a dog on the right": 0.12858211994171143,
+        "[3] a balanced split composition with a cat left and dog right": 0.20689493417739868,
+        "[ALL] a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right": 0.20115911960601807
+      },
+      "\"a dog on the right\"": {
+        "[1] a cat on the left": 0.12417040020227432,
+        "[2] a dog on the right": 0.1763085275888443,
+        "[3] a balanced split composition with a cat left and dog right": 0.1736479103565216,
+        "[ALL] a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right": 0.1679842174053192
+      },
+      "\"a balanced split composition with a cat left and dog right\"": {
+        "[1] a cat on the left": 0.2125779241323471,
+        "[2] a dog on the right": 0.19912149012088776,
+        "[3] a balanced split composition with a cat left and dog right": 0.23556065559387207,
+        "[ALL] a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right": 0.24355849623680115
+      },
+      "CLIP AND: \"a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right\"": {
+        "[1] a cat on the left": 0.22653517127037048,
+        "[2] a dog on the right": 0.20958709716796875,
+        "[3] a balanced split composition with a cat left and dog right": 0.2380789816379547,
+        "[ALL] a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right": 0.25102823972702026
+      },
+      "SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a balanced split composition with a cat left and dog right\"": {
+        "[1] a cat on the left": 0.2366355061531067,
+        "[2] a dog on the right": 0.2270243763923645,
+        "[3] a balanced split composition with a cat left and dog right": 0.2480235993862152,
+        "[ALL] a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right": 0.2626482844352722
+      }
+    },
+    "predictions": {
+      "\"a cat on the left\"": "[1] a cat on the left",
+      "\"a dog on the right\"": "[2] a dog on the right",
+      "\"a balanced split composition with a cat left and dog right\"": "[ALL] a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right",
+      "CLIP AND: \"a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right\"": "[ALL] a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right",
+      "SuperDIFF Multi-AND: \"a cat on the left\" \u2227 \"a dog on the right\" \u2227 \"a balanced split composition with a cat left and dog right\"": "[ALL] a cat on the left and a dog on the right and a balanced split composition with a cat left and dog right"
+    },
+    "clip_pca_variance_explained": {
+      "PC1": 0.6289478540420532,
+      "PC2": 0.10498695075511932
+    }
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "pca_variance_explained": {
+    "PC1": 0.8592142462730408,
+    "PC2": 0.08138862997293472
+  },
+  "pca_total_variance_top2": 0.9406028985977173,
+  "endpoint_distances_l2": {
+    "\"a cat on the left\" vs \"a dog on the right\"": 286.0252380371094,
+    "\"a cat on the left\" vs CLIP AND: \"two animals in one frame, cat on left, dog on right\"": 324.5904846191406,
+    "\"a cat on the left\" vs SuperDIFF (FM-ODE): \"a cat on the left\" \u2227 \"a dog on the right\"": 107.44029998779297,
+    "\"a dog on the right\" vs CLIP AND: \"two animals in one frame, cat on left, dog on right\"": 300.4596252441406,
+    "\"a dog on the right\" vs SuperDIFF (FM-ODE): \"a cat on the left\" \u2227 \"a dog on the right\"": 256.6050720214844,
+    "CLIP AND: \"two animals in one frame, cat on left, dog on right\" vs SuperDIFF (FM-ODE): \"a cat on the left\" \u2227 \"a dog on the right\"": 308.4348449707031
+  },
+  "endpoint_distances_projected": {
+    "\"a cat on the left\" vs \"a dog on the right\"": 174.2053985595703,
+    "\"a cat on the left\" vs CLIP AND: \"two animals in one frame, cat on left, dog on right\"": 317.2742004394531,
+    "\"a cat on the left\" vs SuperDIFF (FM-ODE): \"a cat on the left\" \u2227 \"a dog on the right\"": 20.827747344970703,
+    "\"a dog on the right\" vs CLIP AND: \"two animals in one frame, cat on left, dog on right\"": 157.43385314941406,
+    "\"a dog on the right\" vs SuperDIFF (FM-ODE): \"a cat on the left\" \u2227 \"a dog on the right\"": 153.93019104003906,
+    "CLIP AND: \"two animals in one frame, cat on left, dog on right\" vs SuperDIFF (FM-ODE): \"a cat on the left\" \u2227 \"a dog on the right\"": 296.4915771484375
+  },
+  "divergence_onset_step": {
+    "\"a cat on the left\" vs \"a dog on the right\"": 4,
+    "\"a cat on the left\" vs CLIP AND: \"two animals in one frame, cat on left, dog on right\"": 3,
+    "\"a cat on the left\" vs SuperDIFF (FM-ODE): \"a cat on the left\" \u2227 \"a dog on the right\"": 0,
+    "\"a dog on the right\" vs CLIP AND: \"two animals in one frame, cat on left, dog on right\"": 3,
+    "\"a dog on the right\" vs SuperDIFF (FM-ODE): \"a cat on the left\" \u2227 \"a dog on the right\"": 0,
+    "CLIP AND: \"two animals in one frame, cat on left, dog on right\" vs SuperDIFF (FM-ODE): \"a cat on the left\" \u2227 \"a dog on the right\"": 0
+  },
+  "total_path_length": {
+    "\"a cat on the left\"": 647.4736328125,
+    "\"a dog on the right\"": 600.8272705078125,
+    "CLIP AND: \"two animals in one frame, cat on left, dog on right\"": 652.1058349609375,
+    "SuperDIFF (FM-ODE): \"a cat on the left\" \u2227 \"a dog on the right\"": 634.2434692382812
+  },
+  "final_tangent_cosine_similarity": {
+    "\"a cat on the left\" vs \"a dog on the right\"": 0.790354311466217,
+    "\"a cat on the left\" vs CLIP AND: \"two animals in one frame, cat on left, dog on right\"": 0.763360857963562,
+    "\"a cat on the left\" vs SuperDIFF (FM-ODE): \"a cat on the left\" \u2227 \"a dog on the right\"": 0.0,
+    "\"a dog on the right\" vs CLIP AND: \"two animals in one frame, cat on left, dog on right\"": 0.7949565649032593,
+    "\"a dog on the right\" vs SuperDIFF (FM-ODE): \"a cat on the left\" \u2227 \"a dog on the right\"": 0.0,
+    "CLIP AND: \"two animals in one frame, cat on left, dog on right\" vs SuperDIFF (FM-ODE): \"a cat on the left\" \u2227 \"a dog on the right\"": 0.0
+  },
+  "config": {
+    "prompts": [
+      "a cat on the left",
+      "a dog on the right"
+    ],
+    "num_prompts": 2,
+    "prompt_a": "a cat on the left",
+    "prompt_b": "a dog on the right",
+    "monolithic_prompt": "two animals in one frame, cat on left, dog on right",
+    "model_id": "stabilityai/stable-diffusion-3.5-medium",
+    "num_inference_steps": 50,
+    "guidance_scale": 4.5,
+    "seed": 45,
+    "projection": "pca",
+    "lift": 0.1,
+    "no_poe": true
+  },
+  "clip_classifier": {
+    "cosine_similarities": {
+      "\"a cat on the left\"": {
+        "[1] a cat on the left": 0.17545998096466064,
+        "[2] a dog on the right": 0.09531645476818085,
+        "[ALL] two animals in one frame, cat on left, dog on right": 0.1502995789051056
+      },
+      "\"a dog on the right\"": {
+        "[1] a cat on the left": 0.19185151159763336,
+        "[2] a dog on the right": 0.23990774154663086,
+        "[ALL] two animals in one frame, cat on left, dog on right": 0.20632368326187134
+      },
+      "CLIP AND: \"two animals in one frame, cat on left, dog on right\"": {
+        "[1] a cat on the left": 0.264957457780838,
+        "[2] a dog on the right": 0.24646590650081635,
+        "[ALL] two animals in one frame, cat on left, dog on right": 0.29937005043029785
+      },
+      "SuperDIFF (FM-ODE): \"a cat on the left\" \u2227 \"a dog on the right\"": {
+        "[1] a cat on the left": 0.1740935742855072,
+        "[2] a dog on the right": 0.09931298345327377,
+        "[ALL] two animals in one frame, cat on left, dog on right": 0.1293480098247528
+      }
+    },
+    "predictions": {
+      "\"a cat on the left\"": "[1] a cat on the left",
+      "\"a dog on the right\"": "[2] a dog on the right",
+      "CLIP AND: \"two animals in one frame, cat on left, dog on right\"": "[ALL] two animals in one frame, cat on left, dog on right",
+      "SuperDIFF (FM-ODE): \"a cat on the left\" \u2227 \"a dog on the right\"": "[1] a cat on the left"
+    },
+    "clip_pca_variance_explained": {
+      "PC1": 0.6590820550918579,
+      "PC2": 0.12242313474416733
+    }
+  }
+}

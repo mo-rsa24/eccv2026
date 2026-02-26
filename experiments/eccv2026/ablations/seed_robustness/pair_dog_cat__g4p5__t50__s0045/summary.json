@@ -1,0 +1,96 @@
+{
+  "pca_variance_explained": {
+    "PC1": 0.8653799891471863,
+    "PC2": 0.0843939557671547
+  },
+  "pca_total_variance_top2": 0.9497739672660828,
+  "endpoint_distances_l2": {
+    "\"a dog\" vs \"a cat\"": 268.1383361816406,
+    "\"a dog\" vs CLIP AND: \"a dog and a cat\"": 273.23211669921875,
+    "\"a dog\" vs SuperDIFF (FM-ODE): \"a dog\" \u2227 \"a cat\"": 258.20904541015625,
+    "\"a cat\" vs CLIP AND: \"a dog and a cat\"": 331.0509338378906,
+    "\"a cat\" vs SuperDIFF (FM-ODE): \"a dog\" \u2227 \"a cat\"": 132.01271057128906,
+    "CLIP AND: \"a dog and a cat\" vs SuperDIFF (FM-ODE): \"a dog\" \u2227 \"a cat\"": 307.6849670410156
+  },
+  "endpoint_distances_projected": {
+    "\"a dog\" vs \"a cat\"": 190.32571411132812,
+    "\"a dog\" vs CLIP AND: \"a dog and a cat\"": 146.28903198242188,
+    "\"a dog\" vs SuperDIFF (FM-ODE): \"a dog\" \u2227 \"a cat\"": 166.05857849121094,
+    "\"a cat\" vs CLIP AND: \"a dog and a cat\"": 320.6045227050781,
+    "\"a cat\" vs SuperDIFF (FM-ODE): \"a dog\" \u2227 \"a cat\"": 26.675949096679688,
+    "CLIP AND: \"a dog and a cat\" vs SuperDIFF (FM-ODE): \"a dog\" \u2227 \"a cat\"": 294.166259765625
+  },
+  "divergence_onset_step": {
+    "\"a dog\" vs \"a cat\"": 3,
+    "\"a dog\" vs CLIP AND: \"a dog and a cat\"": 3,
+    "\"a dog\" vs SuperDIFF (FM-ODE): \"a dog\" \u2227 \"a cat\"": 4,
+    "\"a cat\" vs CLIP AND: \"a dog and a cat\"": 3,
+    "\"a cat\" vs SuperDIFF (FM-ODE): \"a dog\" \u2227 \"a cat\"": 7,
+    "CLIP AND: \"a dog and a cat\" vs SuperDIFF (FM-ODE): \"a dog\" \u2227 \"a cat\"": 3
+  },
+  "total_path_length": {
+    "\"a dog\"": 605.9742431640625,
+    "\"a cat\"": 641.0169677734375,
+    "CLIP AND: \"a dog and a cat\"": 669.2005615234375,
+    "SuperDIFF (FM-ODE): \"a dog\" \u2227 \"a cat\"": 640.8132934570312
+  },
+  "final_tangent_cosine_similarity": {
+    "\"a dog\" vs \"a cat\"": 0.8232467174530029,
+    "\"a dog\" vs CLIP AND: \"a dog and a cat\"": 0.8325052857398987,
+    "\"a dog\" vs SuperDIFF (FM-ODE): \"a dog\" \u2227 \"a cat\"": 0.8191865682601929,
+    "\"a cat\" vs CLIP AND: \"a dog and a cat\"": 0.7706238031387329,
+    "\"a cat\" vs SuperDIFF (FM-ODE): \"a dog\" \u2227 \"a cat\"": 0.9511240124702454,
+    "CLIP AND: \"a dog and a cat\" vs SuperDIFF (FM-ODE): \"a dog\" \u2227 \"a cat\"": 0.7936808466911316
+  },
+  "config": {
+    "prompts": [
+      "a dog",
+      "a cat"
+    ],
+    "num_prompts": 2,
+    "prompt_a": "a dog",
+    "prompt_b": "a cat",
+    "monolithic_prompt": "a dog and a cat",
+    "model_id": "stabilityai/stable-diffusion-3.5-medium",
+    "num_inference_steps": 50,
+    "guidance_scale": 4.5,
+    "seed": 45,
+    "projection": "pca",
+    "lift": 0.0,
+    "no_poe": true
+  },
+  "clip_classifier": {
+    "cosine_similarities": {
+      "\"a dog\"": {
+        "[1] a dog": 0.20146872103214264,
+        "[2] a cat": 0.14246129989624023,
+        "[ALL] a dog and a cat": 0.16490361094474792
+      },
+      "\"a cat\"": {
+        "[1] a dog": 0.1674618422985077,
+        "[2] a cat": 0.22363406419754028,
+        "[ALL] a dog and a cat": 0.1633201539516449
+      },
+      "CLIP AND: \"a dog and a cat\"": {
+        "[1] a dog": 0.15944123268127441,
+        "[2] a cat": 0.15489156544208527,
+        "[ALL] a dog and a cat": 0.22715236246585846
+      },
+      "SuperDIFF (FM-ODE): \"a dog\" \u2227 \"a cat\"": {
+        "[1] a dog": 0.1395130753517151,
+        "[2] a cat": 0.19234439730644226,
+        "[ALL] a dog and a cat": 0.14336417615413666
+      }
+    },
+    "predictions": {
+      "\"a dog\"": "[1] a dog",
+      "\"a cat\"": "[2] a cat",
+      "CLIP AND: \"a dog and a cat\"": "[ALL] a dog and a cat",
+      "SuperDIFF (FM-ODE): \"a dog\" \u2227 \"a cat\"": "[2] a cat"
+    },
+    "clip_pca_variance_explained": {
+      "PC1": 0.6874309778213501,
+      "PC2": 0.1263626366853714
+    }
+  }
+}

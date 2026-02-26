@@ -1,0 +1,49 @@
+\documentclass{article}
+\usepackage{amsmath,amssymb}
+
+\begin{document}
+
+\begin{center}
+  {\large\textbf{Hybridization vs.\ Co-Presence in Compositional Diffusion Models}}
+
+  \medskip
+  {\normalsize Author One$^1$, Author Two$^1$, Author Three$^2$}
+
+  \smallskip
+  {\small $^1$Institution One \quad $^2$Institution Two}
+
+  \smallskip
+  {\small Paper ID: XXXX}
+\end{center}
+
+\bigskip
+
+Text-to-image diffusion models achieve \emph{semantic composition}
+through natural-language descriptions, yet depend on training coverage
+of specific concept pairings, and struggle with complex compositional
+tasks such as counting or fine-grained attribute binding.
+A parallel line of work pursues \emph{logical composition}: composing
+smaller pretrained models at inference time, each specialising in a
+distinct concept or constraint --- quick, data-efficient, and
+generalisable to unseen combinations, yet seeking a compromise region
+in the joint probability density that can blend rather than cleanly
+separate concepts.
+Both are used to compose complex scenes, yet one conditions generation
+on a learned semantic meaning of the combined phrase while the other
+composes their score functions directly.
+We show they are not the same operation, and that conflating them
+leads to wrong conclusions about what each paradigm can and cannot express.
+Through trajectory-level analysis of the denoising flow, we demonstrate
+that the two paradigms diverge early and consistently in latent space.
+We characterise this gap by identifying the text prompt stable diffusion
+would need to reproduce a given logical composition, then show that
+linearly interpolating their velocities strikes a balance --- leveraging
+the semantic coherence of language-guided generation and the
+compositional expressibility of logical operators.
+
+\bigskip
+\noindent\textbf{Keywords:} compositional generation, diffusion models,
+latent trajectories, approximate inversion, composability gap,
+logical operators, score composition, flow matching
+
+\end{document}

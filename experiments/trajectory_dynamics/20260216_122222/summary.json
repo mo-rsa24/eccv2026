@@ -1,0 +1,44 @@
+{
+  "pca_variance_explained": {
+    "PC1": 0.9973574876785278,
+    "PC2": 0.0023215957917273045
+  },
+  "pca_total_variance_top2": 0.9996790885925293,
+  "endpoint_distances_l2": {},
+  "endpoint_distances_projected": {},
+  "divergence_onset_step": {},
+  "total_path_length": {
+    "SD3.5: \"a woman without glasses wearing a hat\"": 733.7728881835938
+  },
+  "final_tangent_cosine_similarity": {},
+  "config": {
+    "prompts": [
+      "a woman without glasses wearing a hat"
+    ],
+    "num_prompts": 1,
+    "prompt_a": "a woman without glasses wearing a hat",
+    "prompt_b": "",
+    "monolithic_prompt": "a woman without glasses wearing a hat",
+    "model_id": "stabilityai/stable-diffusion-3.5-medium",
+    "num_inference_steps": 50,
+    "guidance_scale": 4.5,
+    "seed": 42,
+    "projection": "pca",
+    "lift": 0.0,
+    "no_poe": false
+  },
+  "clip_classifier": {
+    "cosine_similarities": {
+      "SD3.5: \"a woman without glasses wearing a hat\"": {
+        "[1] a woman without glasses wearing a hat": 0.23862352967262268
+      }
+    },
+    "predictions": {
+      "SD3.5: \"a woman without glasses wearing a hat\"": "[1] a woman without glasses wearing a hat"
+    },
+    "clip_pca_variance_explained": {
+      "PC1": 1.0,
+      "PC2": 2.555611972043792e-13
+    }
+  }
+}

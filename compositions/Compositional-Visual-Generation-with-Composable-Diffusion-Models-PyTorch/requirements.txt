@@ -1,0 +1,43 @@
+# ============================================================
+# Harmonized requirements for Compositional Diffusion Models
+# Python 3.10 (upgraded from 3.8 — PyTorch 2.6+ requires Python ≥ 3.9 for sm_120 GPU support)
+#
+# Install order:
+#   1. conda activate compose_diff
+#   2. pip install -r requirements.txt
+#   3. pip install -e .          (installs local composable-diffusion + point-e)
+# ============================================================
+
+# --- PyTorch — CUDA 12.4 GPU wheels (RTX 5090 sm_120 support requires 2.6.0+) ---
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch==2.7.0
+torchvision==0.22.0
+
+# --- Diffusion core (pinned — required by repo README) ---
+diffusers==0.10.2
+
+# --- HuggingFace ecosystem (pinned for compatibility with diffusers==0.10.2) ---
+# diffusers==0.10.2 requires transformers>=4.21.0; 4.25.1 is from the same release era
+transformers==4.25.1
+# transformers==4.25.1 requires huggingface-hub>=0.10.0,<1.0
+huggingface-hub==0.11.1
+# diffusers==0.10.2 requires accelerate>=0.11.0
+accelerate==0.15.0
+
+# --- Image processing (user-specified) ---
+Pillow==9.0.0
+scikit-image==0.19.2
+
+# --- 3D visualisation (pinned — required by repo README) ---
+open3d==0.16.0
+
+# --- Mapping (user-specified) ---
+# NOTE: folium==0.9.1 (2019) may conflict with Jinja2>=3.0 pulled in by transformers.
+# If installation fails, upgrade to folium==0.14.0 which is Jinja2 3.x compatible.
+folium==0.9.1
+
+# --- Git-based dependencies ---
+# OpenAI CLIP (also pulled in by pip install -e . via setup.py)
+git+https://github.com/openai/CLIP.git
+# GLIDE text-to-image
+git+https://github.com/openai/glide-text2im

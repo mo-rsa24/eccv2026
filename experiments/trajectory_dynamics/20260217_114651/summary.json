@@ -1,0 +1,115 @@
+{
+  "endpoint_distances_l2": {
+    "\"a dog\" vs \"a cat\"": 331.11102294921875,
+    "\"a dog\" vs CLIP AND: \"a dog and a cat\"": 318.7253723144531,
+    "\"a dog\" vs PoE: \"a dog\" \u00d7 \"a cat\"": 348.5147399902344,
+    "\"a dog\" vs SuperDIFF (author, stoch): \"a dog\" \u2227 \"a cat\"": 555.7777709960938,
+    "\"a cat\" vs CLIP AND: \"a dog and a cat\"": 369.4053649902344,
+    "\"a cat\" vs PoE: \"a dog\" \u00d7 \"a cat\"": 281.2889709472656,
+    "\"a cat\" vs SuperDIFF (author, stoch): \"a dog\" \u2227 \"a cat\"": 527.2545776367188,
+    "CLIP AND: \"a dog and a cat\" vs PoE: \"a dog\" \u00d7 \"a cat\"": 412.20050048828125,
+    "CLIP AND: \"a dog and a cat\" vs SuperDIFF (author, stoch): \"a dog\" \u2227 \"a cat\"": 534.5812377929688,
+    "PoE: \"a dog\" \u00d7 \"a cat\" vs SuperDIFF (author, stoch): \"a dog\" \u2227 \"a cat\"": 580.40966796875
+  },
+  "endpoint_distances_projected": {
+    "\"a dog\" vs \"a cat\"": 84.29711574419821,
+    "\"a dog\" vs CLIP AND: \"a dog and a cat\"": 79.8868156709609,
+    "\"a dog\" vs PoE: \"a dog\" \u00d7 \"a cat\"": 162.1564420207261,
+    "\"a dog\" vs SuperDIFF (author, stoch): \"a dog\" \u2227 \"a cat\"": 427.3758725282528,
+    "\"a cat\" vs CLIP AND: \"a dog and a cat\"": 151.72116640096758,
+    "\"a cat\" vs PoE: \"a dog\" \u00d7 \"a cat\"": 86.25215970410446,
+    "\"a cat\" vs SuperDIFF (author, stoch): \"a dog\" \u2227 \"a cat\"": 464.49493891060956,
+    "CLIP AND: \"a dog and a cat\" vs PoE: \"a dog\" \u00d7 \"a cat\"": 236.27252160693178,
+    "CLIP AND: \"a dog and a cat\" vs SuperDIFF (author, stoch): \"a dog\" \u2227 \"a cat\"": 355.8108216790815,
+    "PoE: \"a dog\" \u00d7 \"a cat\" vs SuperDIFF (author, stoch): \"a dog\" \u2227 \"a cat\"": 544.9323251523854
+  },
+  "divergence_onset_step": {
+    "\"a dog\" vs \"a cat\"": 20,
+    "\"a dog\" vs CLIP AND: \"a dog and a cat\"": 25,
+    "\"a dog\" vs PoE: \"a dog\" \u00d7 \"a cat\"": 17,
+    "\"a dog\" vs SuperDIFF (author, stoch): \"a dog\" \u2227 \"a cat\"": 0,
+    "\"a cat\" vs CLIP AND: \"a dog and a cat\"": 19,
+    "\"a cat\" vs PoE: \"a dog\" \u00d7 \"a cat\"": 16,
+    "\"a cat\" vs SuperDIFF (author, stoch): \"a dog\" \u2227 \"a cat\"": 0,
+    "CLIP AND: \"a dog and a cat\" vs PoE: \"a dog\" \u00d7 \"a cat\"": 18,
+    "CLIP AND: \"a dog and a cat\" vs SuperDIFF (author, stoch): \"a dog\" \u2227 \"a cat\"": 0,
+    "PoE: \"a dog\" \u00d7 \"a cat\" vs SuperDIFF (author, stoch): \"a dog\" \u2227 \"a cat\"": 0
+  },
+  "total_path_length": {
+    "\"a dog\"": 694.7796630859375,
+    "\"a cat\"": 675.684814453125,
+    "CLIP AND: \"a dog and a cat\"": 667.358642578125,
+    "PoE: \"a dog\" \u00d7 \"a cat\"": 770.1474609375,
+    "SuperDIFF (author, stoch): \"a dog\" \u2227 \"a cat\"": 24182.83203125
+  },
+  "final_tangent_cosine_similarity": {
+    "\"a dog\" vs \"a cat\"": 0.8051323890686035,
+    "\"a dog\" vs CLIP AND: \"a dog and a cat\"": 0.8219296336174011,
+    "\"a dog\" vs PoE: \"a dog\" \u00d7 \"a cat\"": 0.8069544434547424,
+    "\"a dog\" vs SuperDIFF (author, stoch): \"a dog\" \u2227 \"a cat\"": -0.0005443607224151492,
+    "\"a cat\" vs CLIP AND: \"a dog and a cat\"": 0.7413825392723083,
+    "\"a cat\" vs PoE: \"a dog\" \u00d7 \"a cat\"": 0.8679144978523254,
+    "\"a cat\" vs SuperDIFF (author, stoch): \"a dog\" \u2227 \"a cat\"": -0.00017289462266489863,
+    "CLIP AND: \"a dog and a cat\" vs PoE: \"a dog\" \u00d7 \"a cat\"": 0.7208065390586853,
+    "CLIP AND: \"a dog and a cat\" vs SuperDIFF (author, stoch): \"a dog\" \u2227 \"a cat\"": 0.0004939874052070081,
+    "PoE: \"a dog\" \u00d7 \"a cat\" vs SuperDIFF (author, stoch): \"a dog\" \u2227 \"a cat\"": -0.00023191439686343074
+  },
+  "config": {
+    "prompts": [
+      "a dog",
+      "a cat"
+    ],
+    "num_prompts": 2,
+    "prompt_a": "a dog",
+    "prompt_b": "a cat",
+    "monolithic_prompt": "a dog and a cat",
+    "model_id": "stabilityai/stable-diffusion-3.5-medium",
+    "num_inference_steps": 400,
+    "guidance_scale": 4.5,
+    "seed": 26,
+    "projection": "mds",
+    "lift": 0.0,
+    "no_poe": false,
+    "author_stoch_model_id": "CompVis/stable-diffusion-v1-4"
+  },
+  "clip_classifier": {
+    "cosine_similarities": {
+      "\"a dog\"": {
+        "[1] a dog": 0.19685527682304382,
+        "[2] a cat": 0.1384018510580063,
+        "[ALL] a dog and a cat": 0.16690167784690857
+      },
+      "\"a cat\"": {
+        "[1] a dog": 0.17383748292922974,
+        "[2] a cat": 0.2303631752729416,
+        "[ALL] a dog and a cat": 0.16238529980182648
+      },
+      "CLIP AND: \"a dog and a cat\"": {
+        "[1] a dog": 0.17316046357154846,
+        "[2] a cat": 0.17637881636619568,
+        "[ALL] a dog and a cat": 0.2495604306459427
+      },
+      "PoE: \"a dog\" \u00d7 \"a cat\"": {
+        "[1] a dog": 0.19805335998535156,
+        "[2] a cat": 0.24475035071372986,
+        "[ALL] a dog and a cat": 0.1986546814441681
+      },
+      "SuperDIFF (author, stoch): \"a dog\" \u2227 \"a cat\"": {
+        "[1] a dog": 0.21051287651062012,
+        "[2] a cat": 0.16304707527160645,
+        "[ALL] a dog and a cat": 0.17275655269622803
+      }
+    },
+    "predictions": {
+      "\"a dog\"": "[1] a dog",
+      "\"a cat\"": "[2] a cat",
+      "CLIP AND: \"a dog and a cat\"": "[ALL] a dog and a cat",
+      "PoE: \"a dog\" \u00d7 \"a cat\"": "[2] a cat",
+      "SuperDIFF (author, stoch): \"a dog\" \u2227 \"a cat\"": "[1] a dog"
+    },
+    "clip_pca_variance_explained": {
+      "PC1": 0.6646767854690552,
+      "PC2": 0.10348960757255554
+    }
+  }
+}

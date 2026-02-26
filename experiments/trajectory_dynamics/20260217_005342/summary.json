@@ -1,0 +1,44 @@
+{
+  "pca_variance_explained": {
+    "PC1": 0.9980244040489197,
+    "PC2": 0.0015913133975118399
+  },
+  "pca_total_variance_top2": 0.9996157288551331,
+  "endpoint_distances_l2": {},
+  "endpoint_distances_projected": {},
+  "divergence_onset_step": {},
+  "total_path_length": {
+    "SD3.5: \"A book on the left of a bird\"": 787.8150634765625
+  },
+  "final_tangent_cosine_similarity": {},
+  "config": {
+    "prompts": [
+      "A book on the left of a bird"
+    ],
+    "num_prompts": 1,
+    "prompt_a": "A book on the left of a bird",
+    "prompt_b": "",
+    "monolithic_prompt": "A book on the left of a bird",
+    "model_id": "stabilityai/stable-diffusion-3.5-medium",
+    "num_inference_steps": 50,
+    "guidance_scale": 4.5,
+    "seed": 42,
+    "projection": "pca",
+    "lift": 0.0,
+    "no_poe": false
+  },
+  "clip_classifier": {
+    "cosine_similarities": {
+      "SD3.5: \"A book on the left of a bird\"": {
+        "[1] A book on the left of a bird": 0.23583590984344482
+      }
+    },
+    "predictions": {
+      "SD3.5: \"A book on the left of a bird\"": "[1] A book on the left of a bird"
+    },
+    "clip_pca_variance_explained": {
+      "PC1": 1.0,
+      "PC2": 7.568256324376119e-14
+    }
+  }
+}

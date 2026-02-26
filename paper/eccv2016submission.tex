@@ -1,0 +1,399 @@
+\documentclass[runningheads]{llncs}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{color}
+\usepackage[width=122mm,left=12mm,paperwidth=146mm,height=193mm,top=12mm,paperheight=217mm]{geometry}
+\begin{document}
+\pagestyle{headings}
+\mainmatter
+\def\ECCV16SubNumber{***}  % Insert your submission number here
+
+\title{Hybridization vs. Co-Presence in Compositional Diffusion Models}
+
+\titlerunning{ECCV-16 submission ID \ECCV16SubNumber}
+
+\authorrunning{ECCV-16 submission ID \ECCV16SubNumber}
+
+\author{Anonymous ECCV submission}
+\institute{Paper ID \ECCV16SubNumber}
+
+\maketitle
+
+\begin{abstract}
+Text-to-image diffusion models achieve \emph{semantic composition}
+through natural-language descriptions, yet depend on training coverage
+of specific concept pairings, and struggle with complex compositional
+tasks such as counting or fine-grained attribute binding.
+A parallel line of work pursues \emph{logical composition}: composing
+smaller pretrained models at inference time, each specialising in a
+distinct concept or constraint --- quick, data-efficient, and
+generalisable to unseen combinations, yet seeking a compromise region
+in the joint probability density that can blend rather than cleanly
+separate concepts.
+Both are used to compose complex scenes, yet one conditions generation
+on a learned semantic meaning of the combined phrase while the other
+composes their score functions directly.
+We show they are not the same operation, and that conflating them
+leads to wrong conclusions about what each paradigm can and cannot express.
+Through trajectory-level analysis of the denoising flow, we demonstrate
+that the two paradigms diverge early and consistently in latent space.
+We characterise this gap by identifying the text prompt stable diffusion
+would need to reproduce a given logical composition, then show that
+linearly interpolating their velocities strikes a balance --- leveraging
+the semantic coherence of language-guided generation and the
+compositional expressibility of logical operators.
+\keywords{compositional generation, diffusion models, latent trajectories,
+approximate inversion, composability gap, logical operators,
+score composition, flow matching}
+\end{abstract}
+
+% =========================================================================
+\section{Introduction}
+% =========================================================================
+
+\textbf{Problem.}
+\begin{itemize}
+  \item Natural-language conjunction (``A and B'') and score-level logical
+    composition via SuperDiff AND are distinct operators with different
+    latent dynamics and different semantic outcomes.
+  \item The product-of-experts distribution produced by SuperDiff AND is not
+    in general representable by any single SD3.5 text prompt, but the
+    expressibility gap is not uniform across concept pairs.
+  \item Characterising this gap requires measuring it at the level of
+    conditioning, latents, and trajectories --- not just decoded images.
+\end{itemize}
+
+\textbf{Objectives.}
+\begin{itemize}
+  \item Establish trajectory-level evidence that CLIP AND and SuperDiff AND
+    are dynamically distinct under shared-noise conditions.
+  \item Quantify the composability gap: how much of the SuperDiff-AND
+    distribution can a single SD3.5 conditioning vector recover?
+  \item Characterise what structural property of the concept pair predicts
+    the gap magnitude.
+  \item Evaluate hybrid guidance as a practical bridge between semantic and
+    logical composition.
+\end{itemize}
+
+\textbf{Contributions.}
+\begin{itemize}
+  \item A shared-noise trajectory analysis protocol comparing monolithic,
+    PoE, SuperDiff, and guided conditions with per-step divergence diagnostics
+    and kappa tracking across 67 reproducible runs.
+  \item An approximate inversion framework: a closed-loop CLIP+MLP inverter
+    $f_\theta$ trained entirely within SD3.5 to find the best single
+    conditioning vector $p^*$ approximating SuperDiff-AND outputs, without
+    any external image-caption data.
+  \item A three-level composability gap metric (CLIP cosine similarity and
+    LPIPS at image level; MSE in VAE latent space; step-wise MSE and cosine
+    similarity along matched denoising trajectories).
+  \item A composability gap taxonomy that correlates residual gap magnitude
+    with CLIP cosine similarity between the individual concept embeddings
+    $e(c_1)$ and $e(c_2)$.
+\end{itemize}
+
+\textbf{Scope.}
+\begin{itemize}
+  \item Model: Stable Diffusion 3.5 Medium with FlowMatchEuler scheduler.
+  \item Composition operators: monolithic CFG, SuperDiff AND (\texttt{fm\_ode}
+    variant), PoE, guided hybrid, Composable NOT, SuperDiff NOT.
+  \item All runs: fixed seed, 50 steps, guidance 4.5 unless stated otherwise.
+\end{itemize}
+
+% =========================================================================
+\section{Background}
+% =========================================================================
+
+% Intentionally left for final version.
+
+% =========================================================================
+\section{Dataset Preparation}
+% =========================================================================
+
+\textbf{Trajectory experiment corpus.}
+\begin{itemize}
+  \item 67 reproducible runs across four intent groups: pairwise AND
+    composition (31), guided $\alpha$ sweeps (9), solo stress prompts (29),
+    negation (1), spatial extension (1), and multi-prompt dynamics (7).
+  \item Each run stores a \texttt{summary.json} with divergence onset,
+    endpoint L2, CLIP probe prediction, and kappa statistics, enabling
+    one-to-one traceability from artifact to paper claim.
+  \item All trajectory runs share the same scheduler configuration, seed,
+    and noise initialisation within each comparison group.
+\end{itemize}
+
+\textbf{Inverter training corpus.}
+\begin{itemize}
+  \item 85 curated prompts across three tiers: single concepts (15),
+    simple conjunctions (40), and attribute-rich variants (30).
+  \item 8 images per prompt generated by SD3.5 (seeds 0--7, 50 steps,
+    guidance 4.5), yielding 680 training images at $512\times512$.
+  \item Ground-truth conditioning stored as \texttt{conditioning.pt} per
+    prompt: \texttt{seq\_embeds} $(1, 410, 4096)$ and
+    \texttt{pooled\_embeds} $(1, 2048)$ from SD3.5's triple text encoders.
+  \item Prompt-level 90/10 train/validation split; the four held-out test
+    pairs (cat/dog, person/umbrella, person/car, car/truck) are excluded
+    from training entirely.
+\end{itemize}
+
+% =========================================================================
+\section{Methodology}
+% =========================================================================
+
+\textbf{Part I\@: Shared-noise trajectory analysis.}
+\begin{itemize}
+  \item All conditions (prompt A alone, prompt B alone, monolithic ``A and B'',
+    SuperDiff AND, PoE, guided hybrid) start from the same initial noise
+    $x_T$ via a fixed generator seed.
+  \item Latent trajectories recorded at every denoising step by
+    \texttt{LatentTrajectoryCollector}, storing $(z_t, v_t, \sigma_t)$
+    for all $t$.
+  \item \textbf{Divergence onset}: first step at which pairwise L2 distance
+    between any two conditions becomes non-trivial.
+  \item \textbf{Endpoint L2}: final latent-space distance between conditions
+    after all denoising steps.
+  \item \textbf{Kappa diagnostics}: per-step concept weights $\kappa(t)$
+    from the SuperDiff Proposition~6 solver, tracking how the composition
+    rebalances over time.
+  \item \textbf{CLIP probe}: nearest text prototype in CLIP space for each
+    decoded output, used to label the effective semantic outcome.
+  \item \textbf{Guided hybrid rule}: $v_\alpha = (1-\alpha)\,v_{\text{mono}}
+    + \alpha\,v_{\text{superdiff}}$, swept over
+    $\alpha \in \{0.0, 0.1, 0.3, 0.5, 0.7, 1.0\}$.
+\end{itemize}
+
+\textbf{Part II\@: Approximate inversion and composability gap measurement.}
+\begin{itemize}
+  \item \textbf{Inverter architecture} $f_\theta$: frozen CLIP ViT-L/14
+    visual encoder (768-dim patch tokens, 257 positions including
+    \texttt{[CLS]}); pooled head MLP
+    $768 \!\to\! 1024 \!\to\! 2048$ predicts
+    \texttt{pooled\_prompt\_embeds}; cross-attention sequence head
+    (154 learned query tokens attending over patch tokens, projected
+    $768 \!\to\! 4096$) predicts the CLIP portion of
+    \texttt{prompt\_embeds}; T5 portion zeroed.
+    Total trainable parameters: $\approx\!8\text{M}$.
+  \item \textbf{Closed-loop training objective}:
+    $\mathcal{L} = \mathrm{MSE}(\hat{e}_{\text{pool}}, e_{\text{pool}})
+    + \lambda\,\mathrm{MSE}(\hat{e}_{\text{seq}}, e_{\text{seq}}[{:}154])$,
+    where targets are the conditioning vectors SD3.5 itself produced
+    when generating the training images.
+    Trained with AdamW, cosine schedule, 50 epochs.
+  \item \textbf{Test protocol}: for each held-out pair $(c_1, c_2)$,
+    generate $N\!=\!8$ images from SuperDiff-AND; invert each image with
+    $f_\theta$ to obtain $p^*$; regenerate from SD3.5($p^*$) from the
+    same initial noise; compare to a naive monolithic baseline
+    $c_1$ ``and'' $c_2$.
+  \item \textbf{Three-level gap}:
+    \emph{image} --- CLIP cosine similarity and LPIPS between AND and $p^*$
+    outputs;
+    \emph{latent} --- MSE in VAE encoder space at the final step;
+    \emph{trajectory} --- step-wise MSE and cosine similarity between
+    matched denoising paths under identical initial noise.
+  \item \textbf{Characterisation}: CLIP cosine similarity between
+    $e(c_1)$ and $e(c_2)$ (SD3.5 pooled conditioning vectors) used as
+    the predictor variable; regressed against each gap metric to identify
+    what geometric property of the concept pair determines composability.
+\end{itemize}
+
+% =========================================================================
+\section{Prompts Tested}
+% =========================================================================
+
+\begin{itemize}
+  \item \textbf{Object co-presence}: ``a dog'' + ``a cat''; verifies
+    baseline logical AND behaviour.
+  \item \textbf{Spatial relations}: ``a book on the left'' + ``a bird on
+    the right''; ``cat on the left'' + ``dog on the right''; tests
+    directional grounding under composition.
+  \item \textbf{Attribute binding}: ``two blue apples'' + ``a red table'';
+    ``a brown bench'' + ``a white building''; tests cross-object attribute
+    preservation.
+  \item \textbf{Negation}: ``a woman wearing a hat'' with NOT ``glasses'';
+    ``a cake with strawberries'' with NOT ``chocolate''; compares Composable
+    NOT (fixed weight) vs.\ SuperDiff NOT (dynamic $\kappa$).
+  \item \textbf{Counting}: ``exactly three red apples''; ``three dogs and
+    four cats''; tests cardinality control.
+  \item \textbf{Multi-constraint (3-prompt)}: ``a cat and a dog'' +
+    ``cat on the left'' + ``dog on the right''; tests semantic anchoring
+    with simultaneous logical constraints.
+  \item \textbf{Held-out inversion pairs}: cat/dog (complementary),
+    person/umbrella (hierarchical), person/car (co-occurring), car/truck
+    (same-category); chosen to span the CLIP cosine similarity spectrum.
+\end{itemize}
+
+% =========================================================================
+\section{Semantic and Logical Composition Diverge in Latent Space}
+% =========================================================================
+
+\textbf{Hypothesis.}
+\begin{itemize}
+  \item If CLIP AND and SuperDiff AND were equivalent operators, they would
+    follow the same latent trajectory from the same $x_T$.
+    Any observed split is structural, not stochastic.
+\end{itemize}
+
+\textbf{Protocol.}
+\begin{itemize}
+  \item Conditions run under identical seed, steps, and guidance scale.
+  \item Trajectory distances computed at every step; divergence onset
+    recorded as the first step where L2 between CLIP and SuperDiff
+    trajectories exceeds a noise-floor threshold.
+  \item SuperDiff variant: \texttt{fm\_ode} with \texttt{--no-poe}.
+\end{itemize}
+
+\textbf{Findings.}
+\begin{itemize}
+  \item CLIP AND and SuperDiff AND diverge at steps 2--4 for all tested
+    pairs; divergence is a property of the composition operator, not
+    of late-stage refinement.
+  \item SuperDiff endpoint geometry sits closer to a latent midpoint
+    between the two single-concept endpoints than to the monolithic
+    endpoint, reflecting the kappa balancing constraint.
+  \item Kappa weights $\kappa(t)$ are time-varying with concept rebalancing
+    concentrated in the first third of denoising, then stabilising.
+  \item PoE and SuperDiff AND produce different trajectory shapes despite
+    both being score-additive; the Proposition~6 normalisation is the
+    decisive structural difference.
+  \item Concrete: run \texttt{20260216\_114652} (cat-left/dog-right)
+    shows divergence onset at step 3, endpoint
+    L2(CLIP, SuperDiff) $= 377.7$.
+    Run \texttt{20260217\_011236} (two-blue-apples/red-table)
+    shows onset at step 2, L2 $= 407.1$.
+\end{itemize}
+
+% =========================================================================
+\section{What Semantic Prompt Does Logical Composition Follow?}
+% =========================================================================
+
+\textbf{Hypothesis.}
+\begin{itemize}
+  \item The SuperDiff-AND distribution lies outside SD3.5's
+    text-conditioning manifold for most concept pairs.
+    An optimal single prompt $p^*$ can partially approximate it, but a
+    residual gap will remain whose magnitude varies with the CLIP geometry
+    of $(c_1, c_2)$.
+  \item This residual --- measured after the best possible inversion ---
+    is the operational definition of the composability gap.
+\end{itemize}
+
+\textbf{CLIP probe evidence (trajectory experiments).}
+\begin{itemize}
+  \item In run \texttt{20260217\_011236}, CLIP assigns the monolithic class
+    to guided outputs but assigns a single sub-prompt class to pure
+    SuperDiff, confirming that logical balancing and linguistic conjunction
+    produce images in different semantic neighbourhoods.
+  \item In run \texttt{20260216\_114652}, pure SuperDiff is pulled toward
+    one component prompt under the CLIP probe, suggesting that when concepts
+    are spatial, the AND operator can privilege one concept over the other.
+\end{itemize}
+
+\textbf{Inversion methodology.}
+\begin{itemize}
+  \item The inverter $f_\theta$ is calibrated within SD3.5's own loop;
+    closed-loop sanity check (SD3.5($p$) $\to$ $f_\theta$ $\to$
+    SD3.5($p^*$)) establishes an upper bound on achievable fidelity.
+  \item The trajectory-level gap between AND and $p^*$ isolates the
+    component of the composability gap that is structurally
+    inexpressible via any single prompt, not attributable to inverter
+    approximation error.
+\end{itemize}
+
+\textbf{Expected taxonomy from gap characterisation.}
+\begin{itemize}
+  \item \emph{Complementary pairs} (cat/dog, high CLIP similarity): AND
+    distribution close to a natural conjunction; small gap; $p^*$ likely
+    readable as a coherent natural-language prompt.
+  \item \emph{Hierarchical pairs} (person/umbrella): AND distribution
+    expressible as object+accessory relation; moderate gap.
+  \item \emph{Co-occurring pairs} (person/car): moderate gap; gap driven
+    by pose and spatial configuration variation.
+  \item \emph{Same-category pairs} (car/truck): near-synonym in CLIP space;
+    smallest expected gap; AND distribution close to either concept alone.
+\end{itemize}
+
+% =========================================================================
+\section{Adding the Semantic Prompt as a Third Constraint}
+% =========================================================================
+
+\textbf{Hypothesis.}
+\begin{itemize}
+  \item Blending monolithic velocity $v_{\text{mono}}$ with SuperDiff
+    velocity $v_{\text{superdiff}}$ at weight $\alpha$ defines a family
+    of trajectories interpolating between semantic naturalness and logical
+    balancing.
+  \item There exists a regime of moderate $\alpha$ that reduces trajectory
+    distance to the CLIP AND path without eliminating the compositional
+    correction from SuperDiff.
+\end{itemize}
+
+\textbf{Method.}
+\begin{itemize}
+  \item Hybrid velocity: $v_\alpha = (1-\alpha)\,v_{\text{mono}} +
+    \alpha\,v_{\text{superdiff}}$, computed at every denoising step.
+  \item Sweep: $\alpha \in \{0.0, 0.1, 0.3, 0.5, 0.7, 1.0\}$; all other
+    controls fixed.
+\end{itemize}
+
+\textbf{Findings.}
+\begin{itemize}
+  \item $\alpha = 0$ recovers monolithic CFG exactly;
+    $\alpha = 1$ recovers pure SuperDiff exactly.
+  \item At $\alpha = 0.3$: L2(CLIP, Guided) $= 146.0$ vs.\
+    L2(CLIP, SuperDiff) $= 247.1$ for book-left/bird-right
+    (\texttt{run 20260217\_005615}); a 41\% reduction.
+  \item At $\alpha = 0.3$: L2(CLIP, Guided) $= 129.3$ vs.\
+    L2(CLIP, SuperDiff) $= 407.1$ for two-blue-apples/red-table
+    (\texttt{run 20260217\_011236}); a 68\% reduction.
+  \item The trade-off is concave in $\alpha$: gains plateau beyond
+    $\alpha = 0.5$ while semantic coherence degrades, making $\alpha = 0.3$
+    the practical operating point for most pairs.
+  \item Guided interpolation does not close the trajectory-level gap
+    entirely, consistent with the structural inexpressibility established
+    by the inversion experiment.
+\end{itemize}
+
+% =========================================================================
+\section{Benchmark}
+% =========================================================================
+
+\textbf{Trajectory experiment protocol.}
+\begin{itemize}
+  \item Shared-noise pairwise comparisons; divergence onset and endpoint L2
+    reported on the same latent trajectory basis.
+  \item SuperDiff variant \texttt{fm\_ode}, \texttt{--no-poe}, 50 steps,
+    guidance 4.5, seed 42 throughout.
+  \item Ablations sweep: guidance scale $\in \{3.0, 4.5, 6.0, 7.5\}$;
+    steps $\in \{30, 40, 50, 75, 100\}$; lift
+    $\in \{0.0, 0.1, 0.3, 0.5\}$; 5 seeds for robustness;
+    PCA vs.\ MDS projection comparison.
+\end{itemize}
+
+\textbf{Inversion experiment protocol.}
+\begin{itemize}
+  \item Four held-out pairs; 8 seeds each; 50 steps, guidance 4.5.
+  \item Gap reported at all three levels per pair; characterisation
+    regression run over CLIP cosine similarity of concept embeddings.
+  \item Monolithic baseline (``$c_1$ and $c_2$'') included as a
+    no-inversion reference point.
+\end{itemize}
+
+\textbf{Key quantitative results.}
+\begin{itemize}
+  \item Divergence onset: steps 2--4 for all tested pairs.
+  \item Endpoint L2 (CLIP vs.\ SuperDiff): 247--407 latent units.
+  \item Guided $\alpha = 0.3$ reduces L2 to CLIP path by 41--68\%.
+  \item Negation: Composable NOT vs.\ SuperDiff NOT onset at step 1,
+    endpoint L2 $= 325.2$ (\texttt{run 20260217\_013025}).
+\end{itemize}
+
+% =========================================================================
+\section{Conclusion}
+% =========================================================================
+
+% Intentionally left for final version.
+
+\bibliographystyle{splncs}
+\bibliography{egbib}
+\end{document}

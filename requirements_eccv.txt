@@ -1,0 +1,126 @@
+# ============================================================================
+# requirements_eccv.txt
+# ECCV 2026 — Hybridization vs. Co-Presence in Compositional Diffusion Models
+# ============================================================================
+#
+# Unified stack for:
+#   - ECCV 2026 project code
+#   - superdiff-ldm (PyTorch + JAX dual-framework)
+# Tested in Python 3.11 on CUDA 12.x.
+#
+# Install with:
+#   pip install -r requirements_eccv.txt
+#
+# Editable library installs (superdiff-ldm embedded, run from superdiff-ldm root):
+#   pip install -e libraries/geomstats
+#   pip install -e libraries/riemannian-score-sde
+#
+# For PyTorch with the correct CUDA version, see INSTALL.md.
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# PyTorch — CUDA 12.8 GPU wheels (RTX 5090 / Blackwell sm_120 support)
+# NOTE: cu124 wheels only compile up to sm_90 regardless of torch version.
+#       cu128 (CUDA 12.8) is the first wheel set with compiled sm_120 kernels.
+#       System driver is CUDA 13.1, fully forward-compatible with cu128 wheels.
+# --extra-index-url provides the CUDA-enabled wheels; PyPI default is CPU-only.
+# ----------------------------------------------------------------------------
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch==2.7.0
+torchvision==0.22.0
+torchaudio==2.7.0
+triton==3.2.0
+
+# ----------------------------------------------------------------------------
+# GPU training utilities
+# xformers must align with torch version — check https://github.com/facebookresearch/xformers#installing-xformers
+# NOTE: flash-attn requires a C++ build step; install separately if needed:
+#   pip install flash-attn --no-build-isolation
+# ----------------------------------------------------------------------------
+xformers==0.0.30
+numba==0.61.2
+
+# ----------------------------------------------------------------------------
+# JAX ecosystem — CUDA 12 (jax[cuda12] installs jaxlib + cuda plugins in one go)
+# --find-links tells pip where to fetch the CUDA-specific jaxlib wheel.
+# ----------------------------------------------------------------------------
+--find-links https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+jax[cuda12]==0.5.3
+flax==0.10.5
+optax==0.2.4
+chex==0.1.89
+equinox==0.11.6
+diffrax==0.6.0
+lineax==0.0.5
+optimistix==0.0.7
+orbax-checkpoint==0.11.12
+jaxtyping==0.2.34
+
+# ----------------------------------------------------------------------------
+# Riemannian geometry — superdiff-ldm embedded libraries
+# NOTE: dm-haiku and distrax are DeepMind JAX libs; version compatibility
+#       with jax==0.5.3 should be verified. If either fails, try latest versions:
+#       pip install dm-haiku distrax
+# ----------------------------------------------------------------------------
+dm-haiku==0.0.13
+distrax==0.1.5
+
+# ----------------------------------------------------------------------------
+# Diffusion models — HuggingFace ecosystem
+# ----------------------------------------------------------------------------
+diffusers==0.35.1
+transformers==4.55.4
+huggingface-hub==0.34.4
+accelerate==1.10.1
+safetensors==0.6.2
+tokenizers==0.21.4
+
+# ----------------------------------------------------------------------------
+# Scientific Python
+# ----------------------------------------------------------------------------
+numpy==1.26.4
+scipy==1.14.1
+pandas==2.3.1
+scikit-learn==1.7.1
+
+# ----------------------------------------------------------------------------
+# Visualisation
+# ----------------------------------------------------------------------------
+matplotlib==3.9.2
+seaborn==0.13.2
+plotly==6.5.2
+
+# ----------------------------------------------------------------------------
+# Image processing
+# ----------------------------------------------------------------------------
+pillow==10.4.0
+imageio==2.37.0
+opencv-python==4.10.0.84
+
+# ----------------------------------------------------------------------------
+# Perceptual metrics
+# ----------------------------------------------------------------------------
+lpips==0.1.4
+
+# ----------------------------------------------------------------------------
+# Dimensionality reduction (manifold + UMAP plots)
+# ----------------------------------------------------------------------------
+umap-learn==0.5.9.post2
+pynndescent==0.5.13
+
+# ----------------------------------------------------------------------------
+# Utilities
+# ----------------------------------------------------------------------------
+tqdm==4.66.5
+rich==13.8.1
+PyYAML==6.0.2
+requests==2.32.3
+packaging==24.1
+filelock==3.15.4
+regex==2025.7.34
+psutil==6.0.0
+
+# ----------------------------------------------------------------------------
+# Experiment tracking (optional — remove if not using wandb)
+# ----------------------------------------------------------------------------
+wandb==0.18.1

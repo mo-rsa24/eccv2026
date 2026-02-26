@@ -1,0 +1,177 @@
+{
+  "pca_variance_explained": {
+    "PC1": 0.874250054359436,
+    "PC2": 0.08083711564540863
+  },
+  "pca_total_variance_top2": 0.9550871849060059,
+  "endpoint_distances_l2": {
+    "\"a book on the left\" vs \"a bird on the right\"": 466.15985107421875,
+    "\"a book on the left\" vs CLIP AND: \"a book on the left and a bird on the right\"": 281.44512939453125,
+    "\"a book on the left\" vs SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\"": 187.19906616210938,
+    "\"a book on the left\" vs Guided (\u03b1=0.3)": 278.97564697265625,
+    "\"a book on the left\" vs Guided (\u03b1=0.5)": 269.5171813964844,
+    "\"a book on the left\" vs Guided (\u03b1=0.7)": 263.1932067871094,
+    "\"a bird on the right\" vs CLIP AND: \"a book on the left and a bird on the right\"": 510.0952453613281,
+    "\"a bird on the right\" vs SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\"": 465.37109375,
+    "\"a bird on the right\" vs Guided (\u03b1=0.3)": 508.42425537109375,
+    "\"a bird on the right\" vs Guided (\u03b1=0.5)": 497.4323425292969,
+    "\"a bird on the right\" vs Guided (\u03b1=0.7)": 489.9816589355469,
+    "CLIP AND: \"a book on the left and a bird on the right\" vs SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\"": 247.09759521484375,
+    "CLIP AND: \"a book on the left and a bird on the right\" vs Guided (\u03b1=0.3)": 145.97988891601562,
+    "CLIP AND: \"a book on the left and a bird on the right\" vs Guided (\u03b1=0.5)": 165.0355987548828,
+    "CLIP AND: \"a book on the left and a bird on the right\" vs Guided (\u03b1=0.7)": 168.42697143554688,
+    "SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\" vs Guided (\u03b1=0.3)": 239.75741577148438,
+    "SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\" vs Guided (\u03b1=0.5)": 225.46469116210938,
+    "SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\" vs Guided (\u03b1=0.7)": 210.70248413085938,
+    "Guided (\u03b1=0.3) vs Guided (\u03b1=0.5)": 95.47235870361328,
+    "Guided (\u03b1=0.3) vs Guided (\u03b1=0.7)": 108.30519104003906,
+    "Guided (\u03b1=0.5) vs Guided (\u03b1=0.7)": 61.1430549621582
+  },
+  "endpoint_distances_projected": {
+    "\"a book on the left\" vs \"a bird on the right\"": 402.7678527832031,
+    "\"a book on the left\" vs CLIP AND: \"a book on the left and a bird on the right\"": 94.36534881591797,
+    "\"a book on the left\" vs SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\"": 22.59735870361328,
+    "\"a book on the left\" vs Guided (\u03b1=0.3)": 100.10195922851562,
+    "\"a book on the left\" vs Guided (\u03b1=0.5)": 89.2016830444336,
+    "\"a book on the left\" vs Guided (\u03b1=0.7)": 81.34449005126953,
+    "\"a bird on the right\" vs CLIP AND: \"a book on the left and a bird on the right\"": 496.9564514160156,
+    "\"a bird on the right\" vs SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\"": 424.20867919921875,
+    "\"a bird on the right\" vs Guided (\u03b1=0.3)": 502.8675537109375,
+    "\"a bird on the right\" vs Guided (\u03b1=0.5)": 491.9078674316406,
+    "\"a bird on the right\" vs Guided (\u03b1=0.7)": 483.8892822265625,
+    "CLIP AND: \"a book on the left and a bird on the right\" vs SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\"": 74.05477905273438,
+    "CLIP AND: \"a book on the left and a bird on the right\" vs Guided (\u03b1=0.3)": 9.312432289123535,
+    "CLIP AND: \"a book on the left and a bird on the right\" vs Guided (\u03b1=0.5)": 11.259577751159668,
+    "CLIP AND: \"a book on the left and a bird on the right\" vs Guided (\u03b1=0.7)": 18.442970275878906,
+    "SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\" vs Guided (\u03b1=0.3)": 78.9956283569336,
+    "SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\" vs Guided (\u03b1=0.5)": 67.84746551513672,
+    "SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\" vs Guided (\u03b1=0.7)": 59.70322036743164,
+    "Guided (\u03b1=0.3) vs Guided (\u03b1=0.5)": 11.353676795959473,
+    "Guided (\u03b1=0.3) vs Guided (\u03b1=0.7)": 19.90175437927246,
+    "Guided (\u03b1=0.5) vs Guided (\u03b1=0.7)": 8.56771183013916
+  },
+  "divergence_onset_step": {
+    "\"a book on the left\" vs \"a bird on the right\"": 2,
+    "\"a book on the left\" vs CLIP AND: \"a book on the left and a bird on the right\"": 5,
+    "\"a book on the left\" vs SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\"": 6,
+    "\"a book on the left\" vs Guided (\u03b1=0.3)": 5,
+    "\"a book on the left\" vs Guided (\u03b1=0.5)": 5,
+    "\"a book on the left\" vs Guided (\u03b1=0.7)": 6,
+    "\"a bird on the right\" vs CLIP AND: \"a book on the left and a bird on the right\"": 2,
+    "\"a bird on the right\" vs SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\"": 2,
+    "\"a bird on the right\" vs Guided (\u03b1=0.3)": 2,
+    "\"a bird on the right\" vs Guided (\u03b1=0.5)": 2,
+    "\"a bird on the right\" vs Guided (\u03b1=0.7)": 2,
+    "CLIP AND: \"a book on the left and a bird on the right\" vs SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\"": 4,
+    "CLIP AND: \"a book on the left and a bird on the right\" vs Guided (\u03b1=0.3)": 6,
+    "CLIP AND: \"a book on the left and a bird on the right\" vs Guided (\u03b1=0.5)": 5,
+    "CLIP AND: \"a book on the left and a bird on the right\" vs Guided (\u03b1=0.7)": 4,
+    "SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\" vs Guided (\u03b1=0.3)": 5,
+    "SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\" vs Guided (\u03b1=0.5)": 6,
+    "SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\" vs Guided (\u03b1=0.7)": 6,
+    "Guided (\u03b1=0.3) vs Guided (\u03b1=0.5)": 6,
+    "Guided (\u03b1=0.3) vs Guided (\u03b1=0.7)": 5,
+    "Guided (\u03b1=0.5) vs Guided (\u03b1=0.7)": 5
+  },
+  "total_path_length": {
+    "\"a book on the left\"": 808.1632080078125,
+    "\"a bird on the right\"": 767.3607177734375,
+    "CLIP AND: \"a book on the left and a bird on the right\"": 823.7176513671875,
+    "SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\"": 814.9378662109375,
+    "Guided (\u03b1=0.3)": 827.8906860351562,
+    "Guided (\u03b1=0.5)": 824.7998046875,
+    "Guided (\u03b1=0.7)": 823.923828125
+  },
+  "final_tangent_cosine_similarity": {
+    "\"a book on the left\" vs \"a bird on the right\"": 0.7137144207954407,
+    "\"a book on the left\" vs CLIP AND: \"a book on the left and a bird on the right\"": 0.891714334487915,
+    "\"a book on the left\" vs SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\"": 0.9406517148017883,
+    "\"a book on the left\" vs Guided (\u03b1=0.3)": 0.8946853876113892,
+    "\"a book on the left\" vs Guided (\u03b1=0.5)": 0.9021031856536865,
+    "\"a book on the left\" vs Guided (\u03b1=0.7)": 0.9058343172073364,
+    "\"a bird on the right\" vs CLIP AND: \"a book on the left and a bird on the right\"": 0.6702448725700378,
+    "\"a bird on the right\" vs SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\"": 0.7219322323799133,
+    "\"a bird on the right\" vs Guided (\u03b1=0.3)": 0.6767733097076416,
+    "\"a bird on the right\" vs Guided (\u03b1=0.5)": 0.6908741593360901,
+    "\"a bird on the right\" vs Guided (\u03b1=0.7)": 0.6996011137962341,
+    "CLIP AND: \"a book on the left and a bird on the right\" vs SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\"": 0.9077417850494385,
+    "CLIP AND: \"a book on the left and a bird on the right\" vs Guided (\u03b1=0.3)": 0.9651404619216919,
+    "CLIP AND: \"a book on the left and a bird on the right\" vs Guided (\u03b1=0.5)": 0.95628821849823,
+    "CLIP AND: \"a book on the left and a bird on the right\" vs Guided (\u03b1=0.7)": 0.95247483253479,
+    "SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\" vs Guided (\u03b1=0.3)": 0.9141259789466858,
+    "SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\" vs Guided (\u03b1=0.5)": 0.9247559309005737,
+    "SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\" vs Guided (\u03b1=0.7)": 0.933310329914093,
+    "Guided (\u03b1=0.3) vs Guided (\u03b1=0.5)": 0.9815095067024231,
+    "Guided (\u03b1=0.3) vs Guided (\u03b1=0.7)": 0.9754413366317749,
+    "Guided (\u03b1=0.5) vs Guided (\u03b1=0.7)": 0.9908629655838013
+  },
+  "config": {
+    "prompts": [
+      "a book on the left",
+      "a bird on the right"
+    ],
+    "num_prompts": 2,
+    "prompt_a": "a book on the left",
+    "prompt_b": "a bird on the right",
+    "monolithic_prompt": "a book on the left and a bird on the right",
+    "model_id": "stabilityai/stable-diffusion-3.5-medium",
+    "num_inference_steps": 50,
+    "guidance_scale": 4.5,
+    "seed": 42,
+    "projection": "pca",
+    "lift": 0.0,
+    "no_poe": true
+  },
+  "clip_classifier": {
+    "cosine_similarities": {
+      "\"a book on the left\"": {
+        "[1] a book on the left": 0.18316930532455444,
+        "[2] a bird on the right": 0.10543535649776459,
+        "[ALL] a book on the left and a bird on the right": 0.16315090656280518
+      },
+      "\"a bird on the right\"": {
+        "[1] a book on the left": 0.11778256297111511,
+        "[2] a bird on the right": 0.16201364994049072,
+        "[ALL] a book on the left and a bird on the right": 0.14694403111934662
+      },
+      "CLIP AND: \"a book on the left and a bird on the right\"": {
+        "[1] a book on the left": 0.1926257163286209,
+        "[2] a bird on the right": 0.1938328742980957,
+        "[ALL] a book on the left and a bird on the right": 0.25418785214424133
+      },
+      "SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\"": {
+        "[1] a book on the left": 0.18918544054031372,
+        "[2] a bird on the right": 0.19309920072555542,
+        "[ALL] a book on the left and a bird on the right": 0.2323138415813446
+      },
+      "Guided (\u03b1=0.3)": {
+        "[1] a book on the left": 0.20940366387367249,
+        "[2] a bird on the right": 0.19759249687194824,
+        "[ALL] a book on the left and a bird on the right": 0.27144381403923035
+      },
+      "Guided (\u03b1=0.5)": {
+        "[1] a book on the left": 0.2074647694826126,
+        "[2] a bird on the right": 0.19508379697799683,
+        "[ALL] a book on the left and a bird on the right": 0.25970184803009033
+      },
+      "Guided (\u03b1=0.7)": {
+        "[1] a book on the left": 0.20373386144638062,
+        "[2] a bird on the right": 0.16956683993339539,
+        "[ALL] a book on the left and a bird on the right": 0.2517438530921936
+      }
+    },
+    "predictions": {
+      "\"a book on the left\"": "[1] a book on the left",
+      "\"a bird on the right\"": "[2] a bird on the right",
+      "CLIP AND: \"a book on the left and a bird on the right\"": "[ALL] a book on the left and a bird on the right",
+      "SuperDIFF (FM-ODE): \"a book on the left\" \u2227 \"a bird on the right\"": "[ALL] a book on the left and a bird on the right",
+      "Guided (\u03b1=0.3)": "[ALL] a book on the left and a bird on the right",
+      "Guided (\u03b1=0.5)": "[ALL] a book on the left and a bird on the right",
+      "Guided (\u03b1=0.7)": "[ALL] a book on the left and a bird on the right"
+    },
+    "clip_pca_variance_explained": {
+      "PC1": 0.5640855431556702,
+      "PC2": 0.12860165536403656
+    }
+  }
+}

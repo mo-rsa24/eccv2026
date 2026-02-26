@@ -1,0 +1,44 @@
+{
+  "pca_variance_explained": {
+    "PC1": 0.9973275661468506,
+    "PC2": 0.0022832287941128016
+  },
+  "pca_total_variance_top2": 0.9996107816696167,
+  "endpoint_distances_l2": {},
+  "endpoint_distances_projected": {},
+  "divergence_onset_step": {},
+  "total_path_length": {
+    "SD3.5: \"A man reading on the floor\"": 739.9280395507812
+  },
+  "final_tangent_cosine_similarity": {},
+  "config": {
+    "prompts": [
+      "A man reading on the floor"
+    ],
+    "num_prompts": 1,
+    "prompt_a": "A man reading on the floor",
+    "prompt_b": "",
+    "monolithic_prompt": "A man reading on the floor",
+    "model_id": "stabilityai/stable-diffusion-3.5-medium",
+    "num_inference_steps": 50,
+    "guidance_scale": 4.5,
+    "seed": 42,
+    "projection": "pca",
+    "lift": 0.0,
+    "no_poe": false
+  },
+  "clip_classifier": {
+    "cosine_similarities": {
+      "SD3.5: \"A man reading on the floor\"": {
+        "[1] A man reading on the floor": 0.24058890342712402
+      }
+    },
+    "predictions": {
+      "SD3.5: \"A man reading on the floor\"": "[1] A man reading on the floor"
+    },
+    "clip_pca_variance_explained": {
+      "PC1": 1.0,
+      "PC2": 1.1656280426281234e-14
+    }
+  }
+}

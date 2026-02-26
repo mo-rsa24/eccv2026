@@ -1,0 +1,51 @@
+name: superdiff
+# Covers: CIFAR experiments + image composition applications
+# Python 3.9
+#
+# RTX 5090 (sm_120 / Blackwell): JAX upgraded from 0.4.28 → 0.5.3.
+# JAX wheels bundle their own CUDA 12 runtime; no system nvcc required.
+#
+# Usage:
+#   conda env create -f environment.yml   (or: conda activate superdiff && pip install -r requirements.txt)
+#
+# Proteins sub-module has a separate env: applications/proteins/environment.yml
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - pip
+  - pip:
+    # JAX CUDA 12 — Blackwell (sm_120) compatible
+    - --find-links https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+    - jax[cuda12]==0.5.3
+    # JAX ML libraries (aligned to jax 0.5.3)
+    - flax==0.10.5
+    - optax==0.2.4
+    - chex==0.1.89
+    - equinox==0.11.6
+    - diffrax==0.6.0
+    - lineax==0.0.5
+    - optimistix==0.0.7
+    - orbax-checkpoint==0.11.12
+    - jaxtyping==0.2.34
+    # TensorFlow (CIFAR data pipeline only)
+    - tensorflow==2.17.0
+    - tensorflow-datasets==4.9.6
+    - tensorflow-io-gcs-filesystem==0.37.1
+    - tensorflow-metadata==1.15.0
+    # Core scientific stack
+    - numpy==1.26.4
+    - scipy==1.14.1
+    - matplotlib==3.9.2
+    # ML utilities
+    - ml_collections==0.1.1
+    - simple-parsing==0.1.6
+    - absl-py==2.1.0
+    # Experiment tracking
+    - wandb==0.18.1
+    - tensorboard==2.17.1
+    # General utilities
+    - tqdm==4.66.5
+    - Pillow==10.4.0
+    - PyYAML==6.0.2

@@ -1,0 +1,212 @@
+{
+  "pca_variance_explained": {
+    "PC1": 0.7589623928070068,
+    "PC2": 0.16055791079998016
+  },
+  "pca_total_variance_top2": 0.9195203185081482,
+  "endpoint_distances_l2": {
+    "\"a bicycle on the left\" vs \"a bus on the right\"": 546.1065063476562,
+    "\"a bicycle on the left\" vs CLIP AND: \"a bicycle on the left and a bus on the right\"": 582.6357421875,
+    "\"a bicycle on the left\" vs SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\"": 312.1749572753906,
+    "\"a bicycle on the left\" vs Guided (\u03b1=0.1)": 578.9496459960938,
+    "\"a bicycle on the left\" vs Guided (\u03b1=0.4)": 555.5578002929688,
+    "\"a bicycle on the left\" vs Guided (\u03b1=0.6)": 524.7513427734375,
+    "\"a bicycle on the left\" vs Guided (\u03b1=0.7)": 496.85614013671875,
+    "\"a bus on the right\" vs CLIP AND: \"a bicycle on the left and a bus on the right\"": 323.5061340332031,
+    "\"a bus on the right\" vs SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\"": 376.8640441894531,
+    "\"a bus on the right\" vs Guided (\u03b1=0.1)": 317.46295166015625,
+    "\"a bus on the right\" vs Guided (\u03b1=0.4)": 275.94140625,
+    "\"a bus on the right\" vs Guided (\u03b1=0.6)": 250.513427734375,
+    "\"a bus on the right\" vs Guided (\u03b1=0.7)": 246.0372314453125,
+    "CLIP AND: \"a bicycle on the left and a bus on the right\" vs SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\"": 426.94622802734375,
+    "CLIP AND: \"a bicycle on the left and a bus on the right\" vs Guided (\u03b1=0.1)": 86.18817901611328,
+    "CLIP AND: \"a bicycle on the left and a bus on the right\" vs Guided (\u03b1=0.4)": 199.8479461669922,
+    "CLIP AND: \"a bicycle on the left and a bus on the right\" vs Guided (\u03b1=0.6)": 244.1060791015625,
+    "CLIP AND: \"a bicycle on the left and a bus on the right\" vs Guided (\u03b1=0.7)": 262.7687683105469,
+    "SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\" vs Guided (\u03b1=0.1)": 421.85589599609375,
+    "SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\" vs Guided (\u03b1=0.4)": 393.4559020996094,
+    "SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\" vs Guided (\u03b1=0.6)": 358.9743957519531,
+    "SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\" vs Guided (\u03b1=0.7)": 328.37652587890625,
+    "Guided (\u03b1=0.1) vs Guided (\u03b1=0.4)": 189.51971435546875,
+    "Guided (\u03b1=0.1) vs Guided (\u03b1=0.6)": 235.27378845214844,
+    "Guided (\u03b1=0.1) vs Guided (\u03b1=0.7)": 254.2999267578125,
+    "Guided (\u03b1=0.4) vs Guided (\u03b1=0.6)": 153.89024353027344,
+    "Guided (\u03b1=0.4) vs Guided (\u03b1=0.7)": 178.31629943847656,
+    "Guided (\u03b1=0.6) vs Guided (\u03b1=0.7)": 80.9908676147461
+  },
+  "endpoint_distances_projected": {
+    "\"a bicycle on the left\" vs \"a bus on the right\"": 475.30413818359375,
+    "\"a bicycle on the left\" vs CLIP AND: \"a bicycle on the left and a bus on the right\"": 567.7692260742188,
+    "\"a bicycle on the left\" vs SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\"": 198.8004608154297,
+    "\"a bicycle on the left\" vs Guided (\u03b1=0.1)": 565.203857421875,
+    "\"a bicycle on the left\" vs Guided (\u03b1=0.4)": 537.55419921875,
+    "\"a bicycle on the left\" vs Guided (\u03b1=0.6)": 495.0711975097656,
+    "\"a bicycle on the left\" vs Guided (\u03b1=0.7)": 460.21746826171875,
+    "\"a bus on the right\" vs CLIP AND: \"a bicycle on the left and a bus on the right\"": 93.4729995727539,
+    "\"a bus on the right\" vs SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\"": 278.9385070800781,
+    "\"a bus on the right\" vs Guided (\u03b1=0.1)": 90.40432739257812,
+    "\"a bus on the right\" vs Guided (\u03b1=0.4)": 62.30961990356445,
+    "\"a bus on the right\" vs Guided (\u03b1=0.6)": 19.771041870117188,
+    "\"a bus on the right\" vs Guided (\u03b1=0.7)": 15.308820724487305,
+    "CLIP AND: \"a bicycle on the left and a bus on the right\" vs SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\"": 370.29840087890625,
+    "CLIP AND: \"a bicycle on the left and a bus on the right\" vs Guided (\u03b1=0.1)": 5.182811260223389,
+    "CLIP AND: \"a bicycle on the left and a bus on the right\" vs Guided (\u03b1=0.4)": 32.35860061645508,
+    "CLIP AND: \"a bicycle on the left and a bus on the right\" vs Guided (\u03b1=0.6)": 73.94770812988281,
+    "CLIP AND: \"a bicycle on the left and a bus on the right\" vs Guided (\u03b1=0.7)": 108.07591247558594,
+    "SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\" vs Guided (\u03b1=0.1)": 367.9722595214844,
+    "SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\" vs Guided (\u03b1=0.4)": 340.80657958984375,
+    "SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\" vs Guided (\u03b1=0.6)": 298.6064453125,
+    "SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\" vs Guided (\u03b1=0.7)": 263.6849060058594,
+    "Guided (\u03b1=0.1) vs Guided (\u03b1=0.4)": 28.565067291259766,
+    "Guided (\u03b1=0.1) vs Guided (\u03b1=0.6)": 70.74681854248047,
+    "Guided (\u03b1=0.1) vs Guided (\u03b1=0.7)": 105.19068145751953,
+    "Guided (\u03b1=0.4) vs Guided (\u03b1=0.6)": 42.54836654663086,
+    "Guided (\u03b1=0.4) vs Guided (\u03b1=0.7)": 77.33678436279297,
+    "Guided (\u03b1=0.6) vs Guided (\u03b1=0.7)": 34.926998138427734
+  },
+  "divergence_onset_step": {
+    "\"a bicycle on the left\" vs \"a bus on the right\"": 2,
+    "\"a bicycle on the left\" vs CLIP AND: \"a bicycle on the left and a bus on the right\"": 2,
+    "\"a bicycle on the left\" vs SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\"": 4,
+    "\"a bicycle on the left\" vs Guided (\u03b1=0.1)": 2,
+    "\"a bicycle on the left\" vs Guided (\u03b1=0.4)": 3,
+    "\"a bicycle on the left\" vs Guided (\u03b1=0.6)": 3,
+    "\"a bicycle on the left\" vs Guided (\u03b1=0.7)": 3,
+    "\"a bus on the right\" vs CLIP AND: \"a bicycle on the left and a bus on the right\"": 2,
+    "\"a bus on the right\" vs SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\"": 2,
+    "\"a bus on the right\" vs Guided (\u03b1=0.1)": 3,
+    "\"a bus on the right\" vs Guided (\u03b1=0.4)": 3,
+    "\"a bus on the right\" vs Guided (\u03b1=0.6)": 2,
+    "\"a bus on the right\" vs Guided (\u03b1=0.7)": 2,
+    "CLIP AND: \"a bicycle on the left and a bus on the right\" vs SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\"": 2,
+    "CLIP AND: \"a bicycle on the left and a bus on the right\" vs Guided (\u03b1=0.1)": 7,
+    "CLIP AND: \"a bicycle on the left and a bus on the right\" vs Guided (\u03b1=0.4)": 4,
+    "CLIP AND: \"a bicycle on the left and a bus on the right\" vs Guided (\u03b1=0.6)": 2,
+    "CLIP AND: \"a bicycle on the left and a bus on the right\" vs Guided (\u03b1=0.7)": 2,
+    "SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\" vs Guided (\u03b1=0.1)": 2,
+    "SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\" vs Guided (\u03b1=0.4)": 2,
+    "SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\" vs Guided (\u03b1=0.6)": 3,
+    "SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\" vs Guided (\u03b1=0.7)": 3,
+    "Guided (\u03b1=0.1) vs Guided (\u03b1=0.4)": 5,
+    "Guided (\u03b1=0.1) vs Guided (\u03b1=0.6)": 3,
+    "Guided (\u03b1=0.1) vs Guided (\u03b1=0.7)": 2,
+    "Guided (\u03b1=0.4) vs Guided (\u03b1=0.6)": 4,
+    "Guided (\u03b1=0.4) vs Guided (\u03b1=0.7)": 3,
+    "Guided (\u03b1=0.6) vs Guided (\u03b1=0.7)": 3
+  },
+  "total_path_length": {
+    "\"a bicycle on the left\"": 773.7758178710938,
+    "\"a bus on the right\"": 675.0687866210938,
+    "CLIP AND: \"a bicycle on the left and a bus on the right\"": 652.4081420898438,
+    "SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\"": 674.342041015625,
+    "Guided (\u03b1=0.1)": 654.1051025390625,
+    "Guided (\u03b1=0.4)": 650.8040771484375,
+    "Guided (\u03b1=0.6)": 649.8277587890625,
+    "Guided (\u03b1=0.7)": 646.5584106445312
+  },
+  "final_tangent_cosine_similarity": {
+    "\"a bicycle on the left\" vs \"a bus on the right\"": 0.5363430380821228,
+    "\"a bicycle on the left\" vs CLIP AND: \"a bicycle on the left and a bus on the right\"": 0.45150095224380493,
+    "\"a bicycle on the left\" vs SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\"": 0.8450214862823486,
+    "\"a bicycle on the left\" vs Guided (\u03b1=0.1)": 0.46003586053848267,
+    "\"a bicycle on the left\" vs Guided (\u03b1=0.4)": 0.5003228187561035,
+    "\"a bicycle on the left\" vs Guided (\u03b1=0.6)": 0.5491912961006165,
+    "\"a bicycle on the left\" vs Guided (\u03b1=0.7)": 0.5909109115600586,
+    "\"a bus on the right\" vs CLIP AND: \"a bicycle on the left and a bus on the right\"": 0.7835961580276489,
+    "\"a bus on the right\" vs SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\"": 0.7143104076385498,
+    "\"a bus on the right\" vs Guided (\u03b1=0.1)": 0.7919377684593201,
+    "\"a bus on the right\" vs Guided (\u03b1=0.4)": 0.8399737477302551,
+    "\"a bus on the right\" vs Guided (\u03b1=0.6)": 0.865357518196106,
+    "\"a bus on the right\" vs Guided (\u03b1=0.7)": 0.8684241771697998,
+    "CLIP AND: \"a bicycle on the left and a bus on the right\" vs SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\"": 0.6204801201820374,
+    "CLIP AND: \"a bicycle on the left and a bus on the right\" vs Guided (\u03b1=0.1)": 0.9810105562210083,
+    "CLIP AND: \"a bicycle on the left and a bus on the right\" vs Guided (\u03b1=0.4)": 0.9074680805206299,
+    "CLIP AND: \"a bicycle on the left and a bus on the right\" vs Guided (\u03b1=0.6)": 0.8652639389038086,
+    "CLIP AND: \"a bicycle on the left and a bus on the right\" vs Guided (\u03b1=0.7)": 0.8448177576065063,
+    "SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\" vs Guided (\u03b1=0.1)": 0.6309701204299927,
+    "SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\" vs Guided (\u03b1=0.4)": 0.6747573614120483,
+    "SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\" vs Guided (\u03b1=0.6)": 0.7225133180618286,
+    "SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\" vs Guided (\u03b1=0.7)": 0.7609878778457642,
+    "Guided (\u03b1=0.1) vs Guided (\u03b1=0.4)": 0.9170733690261841,
+    "Guided (\u03b1=0.1) vs Guided (\u03b1=0.6)": 0.8753755688667297,
+    "Guided (\u03b1=0.1) vs Guided (\u03b1=0.7)": 0.8554818034172058,
+    "Guided (\u03b1=0.4) vs Guided (\u03b1=0.6)": 0.9434890747070312,
+    "Guided (\u03b1=0.4) vs Guided (\u03b1=0.7)": 0.925936222076416,
+    "Guided (\u03b1=0.6) vs Guided (\u03b1=0.7)": 0.9818459749221802
+  },
+  "config": {
+    "prompts": [
+      "a bicycle on the left",
+      "a bus on the right"
+    ],
+    "num_prompts": 2,
+    "prompt_a": "a bicycle on the left",
+    "prompt_b": "a bus on the right",
+    "monolithic_prompt": "a bicycle on the left and a bus on the right",
+    "model_id": "stabilityai/stable-diffusion-3.5-medium",
+    "num_inference_steps": 50,
+    "guidance_scale": 4.5,
+    "seed": 42,
+    "projection": "pca",
+    "lift": 0.0,
+    "no_poe": true
+  },
+  "clip_classifier": {
+    "cosine_similarities": {
+      "\"a bicycle on the left\"": {
+        "[1] a bicycle on the left": 0.20916423201560974,
+        "[2] a bus on the right": 0.09580183029174805,
+        "[ALL] a bicycle on the left and a bus on the right": 0.20047351717948914
+      },
+      "\"a bus on the right\"": {
+        "[1] a bicycle on the left": 0.16202563047409058,
+        "[2] a bus on the right": 0.2180347889661789,
+        "[ALL] a bicycle on the left and a bus on the right": 0.22984161972999573
+      },
+      "CLIP AND: \"a bicycle on the left and a bus on the right\"": {
+        "[1] a bicycle on the left": 0.22181415557861328,
+        "[2] a bus on the right": 0.2093336284160614,
+        "[ALL] a bicycle on the left and a bus on the right": 0.27604299783706665
+      },
+      "SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\"": {
+        "[1] a bicycle on the left": 0.21903005242347717,
+        "[2] a bus on the right": 0.20138216018676758,
+        "[ALL] a bicycle on the left and a bus on the right": 0.2854320704936981
+      },
+      "Guided (\u03b1=0.1)": {
+        "[1] a bicycle on the left": 0.21601003408432007,
+        "[2] a bus on the right": 0.20868481695652008,
+        "[ALL] a bicycle on the left and a bus on the right": 0.2730741500854492
+      },
+      "Guided (\u03b1=0.4)": {
+        "[1] a bicycle on the left": 0.23345252871513367,
+        "[2] a bus on the right": 0.22717855870723724,
+        "[ALL] a bicycle on the left and a bus on the right": 0.28592950105667114
+      },
+      "Guided (\u03b1=0.6)": {
+        "[1] a bicycle on the left": 0.21904264390468597,
+        "[2] a bus on the right": 0.2477211356163025,
+        "[ALL] a bicycle on the left and a bus on the right": 0.2802072763442993
+      },
+      "Guided (\u03b1=0.7)": {
+        "[1] a bicycle on the left": 0.2122402787208557,
+        "[2] a bus on the right": 0.24355731904506683,
+        "[ALL] a bicycle on the left and a bus on the right": 0.27301907539367676
+      }
+    },
+    "predictions": {
+      "\"a bicycle on the left\"": "[1] a bicycle on the left",
+      "\"a bus on the right\"": "[ALL] a bicycle on the left and a bus on the right",
+      "CLIP AND: \"a bicycle on the left and a bus on the right\"": "[ALL] a bicycle on the left and a bus on the right",
+      "SuperDIFF (FM-ODE): \"a bicycle on the left\" \u2227 \"a bus on the right\"": "[ALL] a bicycle on the left and a bus on the right",
+      "Guided (\u03b1=0.1)": "[ALL] a bicycle on the left and a bus on the right",
+      "Guided (\u03b1=0.4)": "[ALL] a bicycle on the left and a bus on the right",
+      "Guided (\u03b1=0.6)": "[ALL] a bicycle on the left and a bus on the right",
+      "Guided (\u03b1=0.7)": "[ALL] a bicycle on the left and a bus on the right"
+    },
+    "clip_pca_variance_explained": {
+      "PC1": 0.6435231566429138,
+      "PC2": 0.11258245259523392
+    }
+  }
+}

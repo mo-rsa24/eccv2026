@@ -1,0 +1,50 @@
+# ============================================================
+# Harmonized requirements for Attend-and-Excite
+# Python 3.10  (PyTorch 2.7+ requires Python ≥ 3.9)
+#
+# Install order:
+#   1. conda activate attend_excite
+#   2. pip install -r environment/requirements_harmonized.txt
+#
+# RTX 5090 / sm_120 note:
+#   cu128 wheels (CUDA 12.8) are the first to include compiled sm_120 kernels.
+#   cu124 and earlier caps at sm_90.
+# ============================================================
+
+# --- PyTorch — CUDA 12.8 GPU wheels (sm_120 Blackwell support) ---
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch==2.7.0
+torchvision==0.22.0
+
+# --- Diffusion core — STRICTLY PINNED, do not upgrade ---
+# Two internal APIs changed after 0.12.1 and will break the pipeline:
+#
+#   1. utils/ptp_utils.py:
+#        from diffusers.models.cross_attention import CrossAttention
+#      → In 0.13+ CrossAttention moved to diffusers.models.attention_processor
+#
+#   2. pipeline_attend_and_excite.py:
+#        from diffusers.utils import randn_tensor, replace_example_docstring
+#      → In 0.13+ randn_tensor moved to diffusers.utils.torch_utils
+#
+# To use a newer diffusers, patch both files first.
+diffusers==0.12.1
+
+# --- HuggingFace ecosystem (pinned for diffusers==0.12.1 era) ---
+# diffusers==0.12.1 requires transformers>=4.21.0
+# transformers==4.26.0 requires huggingface-hub>=0.11.0,<1.0
+transformers==4.26.0
+huggingface-hub==0.11.1
+accelerate==0.15.0
+
+# --- Repo-specified dependencies ---
+pyrallis          # @pyrallis.wrap() CLI/config management (run.py, config.py)
+ftfy              # Unicode text normalization used by CLIP tokenizer
+opencv-python     # cv2 — used in utils/ptp_utils.py and utils/vis_utils.py
+matplotlib
+ipywidgets        # IPython.display.display in ptp_utils.py (also needed for notebooks)
+
+# --- Implicit dependencies (imported but not listed in original requirements.txt) ---
+numpy
+Pillow
+packaging         # from packaging import version in pipeline_attend_and_excite.py

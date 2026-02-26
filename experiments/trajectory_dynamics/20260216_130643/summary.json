@@ -1,0 +1,44 @@
+{
+  "pca_variance_explained": {
+    "PC1": 0.9982938766479492,
+    "PC2": 0.0014415699988603592
+  },
+  "pca_total_variance_top2": 0.9997354745864868,
+  "endpoint_distances_l2": {},
+  "endpoint_distances_projected": {},
+  "divergence_onset_step": {},
+  "total_path_length": {
+    "SD3.5: \"A tall man wearing a green shirt next to a short woman wearing a yellow jacket\"": 851.7575073242188
+  },
+  "final_tangent_cosine_similarity": {},
+  "config": {
+    "prompts": [
+      "A tall man wearing a green shirt next to a short woman wearing a yellow jacket"
+    ],
+    "num_prompts": 1,
+    "prompt_a": "A tall man wearing a green shirt next to a short woman wearing a yellow jacket",
+    "prompt_b": "",
+    "monolithic_prompt": "A tall man wearing a green shirt next to a short woman wearing a yellow jacket",
+    "model_id": "stabilityai/stable-diffusion-3.5-medium",
+    "num_inference_steps": 50,
+    "guidance_scale": 4.5,
+    "seed": 42,
+    "projection": "pca",
+    "lift": 0.0,
+    "no_poe": false
+  },
+  "clip_classifier": {
+    "cosine_similarities": {
+      "SD3.5: \"A tall man wearing a green shirt next to a short woman wearing a yellow jacket\"": {
+        "[1] A tall man wearing a green shirt next to a short woman wearing a yellow jacket": 0.30607688426971436
+      }
+    },
+    "predictions": {
+      "SD3.5: \"A tall man wearing a green shirt next to a short woman wearing a yellow jacket\"": "[1] A tall man wearing a green shirt next to a short woman wearing a yellow jacket"
+    },
+    "clip_pca_variance_explained": {
+      "PC1": 1.0,
+      "PC2": 5.452692435753675e-15
+    }
+  }
+}

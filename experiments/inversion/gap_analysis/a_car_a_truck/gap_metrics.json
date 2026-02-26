@@ -1,0 +1,33 @@
+{
+  "pair": [
+    "a car",
+    "a truck"
+  ],
+  "slug": "a_car_a_truck",
+  "n_seeds": 16,
+  "gap_and_pstar": {
+    "clip_cos": 0.697566032409668,
+    "lpips": 0.42899197340011597,
+    "lat_mse": 0.1776123046875,
+    "traj_mse_mean": 0.06806317471585685,
+    "traj_cos_mean": 0.9577312481403351
+  },
+  "gap_and_mono": {
+    "clip_cos": 0.605863094329834,
+    "lpips": 0.48175284266471863
+  },
+  "decoded_p_star": [
+    {
+      "prompt": "a car",
+      "cos_sim": 0.8829
+    },
+    {
+      "prompt": "a red car",
+      "cos_sim": 0.7885
+    },
+    {
+      "prompt": "a truck",
+      "cos_sim": 0.7739
+    }
+  ]
+}

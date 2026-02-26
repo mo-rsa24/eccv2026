@@ -1,0 +1,44 @@
+{
+  "pca_variance_explained": {
+    "PC1": 0.9986943006515503,
+    "PC2": 0.0010647561866790056
+  },
+  "pca_total_variance_top2": 0.9997590780258179,
+  "endpoint_distances_l2": {},
+  "endpoint_distances_projected": {},
+  "divergence_onset_step": {},
+  "total_path_length": {
+    "SD3.5: \"Two blue apples on a red table\"": 833.431884765625
+  },
+  "final_tangent_cosine_similarity": {},
+  "config": {
+    "prompts": [
+      "Two blue apples on a red table"
+    ],
+    "num_prompts": 1,
+    "prompt_a": "Two blue apples on a red table",
+    "prompt_b": "",
+    "monolithic_prompt": "Two blue apples on a red table",
+    "model_id": "stabilityai/stable-diffusion-3.5-medium",
+    "num_inference_steps": 50,
+    "guidance_scale": 4.5,
+    "seed": 42,
+    "projection": "pca",
+    "lift": 0.0,
+    "no_poe": false
+  },
+  "clip_classifier": {
+    "cosine_similarities": {
+      "SD3.5: \"Two blue apples on a red table\"": {
+        "[1] Two blue apples on a red table": 0.29656484723091125
+      }
+    },
+    "predictions": {
+      "SD3.5: \"Two blue apples on a red table\"": "[1] Two blue apples on a red table"
+    },
+    "clip_pca_variance_explained": {
+      "PC1": 1.0,
+      "PC2": 8.045320526862791e-15
+    }
+  }
+}

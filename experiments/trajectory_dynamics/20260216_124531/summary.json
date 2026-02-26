@@ -1,0 +1,44 @@
+{
+  "pca_variance_explained": {
+    "PC1": 0.9962798357009888,
+    "PC2": 0.0032049850560724735
+  },
+  "pca_total_variance_top2": 0.9994848370552063,
+  "endpoint_distances_l2": {},
+  "endpoint_distances_projected": {},
+  "divergence_onset_step": {},
+  "total_path_length": {
+    "SD3.5: \"a brown bench in front of a white building\"": 676.2493896484375
+  },
+  "final_tangent_cosine_similarity": {},
+  "config": {
+    "prompts": [
+      "a brown bench in front of a white building"
+    ],
+    "num_prompts": 1,
+    "prompt_a": "a brown bench in front of a white building",
+    "prompt_b": "",
+    "monolithic_prompt": "a brown bench in front of a white building",
+    "model_id": "stabilityai/stable-diffusion-3.5-medium",
+    "num_inference_steps": 50,
+    "guidance_scale": 4.5,
+    "seed": 42,
+    "projection": "pca",
+    "lift": 0.0,
+    "no_poe": false
+  },
+  "clip_classifier": {
+    "cosine_similarities": {
+      "SD3.5: \"a brown bench in front of a white building\"": {
+        "[1] a brown bench in front of a white building": 0.3037402629852295
+      }
+    },
+    "predictions": {
+      "SD3.5: \"a brown bench in front of a white building\"": "[1] a brown bench in front of a white building"
+    },
+    "clip_pca_variance_explained": {
+      "PC1": 1.0,
+      "PC2": 6.8450180893959815e-15
+    }
+  }
+}

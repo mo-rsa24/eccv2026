@@ -1,0 +1,44 @@
+{
+  "pca_variance_explained": {
+    "PC1": 0.9965762495994568,
+    "PC2": 0.0027386066503822803
+  },
+  "pca_total_variance_top2": 0.9993148446083069,
+  "endpoint_distances_l2": {},
+  "endpoint_distances_projected": {},
+  "divergence_onset_step": {},
+  "total_path_length": {
+    "SD3.5: \"A zebra and a giraffe\"": 861.3964233398438
+  },
+  "final_tangent_cosine_similarity": {},
+  "config": {
+    "prompts": [
+      "A zebra and a giraffe"
+    ],
+    "num_prompts": 1,
+    "prompt_a": "A zebra and a giraffe",
+    "prompt_b": "",
+    "monolithic_prompt": "A zebra and a giraffe",
+    "model_id": "stabilityai/stable-diffusion-3.5-medium",
+    "num_inference_steps": 50,
+    "guidance_scale": 4.5,
+    "seed": 42,
+    "projection": "pca",
+    "lift": 0.0,
+    "no_poe": false
+  },
+  "clip_classifier": {
+    "cosine_similarities": {
+      "SD3.5: \"A zebra and a giraffe\"": {
+        "[1] A zebra and a giraffe": 0.2827911972999573
+      }
+    },
+    "predictions": {
+      "SD3.5: \"A zebra and a giraffe\"": "[1] A zebra and a giraffe"
+    },
+    "clip_pca_variance_explained": {
+      "PC1": 1.0,
+      "PC2": 1.5924757274302353e-15
+    }
+  }
+}

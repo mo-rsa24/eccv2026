@@ -1,0 +1,44 @@
+{
+  "pca_variance_explained": {
+    "PC1": 0.9982582926750183,
+    "PC2": 0.0014865777920931578
+  },
+  "pca_total_variance_top2": 0.9997448921203613,
+  "endpoint_distances_l2": {},
+  "endpoint_distances_projected": {},
+  "divergence_onset_step": {},
+  "total_path_length": {
+    "SD3.5: \"A man lying on the ground\"": 793.51806640625
+  },
+  "final_tangent_cosine_similarity": {},
+  "config": {
+    "prompts": [
+      "A man lying on the ground"
+    ],
+    "num_prompts": 1,
+    "prompt_a": "A man lying on the ground",
+    "prompt_b": "",
+    "monolithic_prompt": "A man lying on the ground",
+    "model_id": "stabilityai/stable-diffusion-3.5-medium",
+    "num_inference_steps": 50,
+    "guidance_scale": 4.5,
+    "seed": 42,
+    "projection": "pca",
+    "lift": 0.0,
+    "no_poe": false
+  },
+  "clip_classifier": {
+    "cosine_similarities": {
+      "SD3.5: \"A man lying on the ground\"": {
+        "[1] A man lying on the ground": 0.26081421971321106
+      }
+    },
+    "predictions": {
+      "SD3.5: \"A man lying on the ground\"": "[1] A man lying on the ground"
+    },
+    "clip_pca_variance_explained": {
+      "PC1": 1.0,
+      "PC2": 3.054521764103875e-14
+    }
+  }
+}
