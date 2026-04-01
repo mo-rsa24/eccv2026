@@ -49,7 +49,9 @@
       "Bash(git -C /home/molefe/Playground/PhD/eccv2026 remote -v)",
       "Bash(git -C /home/molefe/Playground/PhD/eccv2026 push origin main)",
       "Bash(find /home/molefe/Playground/PhD/eccv2026/paper/eccv/ -name *.pdf -o -name *.aux -o -name *.log)",
-      "Bash(git -C /home/molefe/Playground/PhD/eccv2026 add -A)"
+      "Bash(git -C /home/molefe/Playground/PhD/eccv2026 add -A)",
+      "Bash(git -C:*)",
+      "Bash(git push:*)"
     ]
   }
 }
