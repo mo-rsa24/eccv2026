@@ -1,0 +1,71 @@
+\section{Phase 3: Riemannian Diffusion Analysis of Structural and Geometric Preconditions}
+
+Phase~3 investigates the structural and geometric conditions under which
+compositional generative modelling becomes semantically meaningful or inevitably
+fails. Unlike Phases~1 and~2, which evaluate the behaviour of compositional
+operators directly, Phase~3 focuses on understanding \emph{why} these operators
+succeed in some settings and break down in others. This phase directly supports
+\textbf{Research Goal~3} and tests \textbf{Hypothesis~H3}, which proposes that
+compositional correctness depends on latent-space alignment, coherent factor
+interaction, and compatibility of the geometric structure of the underlying
+densities.
+
+To analyse these structural prerequisites, we employ \emph{Riemannian diffusion
+models} (RDMs), which reinterpret diffusion as occurring on a curved data
+manifold rather than in Euclidean pixel space. RDMs provide a principled way to
+examine the geometry of the representations learned by the TB and Silicosis
+models, enabling us to evaluate whether the manifolds underlying the two
+distributions are compatible for composition. This geometric perspective offers
+a diagnostic tool that is unavailable in standard diffusion frameworks.
+
+\paragraph{Manifold Structure and Latent Alignment.}
+Using RDMs, we examine whether the latent spaces of the TB and Silicosis models
+share a compatible manifold structure. If the two diseases occupy regions with
+aligned tangent spaces and similar local geometry, composition is expected to be
+semantically meaningful. If their manifolds intersect at sharp angles, differ in
+curvature, or exhibit incompatible local volume structure, composition is
+expected to produce artifacts. This analysis provides a direct test of the first
+component of Hypothesis~H3: that aligned or coherent latent structure is a
+precondition for meaningful composition.
+
+\paragraph{Compatibility of Semantic Directions.}
+RDMs allow us to evaluate whether meaningful semantic transitions—such as
+increasing cavitation severity or transitioning from nodular silicosis to
+fibrotic TB—follow geodesics of the learned manifold. If semantic progression is
+aligned with geodesic structure, compositional transitions have a natural
+geometric interpretation. If semantic changes move off-manifold or violate
+geodesic paths, composition will be structurally unstable regardless of the
+operator used. This directly informs whether semantic factors are sufficiently
+locally disentangled for compositional correctness.
+
+\paragraph{Geometric Compatibility of Log-Densities.}
+RDMs provide a framework for analysing whether diffusion models for TB and
+Silicosis impose compatible geometric curvature on their log densities.
+Compositional operators—particularly Product-of-Experts and density-based
+methods like SuperDiff—implicitly assume that the geometry of the component
+densities is consistent. RDMs allow us to visualise and characterise
+incompatibilities: for example, when curvature induced by one pathology opposes
+or overwhelms curvature induced by the other. Such conflict predicts failure
+modes observed in previous phases. This analysis tests the final component of
+Hypothesis~H3: that compositional correctness requires geometric compatibility
+across component models.
+
+\paragraph{Clinical Interpretation of Manifold Compatibility.}
+We overlay the geometric findings with radiological interpretation to assess
+whether regions of manifold compatibility correspond to clinically plausible
+co-morbidity. When RDM analysis identifies smooth, aligned manifold regions,
+compositions in those regions tend to reflect realistic hybrid pathology, such
+as cavitations appearing alongside silicotic nodules. When RDMs reveal manifold
+misalignment or curvature conflict, composed samples often contain unrealistic
+hybrid textures, incorrect anatomical placement, or inconsistent opacity
+patterns. This links geometric analysis directly to clinical semantics.
+
+\paragraph{Contribution of This Phase.}
+Phase~3 contributes a principled geometric and structural explanation for the
+successes and failures of compositional generative modelling observed in the
+earlier phases. By applying Riemannian diffusion analysis to TB and Silicosis
+models, this phase identifies the latent and geometric prerequisites for valid
+composition, clarifies the structural origins of failure modes, and offers a
+unified geometric framework for understanding compositional operators across
+score-based, PoE-based, and density-based methods. This completes the
+methodological foundation for interpreting compositionality in complex domains.

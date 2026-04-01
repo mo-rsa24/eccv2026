@@ -1,6 +1,9 @@
 """
 Phase 1: Generate SD3.5 closed-loop training data for the inverter.
 
+Only needed for --pstar-source inverter (Phase 2 → trained f_θ checkpoint).
+Skip this script entirely if you plan to use pez, vlm, or z2t as your p* source.
+
 For each prompt in the curated set, this script:
   1. Encodes the prompt with SD3.5's triple text encoders → conditioning tensors
   2. Generates K images using SD3.5(prompt) with K different seeds
@@ -40,8 +43,9 @@ from notebooks.composition_experiments import sample_sd3_with_trajectory_trackin
 # Prompt set
 # ---------------------------------------------------------------------------
 
-# Tier A: single concepts
+# Tier A: single concepts  (50 total)
 TIER_A = [
+    # original 15
     "a cat",
     "a dog",
     "a car",
@@ -57,10 +61,58 @@ TIER_A = [
     "a glass bottle",
     "a red apple",
     "a wooden table",
+    # vehicles
+    "a motorcycle",
+    "an airplane",
+    "a bus",
+    "a train",
+    "a helicopter",
+    "a scooter",
+    "a tractor",
+    "a fire truck",
+    "a police car",
+    "a sailboat",
+    # outdoor / street
+    "a bench",
+    "a fire hydrant",
+    "a traffic light",
+    "a stop sign",
+    "a fence",
+    "a streetlamp",
+    # sports & leisure
+    "a kite",
+    "a surfboard",
+    "a skateboard",
+    "a tennis racket",
+    "a baseball bat",
+    "a football",
+    "a basketball",
+    # bags & accessories
+    "a backpack",
+    "a suitcase",
+    "a handbag",
+    # food
+    "a banana",
+    "a pizza",
+    "a birthday cake",
+    "a sandwich",
+    "an orange",
+    # furniture & household
+    "a couch",
+    "a bookshelf",
+    "a clock",
+    "a vase",
+    "a teddy bear",
+    # electronics
+    "a laptop",
+    "a cell phone",
+    "a television",
+    "a camera",
 ]
 
-# Tier B: simple conjunctions
+# Tier B: two-concept conjunctions  (200 total)
 TIER_B = [
+    # ---- original 40 ----
     "a person standing next to a bicycle",
     "a cat sitting on a chair",
     "a dog running in a field",
@@ -101,10 +153,136 @@ TIER_B = [
     "a boat sailing on a river",
     "a cat on top of a car",
     "a dog beneath a tree",
+    # ---- new: person + vehicle ----
+    "a person riding a motorcycle",
+    "a person boarding an airplane",
+    "a person sitting on a bus",
+    "a person next to a police car",
+    "a person pushing a bicycle",
+    "a person carrying a backpack",
+    "a person pulling a suitcase",
+    "a person holding an umbrella in the rain",
+    "a person sitting on a bench",
+    "a person riding a horse",
+    "a person riding a scooter",
+    "a person flying a kite",
+    "a person surfing on a surfboard",
+    "a person skateboarding on a road",
+    "a person holding a tennis racket",
+    "a person holding a baseball bat",
+    "a person kicking a football",
+    "a person with a camera",
+    "a person talking on a cell phone",
+    "a person working on a laptop",
+    # ---- new: animal pairs ----
+    "a cat and a dog playing together",
+    "a bird sitting on a horse",
+    "a dog chasing a cat",
+    "a cat watching a bird",
+    "a horse and a bird in a field",
+    "a dog carrying a ball",
+    "a cat sitting near a dog",
+    "a bird perched on a dog",
+    "a horse drinking from a river",
+    "a dog playing with a ball",
+    # ---- new: vehicle + environment ----
+    "a car on a bridge",
+    "a motorcycle on a mountain road",
+    "a bus on a city street",
+    "a train crossing a bridge",
+    "a boat on a calm lake",
+    "a sailboat on the ocean",
+    "a bicycle parked outside a cafe",
+    "a truck at a construction site",
+    "a helicopter above a building",
+    "a fire truck on a street",
+    "a tractor in a field",
+    "a scooter parked next to a bench",
+    "a police car on a highway",
+    "a car near a traffic light",
+    "an airplane above the clouds",
+    # ---- new: object + location ----
+    "a chair next to a lamp",
+    "a couch in a living room",
+    "a bookshelf next to a window",
+    "a clock on a wall",
+    "a vase on a wooden table",
+    "a teddy bear on a bed",
+    "a laptop on a desk",
+    "a television on a stand",
+    "a camera on a tripod",
+    "a cell phone on a table",
+    "a backpack on a bench",
+    "a suitcase near a door",
+    "a kite in a blue sky",
+    "a surfboard on a beach",
+    "a skateboard on a sidewalk",
+    # ---- new: food + context ----
+    "a pizza on a wooden table",
+    "a birthday cake with candles",
+    "a sandwich on a plate",
+    "a banana next to an orange",
+    "a glass bottle next to a sandwich",
+    "a red apple beside a banana",
+    "a bowl of soup on a table",
+    "a birthday cake beside a vase",
+    # ---- new: three-word spatial variety ----
+    "a dog sitting under a bench",
+    "a cat hiding behind a vase",
+    "a bird landing on a car",
+    "a bicycle beside a bus",
+    "a dog running beside a car",
+    "a person walking beside a horse",
+    "a cat under a wooden table",
+    "a bird on top of a bus",
+    "a motorcycle beside a bicycle",
+    "a dog playing near a tree",
+    "a cat watching a television",
+    "a person lying on a couch",
+    "a dog sleeping on a couch",
+    "a cat sleeping near a laptop",
+    "a person standing beside a tree",
+    "a bird sitting on a fence",
+    "a kite above a tree",
+    "a surfboard beside a bicycle",
+    "a dog next to a fire hydrant",
+    "a cat sitting on a suitcase",
+    "a horse grazing near a fence",
+    "a bird resting on a stop sign",
+    "a motorcycle parked beside a bench",
+    "a child riding a bicycle",
+    "a person near a bookshelf",
+    "a dog beside a fire truck",
+    "a cat on a television",
+    "a person holding a birthday cake",
+    "a bird flying above a boat",
+    "a dog standing in front of a car",
+    # ---- new: scene descriptions ----
+    "a cat and a couch in a living room",
+    "a dog and a bicycle in a park",
+    "a person and a horse on a trail",
+    "a car and a truck on a highway",
+    "a bird and a tree by a lake",
+    "a boat and a person on a river",
+    "a bicycle and a backpack by a bench",
+    "a laptop and a camera on a desk",
+    "a clock and a vase on a shelf",
+    "a child with a teddy bear on a couch",
+    "a dog and a ball in a yard",
+    "a cat and a vase by a window",
+    "a person and an umbrella in the rain",
+    "a suitcase and a backpack near a door",
+    "a pizza and a glass bottle on a table",
+    "a horse and a fence in a meadow",
+    "a kite and a person on a hilltop",
+    "a surfboard and an umbrella on a beach",
+    "a motorcycle and a helmet on a road",
+    "a train and a bridge over a river",
 ]
 
-# Tier C: attribute-rich single concepts
+# Tier C: attribute-rich single concepts  (80 total)
 TIER_C = [
+    # original 30
     "a red car",
     "a blue truck",
     "a white horse",
@@ -135,6 +313,61 @@ TIER_C = [
     "a pink umbrella",
     "a maroon leather chair",
     "a clear glass vase",
+    # new: vehicles with attributes
+    "a shiny black motorcycle",
+    "a vintage red fire truck",
+    "a sleek white police car",
+    "a rusty old tractor",
+    "a small blue scooter",
+    "a large white airplane",
+    "a green double-decker bus",
+    "a wooden sailboat",
+    "a red and white helicopter",
+    "a bright orange traffic cone",
+    # new: animals with attributes
+    "a large brown bear",
+    "a tiny orange cat",
+    "a tall white horse",
+    "a small spotted dog",
+    "a bright blue parrot",
+    "a striped orange tiger",
+    "a fluffy grey rabbit",
+    "a sleek black panther",
+    "a colourful tropical fish",
+    "a large brown horse",
+    # new: objects with texture/material/size
+    "a large leather couch",
+    "a small wooden bookshelf",
+    "a tall silver lamp",
+    "a round wooden clock",
+    "a slender white vase",
+    "a small blue backpack",
+    "a large red suitcase",
+    "a worn brown leather bag",
+    "a sleek silver laptop",
+    "a cracked old vase",
+    # new: food with attributes
+    "a large pepperoni pizza",
+    "a chocolate birthday cake",
+    "a toasted sandwich",
+    "a bunch of yellow bananas",
+    "a bright orange orange",
+    "a steaming bowl of soup",
+    "a freshly baked cake",
+    "a ripe red tomato",
+    "a tall glass of water",
+    "a golden loaf of bread",
+    # new: people / scenes with attributes
+    "an elderly person with a cane",
+    "a young child on a bicycle",
+    "a person in a red coat",
+    "a woman with a large hat",
+    "a man carrying a heavy backpack",
+    "a person in a yellow raincoat",
+    "a child with a colourful kite",
+    "a person with a vintage camera",
+    "an athlete with a tennis racket",
+    "a person in a striped shirt",
 ]
 
 # Tier D: held-out test pairs (DO NOT include in training)
@@ -168,7 +401,8 @@ def slugify(prompt: str) -> str:
 def decode_latents(vae, latents: torch.Tensor) -> torch.Tensor:
     """Decode latents (B, C, H, W) → images (B, 3, H, W) in [0, 1]."""
     latents = latents.to(dtype=vae.dtype)
-    images = vae.decode(latents / vae.config.scaling_factor, return_dict=False)[0]
+    shift_factor = getattr(vae.config, "shift_factor", 0.0)
+    images = vae.decode(latents / vae.config.scaling_factor + shift_factor, return_dict=False)[0]
     images = (images / 2 + 0.5).clamp(0, 1)
     return images.float()
 
@@ -186,7 +420,7 @@ def parse_args():
     p.add_argument("--guidance", type=float, default=4.5)
     p.add_argument("--image-size", type=int, default=512,
                    help="Output image size in pixels (square). Latent = size // 8.")
-    p.add_argument("--dtype", default="float16", choices=["float16", "bfloat16"])
+    p.add_argument("--dtype", default="bfloat16", choices=["float16", "bfloat16"])
     p.add_argument("--skip-existing", action="store_true",
                    help="Skip prompts whose output directory already exists")
     return p.parse_args()

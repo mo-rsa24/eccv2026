@@ -1,0 +1,27 @@
+\paragraph{Energy-Based Models}
+Energy-Based Models (EBMs) represent a family of generative models that learn an unnormalised probability distribution over data by associating each sample $\mathbf{x}$ with a scalar energy value $E_\theta(\mathbf{x})$, parameterised by a neural network. 
+Lower energy corresponds to higher probability, and the model distribution is defined as:
+\begin{equation}
+    p_\theta(\mathbf{x}) = \frac{\exp(-E_\theta(\mathbf{x}))}{Z_\theta}, \qquad Z_\theta = \int \exp(-E_\theta(\mathbf{x}))\, d\mathbf{x},
+\end{equation}
+where $Z_\theta$ is the intractable partition function required for normalisation.
+
+Following \citet{NEURIPS2019_378a063b}, EBMs are trained by adjusting $E_\theta(\mathbf{x})$ using contrastive divergence \citep{product_of_experts} such that real data samples are assigned lower energies than generated or negative samples. 
+The objective is derived from the maximum likelihood principle, whose gradient can be expressed as \citep{NEURIPS2020_49856ed4}:
+\begin{equation}
+    \nabla_\theta \mathcal{L} = 
+    \mathbb{E}_{\mathbf{x}^+ \sim p_{\text{data}}}[\nabla_\theta E_\theta(\mathbf{x}^+)]
+    - \mathbb{E}_{\mathbf{x}^- \sim p_\theta}[\nabla_\theta E_\theta(\mathbf{x}^-)],
+\end{equation}
+where $\mathbf{x}^+$ are real data points and $\mathbf{x}^-$ are samples drawn from the current model distribution $p_\theta$.
+
+Sampling from $p_\theta$ is typically performed using Markov Chain Monte Carlo (MCMC) methods such as Langevin dynamics \citep{bayesian_learning_sgld}, which iteratively refine noisy samples according to:
+\begin{equation}
+    \mathbf{x}^{k} = \mathbf{x}^{k-1} - \frac{\lambda}{2}\nabla_{\mathbf{x}} E_\theta(\mathbf{x}^{k-1}) + \omega^{k}, \qquad \omega^{k} \sim \mathcal{N}(0, \lambda),
+\end{equation}
+where $k$ denotes the iteration step and $\lambda$ is the step size. 
+This process encourages samples to move toward regions of low energy, effectively concentrating probability mass around modes of the data distribution.
+
+EBMs are therefore an important bridge between traditional likelihood-based models and score-based diffusion frameworks. 
+Their formulation naturally connects to stochastic differential equations (SDEs) and score matching, where $\nabla_\mathbf{x} \log p_\theta(\mathbf{x}) = -\nabla_\mathbf{x} E_\theta(\mathbf{x})$, enabling a seamless interpretation of diffusion models as energy-based systems. 
+In this unified view, the energy function defines the geometry of the data manifold, guiding sample trajectories toward high-probability regions in the same way that score fields govern the dynamics of diffusion processes.

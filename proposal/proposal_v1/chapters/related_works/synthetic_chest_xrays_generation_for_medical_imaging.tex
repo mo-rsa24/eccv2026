@@ -1,0 +1,63 @@
+\section{Synthetic Chest X-ray Generation for Medical Imaging}
+
+Recent advances in generative modeling have catalyzed a paradigm shift in medical image analysis, particularly in domains such as chest radiography, where data scarcity, privacy restrictions, and class imbalance remain major obstacles to the development of robust AI systems. Synthetic image generation has emerged as a promising solution to these challenges, enabling the augmentation, anonymization, and enrichment of medical datasets for diagnostic and educational purposes. This section reviews contemporary efforts toward chest X-ray synthesis, emphasizing diffusion-based methods and their role in enhancing data availability, diversity, and clinical utility.
+
+\paragraph{Motivation for Synthetic Imaging.}
+The clinical and computational motivations behind synthetic medical image generation stem from the inherent limitations of real-world medical datasets. Publicly available chest X-ray repositories, such as NIH-Chest X-ray dataset \citep{wang2017chestxray8} or CheXpert \citep{Chexpert}, are often limited in scale, class balance, or labeling quality, and are subject to stringent privacy regulations that restrict open sharing. Generative models offer a means to overcome these constraints by producing large volumes of anatomically plausible, pathology-aware images that can supplement training data for classification, segmentation, and detection tasks. In addition to augmenting rare disease classes, synthetic images can mitigate ethical and legal concerns by replacing identifiable patient data with high-fidelity artificial counterparts that preserve diagnostic relevance \citep{generative_ai_medical_imaging_2025}.
+
+\paragraph{Problem Categories for Chest Radiography.}
+
+Within this taxonomy, chest radiographs occupy a distinctive position. 
+They are typically \emph{fully reconstructed 2D projections} of thoracic anatomy, 
+so classical reconstruction-based inverse problems (as seen in MRI or CT) are generally not applicable to standard X-rays.
+Instead, generative modeling for chest radiography primarily addresses \citep{generative_ai_medical_imaging_2025}:
+\begin{itemize}
+    \item \textbf{Data augmentation:} generating realistic X-rays for rare diseases such as tuberculosis (TB) or silicosis;
+    \item \textbf{Denoising and artifact removal:} treating noise and motion artifacts as mild inverse problems;
+    \item \textbf{Representation learning:} capturing latent manifolds of disease progression and pathology;
+\end{itemize}
+
+To the best of our knowledge, there has not yet been a case study where researchers leverage compositionality or pretrained diffusion models \emph{at inference time} to solve a problem pertinent to medical imaging. 
+The work presented in this proposed research explores precisely this space: it falls within the realm of \emph{compositional generative modeling}, where pretrained diffusion models trained on distinct chest X-ray subsets (e.g., Normal and TB) are combined at inference to produce hybrid or interpolated samples representing compositional pathology manifolds. 
+This formulation can be regarded as a generalization of mixture-of-experts and guided diffusion sampling.
+
+
+\paragraph{Early Generative Approaches Using GANs.}
+Early research on synthetic medical imaging predominantly relied on generative adversarial networks (GANs), which model the data distribution via adversarial training between a generator and discriminator. \citet{gan_medical_image_augmentation_2018} and \citet{medical_image_synthesis_gans_2018} demonstrated that GAN-based augmentation improves convolutional neural network (CNN) performance for lesion classification and anonymization tasks. However, despite their success in general image synthesis, GANs often struggle to maintain fine-grained anatomical and pathological consistency in medical images. The inherent instability of adversarial training and the difficulty of enforcing pixel-level medical realism limit the clinical reliability of GAN-generated data. Consequently, research has shifted toward more stable, probabilistically grounded diffusion-based generative models.
+
+\paragraph{Diffusion Models for Chest X-ray Synthesis.}
+Diffusion models have recently become the dominant approach for high-quality synthetic image generation due to their stability and capacity to model complex data distributions. 
+\citet{mahaulpatha2024ddpm} introduced a Denoising Diffusion Probabilistic Model (DDPM) for X-ray synthesis, leveraging iterative noisy-to-clean transformations to reconstruct diverse, realistic radiographs. 
+Unlike GANs, DDPMs explicitly learn the score function of the data distribution, allowing them to generate anatomically consistent samples without adversarial objectives. 
+Their probabilistic nature provides smoother convergence and better control over generation trajectories, making them particularly suitable for medical domains where subtle textural and structural details are critical \citep{novel_unified_conditional_score_based_generative_framework_2022}.
+
+\paragraph{Latent Diffusion and Conditional Control.}
+More recent work has transitioned from pixel-space diffusion to latent-space diffusion for improved efficiency and control. 
+\citet{prakash2025evaluating} proposed a latent diffusion framework for generating synthetic chest X-rays conditioned on segmentation masks and textual prompts. 
+By guiding the generative process through anatomical or semantic conditions, their method produced pathology-controllable radiographs that enhance the diversity of training data while preserving clinical realism. 
+Their study also integrated radiologist feedback to iteratively refine the generation process—a human-in-the-loop strategy that bridges generative modeling and expert validation. 
+Such approaches directly address the issue of limited publicly available annotated data by enabling targeted synthesis of underrepresented disease cases. 
+
+\paragraph{Anonymization and Privacy-Preserving Generation.}
+In the context of data privacy, \citet{generation_anonymous_chest_radiographs_2023} employed a latent diffusion model to generate anonymous, high-quality, class-conditional chest radiographs for thoracic abnormality classification. 
+They argue that biometric identifiers embedded in chest radiographs, such as rib patterns or device signatures, pose re-identification risks that hinder open data sharing. 
+Their proposed model synthesizes clinically valid yet anonymized chest X-rays, thus preserving diagnostic integrity while removing patient-specific identifiers. 
+Comprehensive evaluations demonstrated that classifiers trained on synthetic or mixed (real + synthetic) datasets achieved comparable performance to those trained on purely real datasets, underscoring the feasibility of synthetic data as a privacy-preserving substitute.
+
+\paragraph{Controllable Diffusion for Pathology-Aware Synthesis.}
+Beyond unconditional synthesis, controlling the generation of anatomically and pathologically distinct regions has become a central research focus. 
+\citet{hashmi2024xreal} introduced \textit{XReal}, a pathology- and anatomy-aware diffusion model that introduces spatial control via dedicated anatomy and pathology controllers. 
+By adapting pretrained text-to-image diffusion models, \textit{XReal} enables explicit manipulation of anatomical structures (e.g., lungs, ribs) and pathological regions (e.g., lesions, infiltrates) without requiring full model retraining. 
+This controllable generation framework paves the way for compositional synthesis, where distinct diffusion models or components can be combined to simulate complex disease patterns—an approach conceptually aligned with the superposition of pretrained diffusion models proposed in this PhD.
+
+% \paragraph{Evaluating Synthetic Image Quality and Utility.}
+% Evaluation of synthetic medical images extends beyond visual realism to include diagnostic validity and downstream task performance. 
+% Studies such as those by \citet{prakash2025evaluating} and \citet{generation_anonymous_chest_radiographs_2023} report that incorporating synthetic samples into training improves both classification accuracy and robustness to data imbalance. 
+% Quantitative metrics like Fréchet Inception Distance (FID) or Structural Similarity Index (SSIM) are commonly used to assess fidelity, while qualitative validation by radiologists remains indispensable for confirming clinical plausibility. 
+% The consensus across these works is that diffusion-generated images are not only visually convincing but also functionally valuable as data augmentations for medical AI training and evaluation.
+
+% \paragraph{Summary and Research Context.}
+In summary, diffusion-based generative models represent a significant advancement over prior adversarial methods for medical image synthesis. 
+Their probabilistic and controllable nature enables the generation of realistic, privacy-safe, and pathology-specific chest X-rays that can effectively augment scarce datasets. 
+Building upon this foundation, the proposed PhD research aims to explore the compositional superposition of pretrained diffusion models to produce controllable chest X-ray pathologies—enabling fine-grained synthesis for tasks such as tuberculosis detection, disease localization, and diagnostic robustness studies. 
+% This direction aligns with recent progress in conditional and compositional diffusion modeling, bridging generative AI with clinically relevant medical imaging applications.

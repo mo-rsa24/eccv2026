@@ -36,7 +36,11 @@ from sklearn.manifold import MDS
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from diffusers import EulerDiscreteScheduler, FlowMatchEulerDiscreteScheduler
+from diffusers import EulerDiscreteScheduler
+try:
+    from diffusers import FlowMatchEulerDiscreteScheduler
+except ImportError:
+    FlowMatchEulerDiscreteScheduler = None
 from notebooks.utils import (
     get_sd_models,
     get_sd3_models,
@@ -63,6 +67,52 @@ from notebooks.dynamics import get_latents, get_vel
 # ---------------------------------------------------------------------------
 AUTHOR_STOCH_NOTEBOOK_MODEL_ID = "CompVis/stable-diffusion-v1-4"
 
+# ---------------------------------------------------------------------------
+# Phase 1 taxonomy — pairs aligned exactly with phase_1.tex
+# ---------------------------------------------------------------------------
+TAXONOMY_GROUPS = {
+    "group1_cooccurrence": {
+        "label": "Group 1 – Manifold-Supported Co-occurrence",
+        "pairs": [
+            ("a camel",             "a desert landscape"),
+            ("a butterfly",         "a flower meadow"),
+            ("a dolphin",           "an ocean wave"),
+            ("a lion",              "a savanna at sunset"),
+        ],
+    },
+    "group2_disentangled": {
+        "label": "Group 2 – Feature-Space Disentangled",
+        "pairs": [
+            ("a dog",               "oil painting style"),
+            ("a lighthouse",        "watercolour style"),
+            ("a bicycle",           "sketch style"),
+        ],
+    },
+    "group3_ood": {
+        "label": "Group 3 – Low Co-occurrence, OOD",
+        "pairs": [
+            ("a desk lamp",         "a glacier"),
+            ("a bathtub",           "a streetlamp"),
+            ("a lab microscope",    "a hay bale"),
+            ("a black grand piano", "a white vase"),
+            ("a typewriter",        "a cactus"),
+        ],
+    },
+    "group4_collision": {
+        "label": "Group 4 – Adversarial Collision",
+        "pairs": [
+            ("a cat",               "a dog"),
+            ("a cat",               "an owl"),
+            ("a cat",               "a bear"),
+            ("a tiger",             "a lion"),
+        ],
+    },
+}
+
+# SD 1.4 / no-SuperDiff column layout for the proposal decoded-images figure
+_TAXONOMY_COLUMN_ORDER: List[str] = ["prompt_a", "prompt_b", "monolithic", "poe"]
+_TAXONOMY_COLUMN_HEADERS: List[str] = ["Solo A", "Solo B", "Monolithic", "PoE/AND"]
+
 
 @dataclass
 class TrajectoryExperimentConfig:
@@ -78,7 +128,7 @@ class TrajectoryExperimentConfig:
     latent_height: int = 128
     latent_width: int = 128
     lift: float = 0.0
-    projection: str = "pca"  # "pca" or "mds"
+    projection: str = "mds"  # "pca" or "mds"
     device: str = "cuda"
     dtype: torch.dtype = torch.bfloat16
     output_dir: str = ""
@@ -103,8 +153,8 @@ class TrajectoryExperimentConfig:
     neg_prompt: str = ""  # e.g., "glasses" to suppress
     neg_scale: float = 1.0  # fixed weight for Composable NOT (Eq 13)
     neg_lambda: float = 1.0  # suppression strength for SuperDIFF NOT
-    # Uniform color: all trajectories use the same time colormap, differentiated by line style
-    uniform_color: bool = False
+    # Uniform color: all trajectories use the same time colormap, differentiated by endpoint marker
+    uniform_color: bool = True
     # Solo mode: run a single prompt through standard SD3.5 (no composition)
     solo: bool = False
     # GLIGEN mode: switches to DDPM noise-prediction paradigm with bounding-box grounding
@@ -118,6 +168,10 @@ class TrajectoryExperimentConfig:
     spatial_prompt_a: str = "a dog on the left"
     spatial_prompt_b: str = "a cat on the right"
     spatial_monolithic: str = "a dog on the left and a cat on the right"
+    # Phase 1 taxonomy label — stored in summary.json for downstream aggregation
+    taxonomy_group: str = ""
+    # Demote SuperDiff AND: skip all superdiff_* conditions when True
+    no_superdiff: bool = False
 
 
 # ---------------------------------------------------------------------------
@@ -160,7 +214,7 @@ CONDITION_LABELS = {
     "superdiff": "SuperDIFF (ours)",
     "superdiff_det": "SuperDIFF (author, det)",
     "superdiff_stoch": "SuperDIFF (author, stoch)",
-    "superdiff_fm_ode": "SuperDIFF (FM-ODE)",
+    "superdiff_fm_ode": "SuperDIFF AND",
     "superdiff_multi": "SuperDIFF Multi-AND",
     "superdiff_guided": "SuperDIFF-Guided",
     "poe": "PoE (score addition)",
@@ -601,6 +655,7 @@ def superdiff_fm_ode_sd3(
     tokenizer_3, text_encoder_3,
     guidance_scale=4.5, num_inference_steps=50, batch_size=1,
     device=torch.device("cuda"), dtype=torch.float16, lift=0.0,
+    kappa_mode: str = "dynamic", fixed_kappa: float = 0.5,
 ):
     """
     SuperDIFF AND adapted for Flow Matching (SD3) — deterministic ODE.
@@ -623,7 +678,14 @@ def superdiff_fm_ode_sd3(
     divergence correction, which is typically small.
 
     Step: pure ODE  →  latents += dt · v_composite
+
+    Optional fixed-kappa mode:
+      kappa_mode="fixed" with fixed_kappa=0.5 gives a strict 50/50 blend
+      between the two concept residuals at every timestep.
     """
+    if kappa_mode not in {"dynamic", "fixed"}:
+        raise ValueError(f"Invalid kappa_mode '{kappa_mode}'. Expected 'dynamic' or 'fixed'.")
+
     obj_embeds, obj_pooled = _get_sd3_conditioning(
         obj_prompt, batch_size, tokenizer, text_encoder,
         tokenizer_2, text_encoder_2, tokenizer_3, text_encoder_3, device,
@@ -665,13 +727,16 @@ def superdiff_fm_ode_sd3(
         diff = vel_obj - vel_bg
         dx_bg = dt * (vel_uncond + guidance_scale * (vel_bg - vel_uncond))
 
-        kappa_num = (
-            (torch.abs(dt) * (vel_bg - vel_obj) * (vel_bg + vel_obj)).sum((1, 2, 3))
-            - (dx_bg * diff).sum((1, 2, 3))
-            + float(sigma) * lift / num_inference_steps
-        )
-        kappa_den = dt * guidance_scale * (diff ** 2).sum((1, 2, 3))
-        kappa[i + 1] = kappa_num / (kappa_den + 1e-8)
+        if kappa_mode == "fixed":
+            kappa[i + 1] = float(fixed_kappa)
+        else:
+            kappa_num = (
+                (torch.abs(dt) * (vel_bg - vel_obj) * (vel_bg + vel_obj)).sum((1, 2, 3))
+                - (dx_bg * diff).sum((1, 2, 3))
+                + float(sigma) * lift / num_inference_steps
+            )
+            kappa_den = dt * guidance_scale * (diff ** 2).sum((1, 2, 3))
+            kappa[i + 1] = kappa_num / (kappa_den + 1e-8)
 
         # Composite velocity field
         vf = vel_uncond + guidance_scale * (
@@ -1210,47 +1275,305 @@ def superdiff_not_fm_ode_sd3(
 
 
 # ---------------------------------------------------------------------------
-# PoE (Product of Experts) via score addition
+# Standard CFG for SD 1.x — faithful to the original SD pipeline
 # ---------------------------------------------------------------------------
-def poe_sd_with_trajectory_tracking(
-    latents, prompt_a, prompt_b, scheduler, unet,
+def sample_sd1_with_trajectory_tracking(
+    latents, prompt, scheduler, unet,
     tokenizer, text_encoder,
-    guidance_scale=4.5, num_inference_steps=50, batch_size=1,
+    guidance_scale=7.5, num_inference_steps=50, batch_size=1,
     device=torch.device("cuda"), dtype=torch.float16,
+    model_id=None, euler_init_noise_sigma=1.0,
+    height=512, width=512,
 ):
     """
-    PoE for notebook-style SD backends (Euler + UNet score model).
+    Standard CFG sampling for SD 1.x using DDIMScheduler (eta=0, deterministic).
+    Matches the standard StableDiffusionPipeline denoising loop:
+        noise_pred = uncond + guidance_scale * (cond - uncond)
+        latents = scheduler.step(noise_pred, t, latents).prev_sample
     """
-    a_embeds = get_text_embedding([prompt_a] * batch_size, tokenizer, text_encoder, device)
-    b_embeds = get_text_embedding([prompt_b] * batch_size, tokenizer, text_encoder, device)
-    uncond_embeds = get_text_embedding([""] * batch_size, tokenizer, text_encoder, device)
+    from diffusers import DDIMScheduler
+    import inspect as _inspect
+
+    if model_id is not None:
+        ddim = DDIMScheduler.from_pretrained(model_id, subfolder="scheduler")
+    else:
+        ddim = DDIMScheduler.from_config(scheduler.config)
+    ddim.set_timesteps(num_inference_steps)
+
+    # Normalise Euler-scaled latents back to N(0,I) for DDIM
+    latents = (latents / euler_init_noise_sigma).to(dtype=dtype)
+
+    def _encode(texts):
+        inp = tokenizer(
+            texts, padding="max_length", max_length=tokenizer.model_max_length,
+            truncation=True, return_tensors="pt",
+        )
+        return text_encoder(inp.input_ids.to(device))[0]
+
+    uncond_emb = _encode([""] * batch_size)
+    cond_emb   = _encode([prompt] * batch_size)
 
     tracker = LatentTrajectoryCollector(
         num_inference_steps, batch_size,
         latents.shape[1], latents.shape[2], latents.shape[3],
     )
 
-    scheduler.set_timesteps(num_inference_steps)
+    extra_step_kwargs = {}
+    if "eta" in _inspect.signature(ddim.step).parameters:
+        extra_step_kwargs["eta"] = 0.0
+
+    for i, t in enumerate(ddim.timesteps):
+        latent_model_input = ddim.scale_model_input(latents, t)
+
+        with torch.no_grad():
+            noise_pred_uncond = unet(latent_model_input, t, encoder_hidden_states=uncond_emb).sample
+            noise_pred_cond   = unet(latent_model_input, t, encoder_hidden_states=cond_emb).sample
+
+        noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_cond - noise_pred_uncond)
+
+        tracker.store_step(i, latents, noise_pred, float(i) / num_inference_steps, t.item())
+        latents = ddim.step(noise_pred, t, latents, **extra_step_kwargs).prev_sample
+
+    tracker.store_final(latents)
+    return latents, tracker
+
+
+# PoE (Product of Experts) via score addition
+# ---------------------------------------------------------------------------
+def poe_sd_with_trajectory_tracking(
+    latents, prompt_a, prompt_b, scheduler, unet,
+    tokenizer, text_encoder,
+    guidance_scale=7.5, num_inference_steps=50, batch_size=1,
+    device=torch.device("cuda"), dtype=torch.float16,
+    model_id=None, euler_init_noise_sigma=1.0,
+    height=512, width=512,
+):
+    """
+    PoE faithful to ComposableStableDiffusionPipeline._predict_composed_noise:
+
+        noise_pred = uncond + sum(w_i * (cond_i - uncond))
+
+    Uses DDIMScheduler with eta=0 (deterministic), scheduler.scale_model_input,
+    and scheduler.step — exactly matching the original composable diffusion repo
+    (image_sample_compose_stable_diffusion.py with --scheduler ddim).
+
+    The shared initial latents were created with the Euler scheduler's
+    init_noise_sigma scaling (sigma_max).  We normalise them back to N(0,I)
+    before handing off to DDIM, which uses init_noise_sigma=1.
+    """
+    from diffusers import DDIMScheduler
+    import inspect as _inspect
+
+    # Build DDIMScheduler matching the composable diffusion repo's --scheduler ddim
+    if model_id is not None:
+        ddim = DDIMScheduler.from_pretrained(model_id, subfolder="scheduler")
+    else:
+        ddim = DDIMScheduler.from_config(scheduler.config)
+    ddim.set_timesteps(num_inference_steps)
+
+    # Normalise Euler-scaled latents (x * sigma_max) back to N(0,I) for DDIM
+    latents = (latents / euler_init_noise_sigma).to(dtype=dtype)
+
+    # Encode prompts: one unconditional + one per concept
+    def _encode(texts):
+        inp = tokenizer(
+            texts, padding="max_length", max_length=tokenizer.model_max_length,
+            truncation=True, return_tensors="pt",
+        )
+        return text_encoder(inp.input_ids.to(device))[0]
+
+    uncond_emb = _encode([""] * batch_size)       # (B, 77, 768)
+    a_emb      = _encode([prompt_a] * batch_size)  # (B, 77, 768)
+    b_emb      = _encode([prompt_b] * batch_size)  # (B, 77, 768)
+
+    # Stack [uncond, cond_a, cond_b] — mirrors the pipeline's text_embeddings layout
+    text_embeddings = torch.cat([uncond_emb, a_emb, b_emb])  # (3B, 77, 768)
+
+    # Per-concept guidance weights (one weight per conditional embedding)
+    weights = torch.tensor(
+        [guidance_scale, guidance_scale], device=device, dtype=dtype
+    ).reshape(-1, 1, 1, 1)  # (2, 1, 1, 1)
+
+    tracker = LatentTrajectoryCollector(
+        num_inference_steps, batch_size,
+        latents.shape[1], latents.shape[2], latents.shape[3],
+    )
+
+    extra_step_kwargs = {}
+    if "eta" in _inspect.signature(ddim.step).parameters:
+        extra_step_kwargs["eta"] = 0.0  # deterministic DDIM
+
+    for i, t in enumerate(ddim.timesteps):
+        # scale_model_input: no-op for DDIM but matches the pipeline for correctness
+        latent_model_input = ddim.scale_model_input(latents, t)
+
+        # Sequential UNet calls per embedding — replicates _predict_composed_noise
+        noise_preds = []
+        with torch.no_grad():
+            for j in range(text_embeddings.shape[0]):
+                noise_preds.append(
+                    unet(
+                        latent_model_input, t,
+                        encoder_hidden_states=text_embeddings[j : j + 1],
+                    ).sample
+                )
+        noise_preds = torch.cat(noise_preds, dim=0)  # (3B, 4, 64, 64)
+
+        # _predict_composed_noise composition:
+        #   noise_pred = uncond + (weights * (cond - uncond)).sum(dim=0)
+        noise_pred_uncond = noise_preds[:batch_size]   # (B,  4, 64, 64)
+        noise_pred_text   = noise_preds[batch_size:]   # (2B, 4, 64, 64)
+        noise_pred = noise_pred_uncond + (
+            weights * (noise_pred_text - noise_pred_uncond)
+        ).sum(dim=0, keepdim=True)                     # (B,  4, 64, 64)
+
+        tracker.store_step(i, latents, noise_pred, float(i) / num_inference_steps, t.item())
+
+        # Deterministic DDIM step — matches scheduler.step in the original pipeline
+        latents = ddim.step(noise_pred, t, latents, **extra_step_kwargs).prev_sample
+
+    tracker.store_final(latents)
+    return latents, tracker
+
+
+# SuperDiff AND for SD 1.x — faithful to compositions/super-diffusion/scripts/compose_and.py
+# ---------------------------------------------------------------------------
+def superdiff_sd1_with_trajectory_tracking(
+    latents, obj_prompt, bg_prompt, scheduler, unet,
+    tokenizer, text_encoder,
+    guidance_scale=7.5, num_inference_steps=50, batch_size=1,
+    device=torch.device("cuda"), dtype=torch.float16,
+    lift=0.0, mode="stochastic",
+    height=512, width=512,
+):
+    """
+    SuperDiff AND faithful to compose_and.py (compositions/super-diffusion).
+
+    Runs in float32 internally — the original repo uses float32 and the kappa
+    computation involves small-number division that degrades badly in float16.
+
+    Supports the same modes as the original script:
+        stochastic   — adaptive kappa from SDE noise estimate (default, faster)
+        deterministic — adaptive kappa via JVP divergence (2x UNet calls/step)
+    """
+    # Force float32 to match the original repo exactly
+    _dtype = torch.float32
+    latents = latents.to(device=device, dtype=_dtype)
+
+    def _encode(texts):
+        inp = tokenizer(
+            texts, padding="max_length", max_length=tokenizer.model_max_length,
+            truncation=True, return_tensors="pt",
+        )
+        return text_encoder(inp.input_ids.to(device))[0].to(_dtype)
+
+    obj_emb    = _encode([obj_prompt]  * batch_size)
+    bg_emb     = _encode([bg_prompt]   * batch_size)
+    uncond_emb = _encode([""]          * batch_size)
+
+    # Cast UNet to float32 for this run (original uses float32 throughout)
+    unet_was_dtype = next(unet.parameters()).dtype
+    unet.to(_dtype)
+
+    def _vel(t, sigma, x):
+        """v(x, c) = unet(x / sqrt(σ²+1), t, c)  — exact replica of compose_and.py get_vel"""
+        scale = (sigma ** 2 + 1) ** 0.5
+        with torch.no_grad():
+            v_obj    = unet(x / scale, t, encoder_hidden_states=obj_emb).sample
+            v_bg     = unet(x / scale, t, encoder_hidden_states=bg_emb).sample
+            v_uncond = unet(x / scale, t, encoder_hidden_states=uncond_emb).sample
+        return v_obj, v_bg, v_uncond
+
+    def _vel_with_div(t, sigma, x):
+        """Deterministic mode: velocity + scalar divergence via JVP."""
+        from torch.nn.attention import SDPBackend, sdpa_kernel
+        scale = (sigma ** 2 + 1) ** 0.5
+        eps = (torch.randint_like(x, 2, dtype=_dtype) * 2 - 1)
+
+        def _unet_obj(lx):
+            return unet(lx / scale, t, encoder_hidden_states=obj_emb).sample
+        def _unet_bg(lx):
+            return unet(lx / scale, t, encoder_hidden_states=bg_emb).sample
+
+        with sdpa_kernel(SDPBackend.MATH):
+            v_obj,  jvp_obj = torch.func.jvp(_unet_obj, (x,), (eps,))
+            v_bg,   jvp_bg  = torch.func.jvp(_unet_bg,  (x,), (eps,))
+            with torch.no_grad():
+                v_uncond = unet(x / scale, t, encoder_hidden_states=uncond_emb).sample
+
+        dlog_obj = -(eps * jvp_obj).sum((1, 2, 3))
+        dlog_bg  = -(eps * jvp_bg).sum((1, 2, 3))
+        return v_obj, v_bg, v_uncond, dlog_obj, dlog_bg
+
+    w = guidance_scale
+    T = num_inference_steps
+    kappa_hist = 0.5 * torch.ones((T + 1, batch_size), device=device, dtype=_dtype)
+    ll_obj = torch.ones((T + 1, batch_size), device=device, dtype=_dtype)
+    ll_bg  = torch.ones((T + 1, batch_size), device=device, dtype=_dtype)
+
+    tracker = LatentTrajectoryCollector(
+        T, batch_size,
+        latents.shape[1], latents.shape[2], latents.shape[3],
+    )
+
+    scheduler.set_timesteps(T)
 
     for i, t in enumerate(scheduler.timesteps):
         dsigma = scheduler.sigmas[i + 1] - scheduler.sigmas[i]
-        sigma = scheduler.sigmas[i]
+        sigma  = scheduler.sigmas[i]
 
-        vel_a, _ = get_vel(unet, t, sigma, latents, [a_embeds], device=device, dtype=dtype)
-        vel_b, _ = get_vel(unet, t, sigma, latents, [b_embeds], device=device, dtype=dtype)
-        vel_uncond, _ = get_vel(unet, t, sigma, latents, [uncond_embeds], device=device, dtype=dtype)
+        if mode == "stochastic":
+            v_obj, v_bg, v_uncond = _vel(t, sigma, latents)
 
-        # PoE score addition: s_a + s_b - s_unc
-        vf = vel_uncond + guidance_scale * ((vel_a - vel_uncond) + (vel_b - vel_uncond))
+            noise  = torch.sqrt(2 * torch.abs(dsigma) * sigma) * torch.randn_like(latents)
+            dx_ind = 2 * dsigma * (v_uncond + w * (v_bg - v_uncond)) + noise
 
-        noise = torch.sqrt(2 * torch.abs(dsigma) * sigma) * torch.randn_like(latents)
-        dx = 2 * dsigma * vf + noise
+            denom = 2 * dsigma * w * ((v_obj - v_bg) ** 2).sum((1, 2, 3))
+            kappa_hist[i + 1] = (
+                (torch.abs(dsigma) * (v_bg - v_obj) * (v_bg + v_obj)).sum((1, 2, 3))
+                - (dx_ind * (v_obj - v_bg)).sum((1, 2, 3))
+                + sigma * lift / T
+            ) / denom
+
+            vf = v_uncond + w * (
+                (v_bg - v_uncond) + kappa_hist[i + 1][:, None, None, None] * (v_obj - v_bg)
+            )
+            dx = 2 * dsigma * vf + noise
+
+        else:  # deterministic
+            v_obj, v_bg, v_uncond, dlog_obj, dlog_bg = _vel_with_div(t, sigma, latents)
+
+            denom = w * ((v_obj - v_bg) ** 2).sum((1, 2, 3))
+            kappa_hist[i + 1] = (
+                sigma * (dlog_obj - dlog_bg)
+                + ((v_obj - v_bg) * (v_obj + v_bg)).sum((1, 2, 3))
+                + lift / dsigma * sigma / T
+                - ((v_obj - v_bg) * (v_uncond + w * (v_bg - v_uncond))).sum((1, 2, 3))
+            ) / denom
+
+            vf = v_uncond + w * (
+                (v_bg - v_uncond) + kappa_hist[i + 1][:, None, None, None] * (v_obj - v_bg)
+            )
+            dx = dsigma * vf
 
         tracker.store_step(i, latents, vf, sigma.item(), t.item())
         latents = latents + dx
 
+        ll_obj[i + 1] = ll_obj[i] + (
+            -torch.abs(dsigma) / sigma * (v_obj ** 2)
+            - (dx * (v_obj / sigma))
+        ).sum((1, 2, 3))
+        ll_bg[i + 1] = ll_bg[i] + (
+            -torch.abs(dsigma) / sigma * (v_bg ** 2)
+            - (dx * (v_bg / sigma))
+        ).sum((1, 2, 3))
+
     tracker.store_final(latents)
-    return latents, tracker
+
+    # Restore UNet dtype
+    unet.to(unet_was_dtype)
+
+    return latents, tracker, kappa_hist, ll_obj, ll_bg
 
 
 def poe_sd3_with_trajectory_tracking(
@@ -1340,6 +1663,11 @@ def collect_trajectories(
             cfg.model_id, subfolder="scheduler"
         )
     else:
+        if FlowMatchEulerDiscreteScheduler is None:
+            raise ImportError(
+                "FlowMatchEulerDiscreteScheduler is not available in this diffusers version. "
+                "Upgrade diffusers or use --model-id with an SD 1.x / 2.x model."
+            )
         scheduler = FlowMatchEulerDiscreteScheduler.from_pretrained(
             cfg.model_id, subfolder="scheduler"
         )
@@ -1432,17 +1760,37 @@ def collect_trajectories(
         # --- Legacy SD dispatch (notebook-compatible author_stoch backend) ---
         elif using_sd_legacy:
             if cond["type"] == "standard":
-                latents_out, tracker = sample_with_trajectory_tracking(
-                    latents_clone, cond["prompt"], **common_kwargs,
+                latents_out, tracker = sample_sd1_with_trajectory_tracking(
+                    latents_clone, cond["prompt"],
+                    scheduler=scheduler,
+                    unet=models["unet"],
+                    tokenizer=models["tokenizer"],
+                    text_encoder=models["text_encoder"],
+                    guidance_scale=cfg.guidance_scale,
+                    num_inference_steps=cfg.num_inference_steps,
+                    batch_size=cfg.batch_size,
+                    device=device,
+                    dtype=dtype,
+                    model_id=cfg.model_id,
+                    euler_init_noise_sigma=float(scheduler.init_noise_sigma),
                 )
             elif cond["type"] == "superdiff_author_stoch":
                 latents_out, tracker, kappa, ll_obj, ll_bg = (
-                    superdiff_with_trajectory_tracking(
+                    superdiff_sd1_with_trajectory_tracking(
                         latents_clone,
                         cond["obj_prompt"],
                         cond["bg_prompt"],
-                        **common_kwargs,
+                        scheduler=scheduler,
+                        unet=models["unet"],
+                        tokenizer=models["tokenizer"],
+                        text_encoder=models["text_encoder"],
+                        guidance_scale=cfg.guidance_scale,
+                        num_inference_steps=cfg.num_inference_steps,
+                        batch_size=cfg.batch_size,
+                        device=device,
+                        dtype=dtype,
                         lift=cfg.lift,
+                        mode="stochastic",
                     )
                 )
                 kappa_data[name] = {
@@ -1466,6 +1814,8 @@ def collect_trajectories(
                     batch_size=cfg.batch_size,
                     device=device,
                     dtype=dtype,
+                    model_id=cfg.model_id,
+                    euler_init_noise_sigma=float(scheduler.init_noise_sigma),
                 )
             else:
                 raise ValueError(
@@ -1706,6 +2056,23 @@ _UNIFORM_ENDPOINT_COLORS = [
 ]
 
 
+# Short keys placed at trajectory endpoints. Full names appear only in the legend,
+# preventing label overlap in the manifold plot.
+_SHORT_ENDPOINT_KEY: Dict[str, str] = {
+    "prompt_a":         "A",
+    "prompt_b":         "B",
+    "monolithic":       "M",
+    "poe":              "PoE",
+    "superdiff":        "AND",
+    "superdiff_det":    "AND",
+    "superdiff_stoch":  "AND",
+    "superdiff_fm_ode": "AND",
+    "superdiff_multi":  "AND",
+    "composable_not":   "NOT",
+    "superdiff_not":    "NOT",
+}
+
+
 def _compact_manifold_annotation_label(name: str, label: str) -> str:
     """Keep guided endpoint annotations compact; leave legend labels unchanged."""
     if not name.startswith("guided_"):
@@ -1747,8 +2114,8 @@ def plot_trajectory_manifold(
     n_steps: int,
     output_path: str,
     title: str = "Latent Trajectory Dynamics",
-    projection_method: str = "pca",
-    uniform_color: bool = False,
+    projection_method: str = "mds",
+    uniform_color: bool = True,
     prompt_key_map: Optional[Dict[str, str]] = None,
 ):
     """Plot all trajectories on one figure with time-gradient coloring.
@@ -1790,9 +2157,12 @@ def plot_trajectory_manifold(
         lc.set_array(np.arange(len(segments)))
         ax.add_collection(lc)
 
-        # Endpoint marker + label
+        # Endpoint marker + short key (full name goes in legend only)
         label = labels.get(name, name)
-        ann_label = _compact_manifold_annotation_label(name, label)
+        if name.startswith("guided_"):
+            short_key = _compact_manifold_annotation_label(name, label)
+        else:
+            short_key = _SHORT_ENDPOINT_KEY.get(name, str(idx + 1))
         if uniform_color:
             marker = _UNIFORM_MARKERS[idx % len(_UNIFORM_MARKERS)]
             ep_color = _UNIFORM_ENDPOINT_COLORS[idx % len(_UNIFORM_ENDPOINT_COLORS)]
@@ -1800,20 +2170,17 @@ def plot_trajectory_manifold(
                     markersize=12, markeredgecolor="black", markeredgewidth=1.0,
                     zorder=6, linestyle="none")
             ann_color = ep_color
-            arrow_color = ep_color
         else:
             ann_color = cmap(0.85)
-            arrow_color = cmap(0.6)
 
         ax.annotate(
-            ann_label,
+            short_key,
             xy=(pts[-1, 0], pts[-1, 1]),
-            fontsize=10,
+            fontsize=8,
             fontweight="bold",
             color=ann_color,
             textcoords="offset points",
-            xytext=(8, 4),
-            arrowprops=dict(arrowstyle="-", color=arrow_color, lw=0.8),
+            xytext=(6, 3),
         )
 
     # Mark shared origin
@@ -1866,6 +2233,198 @@ def plot_trajectory_manifold(
 
     top = 0.90 if prompt_key_map else 0.98
     fig.tight_layout(rect=(0.0, 0.0, 1.0, top))
+    fig.savefig(output_path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  Saved: {output_path}")
+
+
+def plot_trajectory_manifold_grid(
+    pairs: List[Tuple],
+    output_path: str,
+    projection_method: str = "mds",
+    uniform_color: bool = True,
+    max_plots: int = 4,
+    cell_size: float = 5.8,
+):
+    """Plot up to 4 manifold plots in a 2-column grid.
+
+    Each entry in ``pairs`` is expected to start with:
+      (final_latents, viz_labels, vae_or_map, prompt_key_map, ...)
+    and may optionally include trailing manifold data:
+      (..., projected, labels, n_steps)
+    """
+    if not pairs:
+        print("  Skipping manifold grid (no pair data).")
+        return
+
+    selected_pairs = pairs[:max_plots]
+    if len(pairs) > max_plots:
+        print(f"  Using first {max_plots} pairs for manifold grid (got {len(pairs)}).")
+
+    n_plots = len(selected_pairs)
+    n_cols = 2
+    n_rows = int(np.ceil(n_plots / n_cols))
+
+    fig, axes = plt.subplots(
+        n_rows, n_cols,
+        figsize=(cell_size * n_cols, cell_size * n_rows),
+        squeeze=False,
+    )
+
+    # Shared time scale and color map across all subplots.
+    all_steps = [pair[6] for pair in selected_pairs if len(pair) >= 7]
+    shared_n_steps = max(all_steps) if all_steps else 1
+    norm = Normalize(vmin=0, vmax=max(shared_n_steps - 1, 1))
+    shared_cmap_name = "viridis"
+
+    def _format_grid_legend_label(raw: str) -> str:
+        """Keep grid legend concise and paper-friendly."""
+        return raw.replace("SuperDIFF (FM-ODE)", "SuperDiff").replace("SuperDIFF", "SuperDiff")
+
+    for idx, pair in enumerate(selected_pairs):
+        row_idx = idx // n_cols
+        col_idx = idx % n_cols
+        ax = axes[row_idx][col_idx]
+
+        if len(pair) < 7:
+            ax.axis("off")
+            ax.text(
+                0.5, 0.5, "Missing trajectory projection data",
+                ha="center", va="center", transform=ax.transAxes,
+                fontsize=11, color="#666666",
+            )
+            continue
+
+        # Tuple layout from run_experiment:
+        # (final_latents, viz_labels, vae_or_map, prompt_key_map, projected, labels, n_steps)
+        prompt_key_map = pair[3]
+        projected = pair[4]
+        labels = pair[5] if pair[5] else pair[1]
+        condition_names = list(projected.keys())
+        if not condition_names:
+            ax.axis("off")
+            ax.text(
+                0.5, 0.5, "No conditions",
+                ha="center", va="center", transform=ax.transAxes,
+                fontsize=11, color="#666666",
+            )
+            continue
+
+        for cond_idx, name in enumerate(condition_names):
+            pts = projected[name]
+            if uniform_color:
+                cmap = cm.get_cmap(shared_cmap_name)
+            else:
+                cmap = cm.get_cmap(CONDITION_CMAPS.get(name, "viridis"))
+
+            if len(pts) >= 2:
+                points = pts.reshape(-1, 1, 2)
+                segments = np.concatenate([points[:-1], points[1:]], axis=1)
+                lc = LineCollection(
+                    segments,
+                    cmap=cmap,
+                    norm=norm,
+                    linewidths=2.0,
+                    alpha=0.9,
+                )
+                lc.set_array(np.arange(len(segments)))
+                ax.add_collection(lc)
+
+            label = labels.get(name, name)
+            if name.startswith("guided_"):
+                short_key = _compact_manifold_annotation_label(name, label)
+            else:
+                short_key = _SHORT_ENDPOINT_KEY.get(name, str(cond_idx + 1))
+
+            if uniform_color:
+                marker = _UNIFORM_MARKERS[cond_idx % len(_UNIFORM_MARKERS)]
+                ep_color = _UNIFORM_ENDPOINT_COLORS[cond_idx % len(_UNIFORM_ENDPOINT_COLORS)]
+                ax.plot(
+                    pts[-1, 0], pts[-1, 1],
+                    marker=marker, color=ep_color, linestyle="none",
+                    markersize=9, markeredgecolor="black", markeredgewidth=0.9,
+                    zorder=6,
+                )
+                ann_color = ep_color
+            else:
+                ann_color = cmap(0.85)
+
+            ax.annotate(
+                short_key,
+                xy=(pts[-1, 0], pts[-1, 1]),
+                fontsize=10,
+                fontweight="bold",
+                color=ann_color,
+                textcoords="offset points",
+                xytext=(4, 2),
+            )
+
+        origin = projected[condition_names[0]][0]
+        ax.plot(origin[0], origin[1], "ko", markersize=5, zorder=5)
+        ax.annotate(
+            r"$x_T$",
+            xy=(origin[0], origin[1]),
+            fontsize=10,
+            fontweight="bold",
+            textcoords="offset points",
+            xytext=(-11, -10),
+        )
+
+        ax_prefix = "MDS" if projection_method == "mds" else "PC"
+        ax.autoscale()
+        ax.set_xlabel(f"{ax_prefix} 1", fontsize=11)
+        ax.set_ylabel(f"{ax_prefix} 2", fontsize=11)
+        ax.grid(True, alpha=0.3)
+        ax.tick_params(axis="both", labelsize=10)
+
+        if prompt_key_map:
+            key_text = _format_prompt_key_text(prompt_key_map, width=64)
+            ax.set_title(key_text, fontsize=12, pad=6)
+        else:
+            ax.set_title(f"Pair {idx + 1}", fontsize=12, pad=6)
+
+        from matplotlib.lines import Line2D
+        legend_handles = []
+        for cond_idx, name in enumerate(condition_names):
+            if uniform_color:
+                marker = _UNIFORM_MARKERS[cond_idx % len(_UNIFORM_MARKERS)]
+                ep_color = _UNIFORM_ENDPOINT_COLORS[cond_idx % len(_UNIFORM_ENDPOINT_COLORS)]
+                legend_handles.append(
+                    Line2D(
+                        [0], [0],
+                        color=cm.get_cmap(shared_cmap_name)(0.5), lw=2.0,
+                        marker=marker, markerfacecolor=ep_color, markeredgecolor="black",
+                        markersize=7,
+                        label=_format_grid_legend_label(labels.get(name, name)),
+                    )
+                )
+            else:
+                cmap = cm.get_cmap(CONDITION_CMAPS.get(name, "viridis"))
+                legend_handles.append(
+                    Line2D(
+                        [0], [0],
+                        color=cmap(0.7), lw=2.0,
+                        label=_format_grid_legend_label(labels.get(name, name)),
+                    )
+                )
+        ax.legend(handles=legend_handles, loc="best", fontsize=9, framealpha=0.9)
+
+    # Hide any unused subplot cells.
+    for idx in range(n_plots, n_rows * n_cols):
+        row_idx = idx // n_cols
+        col_idx = idx % n_cols
+        axes[row_idx][col_idx].axis("off")
+
+    sm = cm.ScalarMappable(cmap=shared_cmap_name if uniform_color else "coolwarm", norm=norm)
+    sm.set_array([])
+
+    # Reserve a dedicated right-side slot for the colorbar so it never overlaps subplots.
+    fig.tight_layout(rect=(0.0, 0.0, 0.89, 0.98))
+    cax = fig.add_axes([0.91, 0.14, 0.018, 0.74])
+    cbar = fig.colorbar(sm, cax=cax)
+    cbar.set_label("Time (steps)", fontsize=11)
+    cbar.ax.tick_params(labelsize=10)
+
     fig.savefig(output_path, dpi=200, bbox_inches="tight")
     plt.close(fig)
     print(f"  Saved: {output_path}")
@@ -1985,6 +2544,78 @@ def plot_pairwise_distances(
 
 
 # ---------------------------------------------------------------------------
+# Grid manifest helper
+# ---------------------------------------------------------------------------
+def save_grid_manifest(
+    output_path: str,
+    condition_names: List[str],
+    labels: Dict[str, str],
+    viz_labels: Dict[str, str],
+    conditions: Dict[str, dict],
+) -> None:
+    """Write a companion _manifest.txt that maps each grid cell to its condition/prompt.
+
+    The grid is always 1 row × N columns (left-to-right order matches the figure).
+    Use this to cross-reference figure columns when comparing SuperDiff AND vs SD 3.5 (p*).
+    """
+    from datetime import datetime
+
+    stem = os.path.splitext(output_path)[0]
+    manifest_path = stem + "_manifest.txt"
+    n_cols = len(condition_names)
+
+    lines = [
+        f"Grid manifest for : {os.path.basename(output_path)}",
+        f"Generated         : {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        f"Layout            : 1 row × {n_cols} columns",
+        "",
+    ]
+
+    for col, name in enumerate(condition_names):
+        cond  = conditions.get(name, {})
+        ctype = cond.get("type", "unknown")
+        lines.append(f"Row 0, Col {col}")
+        lines.append(f"  Condition key  : {name}")
+        lines.append(f"  Figure label   : {viz_labels.get(name, name)}")
+        lines.append(f"  Verbose label  : {labels.get(name, name)}")
+        lines.append(f"  Type           : {ctype}")
+
+        # Prompt details, broken out by condition type
+        if ctype == "standard":
+            lines.append(f"  Prompt         : {cond.get('prompt', '')}")
+        elif ctype in ("poe", "superdiff", "superdiff_author_det",
+                       "superdiff_author_stoch", "superdiff_fm_ode"):
+            lines.append(f"  Prompt A       : {cond.get('prompt_a', cond.get('obj_prompt', ''))}")
+            lines.append(f"  Prompt B       : {cond.get('prompt_b', cond.get('bg_prompt', ''))}")
+        elif ctype == "superdiff_multi":
+            for i, p in enumerate(cond.get("prompts", [])):
+                lines.append(f"  Prompt {i:<9}: {p}")
+        elif ctype == "guided":
+            lines.append(f"  Prompt A       : {cond.get('prompt_a', '')}")
+            lines.append(f"  Prompt B       : {cond.get('prompt_b', '')}")
+            lines.append(f"  Alpha          : {cond.get('alpha', '')}")
+        elif ctype == "composable_not":
+            lines.append(f"  Pos Prompt     : {cond.get('pos_prompt', '')}")
+            lines.append(f"  Neg Prompt     : {cond.get('neg_prompt', '')}")
+            lines.append(f"  Neg Scale      : {cond.get('neg_scale', '')}")
+        elif ctype == "superdiff_not":
+            lines.append(f"  Pos Prompt     : {cond.get('pos_prompt', '')}")
+            lines.append(f"  Neg Prompt     : {cond.get('neg_prompt', '')}")
+            lines.append(f"  Neg Lambda     : {cond.get('neg_lambda', '')}")
+        else:
+            # Generic fallback: dump all keys except "type"
+            for k, v in cond.items():
+                if k != "type":
+                    lines.append(f"  {k:<15}: {v}")
+
+        lines.append("")
+
+    with open(manifest_path, "w") as f:
+        f.write("\n".join(lines))
+    print(f"  Saved: {manifest_path}")
+
+
+# ---------------------------------------------------------------------------
 # Visualization: Decoded image strip
 # ---------------------------------------------------------------------------
 def plot_decoded_images(
@@ -2005,22 +2636,157 @@ def plot_decoded_images(
         images.append(img)
 
     n = len(images)
-    fig, axes = plt.subplots(1, n, figsize=(4 * n, 4))
+    fig, axes = plt.subplots(1, n, figsize=(4 * n, 5))
     if n == 1:
         axes = [axes]
 
     for ax, img, name in zip(axes, images, condition_names):
         ax.imshow(img)
-        ax.set_title(labels.get(name, name), fontsize=10, fontweight="bold")
+        ax.set_title(labels.get(name, name), fontsize=16, fontweight="bold")
         ax.axis("off")
 
     if prompt_key_map:
         key_text = _format_prompt_key_text(prompt_key_map)
-        fig.text(0.5, 0.99, f"Prompt Key: {key_text}", ha="center", va="top", fontsize=9)
+        fig.text(0.5, 0.99, f"Prompt Key: {key_text}", ha="center", va="top", fontsize=14)
     suptitle_y = 0.92 if prompt_key_map else 0.98
-    top = 0.85 if prompt_key_map else 0.93
-    fig.suptitle("Decoded Final Latents", fontsize=13, fontweight="bold", y=suptitle_y)
+    top = 0.83 if prompt_key_map else 0.91
+    fig.suptitle("Decoded Final Latents", fontsize=18, fontweight="bold", y=suptitle_y)
     fig.tight_layout(rect=(0.0, 0.0, 1.0, top))
+    fig.savefig(output_path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  Saved: {output_path}")
+
+
+# ---------------------------------------------------------------------------
+# Visualization: Multi-pair decoded image grid
+# ---------------------------------------------------------------------------
+
+def _is_sd_legacy_model_id(model_id: str) -> bool:
+    """Return True for SD 1.x / 2.x U-Net models (not SD3 / SDXL / GLIGEN)."""
+    m = model_id.lower()
+    return "stable-diffusion-v1" in m or "stable-diffusion-v2" in m
+
+
+# Fixed column order for the paper grid figure.
+_GRID_COLUMN_ORDER: List[str] = [
+    "prompt_a",
+    "prompt_b",
+    "monolithic",
+    "poe",
+    "superdiff_fm_ode",
+]
+_GRID_COLUMN_HEADERS: List[str] = [
+    "SD3.5 A",
+    "SD3.5 B",
+    "SD3.5 A\u2227B",
+    "PoE A\u00d7B",
+    "SuperDiff A\u2227B",
+]
+# Fallback order when the canonical superdiff key is absent for a pair.
+_SUPERDIFF_KEY_VARIANTS: List[str] = [
+    "superdiff_fm_ode",
+    "superdiff",
+    "superdiff_det",
+    "superdiff_stoch",
+    "superdiff_multi",
+]
+
+
+def _resolve_grid_key(key: str, final_latents: Dict[str, torch.Tensor]) -> Optional[str]:
+    """Return the key to use for *key* in *final_latents*, trying superdiff fallbacks."""
+    if key in final_latents:
+        return key
+    if key in _SUPERDIFF_KEY_VARIANTS:
+        for alt in _SUPERDIFF_KEY_VARIANTS:
+            if alt in final_latents:
+                return alt
+    return None
+
+
+def plot_decoded_images_grid(
+    pairs: List[Tuple],
+    output_path: str,
+    column_order: Optional[List[str]] = None,
+    column_headers: Optional[List[str]] = None,
+    cell_size: float = 3.5,
+):
+    """Produce an R×C grid of decoded final-latent images across multiple concept pairs.
+
+    Parameters
+    ----------
+    pairs:
+        List of tuples where the first 4 values are
+        ``(final_latents, viz_labels, vae_or_map, prompt_key_map)``.
+        Additional trailing values are ignored.
+    output_path:
+        Where to save the figure.
+    column_order:
+        Condition keys (from each ``final_latents`` dict) that define the columns.
+        Defaults to ``_GRID_COLUMN_ORDER``.
+    column_headers:
+        Display strings for the column headers.  Must match ``len(column_order)``.
+        Defaults to ``_GRID_COLUMN_HEADERS``.
+    cell_size:
+        Square cell size in inches.
+    """
+    if column_order is None:
+        column_order = _GRID_COLUMN_ORDER
+    if column_headers is None:
+        column_headers = _GRID_COLUMN_HEADERS
+    assert len(column_headers) == len(column_order), (
+        f"column_headers ({len(column_headers)}) must match column_order ({len(column_order)})"
+    )
+
+    n_rows = len(pairs)
+    n_cols = len(column_order)
+    col_header_fontsize = max(14, int(cell_size * 4.8))
+    prompt_key_fontsize = max(12, int(cell_size * 3.4))
+
+    fig, axes = plt.subplots(
+        n_rows, n_cols,
+        figsize=(cell_size * n_cols, cell_size * n_rows),
+        squeeze=False,
+    )
+
+    for row_idx, pair in enumerate(pairs):
+        final_latents = pair[0]
+        vae_or_map = pair[2]
+        prompt_key_map = pair[3] if len(pair) > 3 else None
+        for col_idx, (col_key, col_header) in enumerate(zip(column_order, column_headers)):
+            ax = axes[row_idx][col_idx]
+            ax.axis("off")
+
+            resolved = _resolve_grid_key(col_key, final_latents)
+            if resolved is None:
+                ax.set_facecolor("#eeeeee")
+                ax.text(0.5, 0.5, "N/A", ha="center", va="center",
+                        transform=ax.transAxes, fontsize=12, color="#888888")
+            else:
+                vae = vae_or_map[resolved] if isinstance(vae_or_map, dict) else vae_or_map
+                img = get_image(vae, final_latents[resolved], 1, 1)
+                ax.imshow(img)
+
+            # Column header on first row only
+            if row_idx == 0:
+                ax.set_title(col_header, fontsize=col_header_fontsize, fontweight="bold", pad=7)
+
+        # Prompt-key legend: one unwrapped line per key below the leftmost cell.
+        if prompt_key_map:
+            key_text = "\n".join([f"{k} = {v}" for k, v in prompt_key_map.items()])
+            axes[row_idx][0].text(
+                0.0, -0.07, key_text,
+                transform=axes[row_idx][0].transAxes,
+                ha="left", va="top",
+                fontsize=prompt_key_fontsize,
+                fontweight="bold",
+                linespacing=1.18,
+                color="#111111",
+                clip_on=False,
+            )
+
+    fig.tight_layout(pad=0.5)
+    # Keep extra vertical space so large prompt-key labels do not collide between rows.
+    fig.subplots_adjust(hspace=0.48)
     fig.savefig(output_path, dpi=200, bbox_inches="tight")
     plt.close(fig)
     print(f"  Saved: {output_path}")
@@ -2325,8 +3091,11 @@ def save_trajectory_data(
         lat = flat_np[name]                                     # (T+1, D)
         lat_norms = np.linalg.norm(lat, axis=1).tolist()
 
-        # Velocity magnitudes: ||v_t||_2  (last entry is zeros — store_final has no vel)
-        vel = tracker.velocities[:, 0].reshape(T1, -1).float().numpy()
+        # Velocity magnitudes: ||v_t||_2
+        # velocities has shape (num_steps, B, C, H, W) = T1-1 entries;
+        # trajectories has T1 = num_steps+1 entries (initial state + each step).
+        vel_T = tracker.velocities.shape[0]
+        vel = tracker.velocities[:, 0].reshape(vel_T, -1).float().numpy()
         vel_mags = np.linalg.norm(vel, axis=1).tolist()
 
         # Projected coordinates (2D)
@@ -2413,8 +3182,36 @@ def save_trajectory_data(
 # ---------------------------------------------------------------------------
 # Main experiment
 # ---------------------------------------------------------------------------
-def run_experiment(cfg: TrajectoryExperimentConfig):
-    """Run the full trajectory dynamics experiment."""
+def run_experiment(
+    cfg: TrajectoryExperimentConfig,
+    preloaded_models: Optional[dict] = None,
+) -> Optional[
+    Tuple[
+        Dict[str, torch.Tensor],
+        Dict[str, str],
+        object,
+        Optional[Dict[str, str]],
+        Dict[str, np.ndarray],
+        Dict[str, str],
+        int,
+    ]
+]:
+    """Run the full trajectory dynamics experiment.
+
+    Parameters
+    ----------
+    cfg:
+        Experiment configuration.
+    preloaded_models:
+        If provided, skip model loading and use these models directly.
+        Must be a dict as returned by ``get_sd3_models`` / ``get_gligen_models``.
+
+    Returns
+    -------
+    ``(final_latents, viz_labels, vae_for_decoding, prompt_key_map, projected, labels, n_steps)``
+    for use with grid plotting functions, or ``None`` if the experiment was run
+    but something prevented data collection.
+    """
 
     # Output directory
     if not cfg.output_dir:
@@ -2457,7 +3254,8 @@ def run_experiment(cfg: TrajectoryExperimentConfig):
         active_prompts = [solo_prompt]
         print(f"  Solo mode: \"{solo_prompt}\"")
 
-        model_tag = "GLIGEN" if cfg.gligen else "SD3.5"
+        model_tag = ("GLIGEN" if cfg.gligen else
+                     "SD 1.x" if _is_sd_legacy_model_id(cfg.model_id) else "SD3.5")
         labels["monolithic"] = f'{model_tag}: "{solo_prompt}"'
         conditions["monolithic"] = {"type": "standard", "prompt": solo_prompt}
 
@@ -2518,9 +3316,11 @@ def run_experiment(cfg: TrajectoryExperimentConfig):
                 "prompt_b": prompt_b,
             }
 
-        # Add SuperDIFF variant(s) — not available in GLIGEN mode
+        # Add SuperDIFF variant(s) — not available in GLIGEN mode or when demoted
         if cfg.gligen:
             print("  GLIGEN mode: SuperDIFF variants skipped (incompatible paradigm).")
+        elif cfg.no_superdiff:
+            print("  no_superdiff=True: SuperDIFF AND condition skipped.")
         else:
             sd_prompts = {"obj_prompt": prompt_a, "bg_prompt": prompt_b}
             variant = cfg.superdiff_variant
@@ -2580,6 +3380,8 @@ def run_experiment(cfg: TrajectoryExperimentConfig):
 
         if cfg.gligen:
             print(f"  GLIGEN mode: SuperDIFF multi-AND skipped (incompatible paradigm).")
+        elif cfg.no_superdiff:
+            print(f"  no_superdiff=True: SuperDIFF multi-AND skipped.")
         else:
             labels["superdiff_multi"] = f"SuperDIFF Multi-AND: {prompt_str}"
             conditions["superdiff_multi"] = {
@@ -2657,14 +3459,22 @@ def run_experiment(cfg: TrajectoryExperimentConfig):
         conditions=conditions,
         base_prompts=active_prompts,
         monolithic_prompt=cfg.monolithic_prompt,
-        model_tag=("GLIGEN" if cfg.gligen else "SD3.5"),
+        model_tag=("GLIGEN" if cfg.gligen else
+                   "SD 1.x" if _is_sd_legacy_model_id(cfg.model_id) else "SD3.5"),
     )
 
-    # Load model(s)
+    # Load model(s) — skip if caller already loaded them
     use_author_stoch_backend = (not cfg.gligen) and (cfg.superdiff_variant == "author_stoch")
     legacy_models = None
 
-    if cfg.gligen:
+    if preloaded_models is not None:
+        models = preloaded_models
+        print("  Using preloaded models.")
+        # If the caller already loaded SD 1.x models, all conditions run through
+        # collect_trajectories' using_sd_legacy path — no second backend needed.
+        if "unet" in models and "transformer" not in models:
+            use_author_stoch_backend = False
+    elif cfg.gligen:
         print(f"Loading GLIGEN ({cfg.gligen_model_id}) ...")
         models = get_gligen_models(
             model_id=cfg.gligen_model_id,
@@ -2675,6 +3485,15 @@ def run_experiment(cfg: TrajectoryExperimentConfig):
         cfg.z_channels = 4
         cfg.latent_height = 64
         cfg.latent_width = 64
+    elif _is_sd_legacy_model_id(cfg.model_id):
+        print(f"Loading SD 1.x ({cfg.model_id}) ...")
+        models = get_sd_models(cfg.model_id, dtype=cfg.dtype, device=device)
+        # SD 1.x UNet latent space: 4 channels, 64×64 for 512×512 output
+        cfg.z_channels = 4
+        cfg.latent_height = 64
+        cfg.latent_width = 64
+        # author_stoch is the native SD1.x SuperDiff variant; no second backend needed
+        use_author_stoch_backend = False
     else:
         print("Loading SD3.5 Medium ...")
         models = get_sd3_models(
@@ -2759,6 +3578,10 @@ def run_experiment(cfg: TrajectoryExperimentConfig):
         uniform_color=cfg.uniform_color,
         prompt_key_map=prompt_key_map,
     )
+    save_grid_manifest(
+        os.path.join(cfg.output_dir, "trajectory_subplots.png"),
+        list(projected.keys()), labels, viz_labels, conditions,
+    )
     plot_pairwise_distances(
         trackers, labels,
         os.path.join(cfg.output_dir, "pairwise_distances.png"),
@@ -2767,6 +3590,10 @@ def run_experiment(cfg: TrajectoryExperimentConfig):
         final_latents, viz_labels, vae_for_decoding,
         os.path.join(cfg.output_dir, "decoded_images.png"),
         prompt_key_map=prompt_key_map,
+    )
+    save_grid_manifest(
+        os.path.join(cfg.output_dir, "decoded_images.png"),
+        list(final_latents.keys()), labels, viz_labels, conditions,
     )
 
     # Quantitative summary
@@ -2785,6 +3612,7 @@ def run_experiment(cfg: TrajectoryExperimentConfig):
         "projection": cfg.projection,
         "lift": cfg.lift,
         "no_poe": cfg.no_poe,
+        "taxonomy_group": cfg.taxonomy_group,
     }
     if use_author_stoch_backend:
         summary["config"]["author_stoch_model_id"] = AUTHOR_STOCH_NOTEBOOK_MODEL_ID
@@ -2886,7 +3714,7 @@ def run_experiment(cfg: TrajectoryExperimentConfig):
             conditions=spatial_conditions,
             base_prompts=[cfg.spatial_prompt_a, cfg.spatial_prompt_b],
             monolithic_prompt=cfg.spatial_monolithic,
-            model_tag="SD3.5",
+            model_tag=("SD 1.x" if _is_sd_legacy_model_id(cfg.model_id) else "SD3.5"),
         )
 
         spatial_trackers, spatial_final = collect_trajectories(
@@ -2910,6 +3738,10 @@ def run_experiment(cfg: TrajectoryExperimentConfig):
             uniform_color=cfg.uniform_color,
             prompt_key_map=spatial_prompt_key_map,
         )
+        save_grid_manifest(
+            os.path.join(cfg.output_dir, "spatial_trajectory_subplots.png"),
+            list(spatial_proj.keys()), spatial_labels, spatial_viz_labels, spatial_conditions,
+        )
         plot_pairwise_distances(
             spatial_trackers, spatial_labels,
             os.path.join(cfg.output_dir, "spatial_pairwise_distances.png"),
@@ -2919,8 +3751,123 @@ def run_experiment(cfg: TrajectoryExperimentConfig):
             os.path.join(cfg.output_dir, "spatial_decoded_images.png"),
             prompt_key_map=spatial_prompt_key_map,
         )
+        save_grid_manifest(
+            os.path.join(cfg.output_dir, "spatial_decoded_images.png"),
+            list(spatial_final.keys()), spatial_labels, spatial_viz_labels, spatial_conditions,
+        )
 
     print(f"\nExperiment complete. Results in: {cfg.output_dir}")
+    return (
+        final_latents,
+        viz_labels,
+        vae_for_decoding,
+        prompt_key_map,
+        projected,
+        viz_labels,
+        n_steps,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Multi-pair grid experiment
+# ---------------------------------------------------------------------------
+
+def run_grid_experiment(
+    cfg: TrajectoryExperimentConfig,
+    pairs: List[Tuple[str, str]],
+    grid_output_dir: str,
+):
+    """Run one experiment per concept pair (sharing loaded models) and save a grid figure.
+
+    Parameters
+    ----------
+    cfg:
+        Base configuration.  ``prompt_a`` / ``prompt_b`` / ``monolithic_prompt``
+        are overridden for each pair; all other settings are shared.
+    pairs:
+        List of ``(prompt_a, prompt_b)`` tuples — one per row of the grid.
+    grid_output_dir:
+        Directory where combined grid figures are saved
+        (``decoded_images_grid.png`` and ``trajectory_manifold_grid.png``).
+        Per-pair results are saved in subdirectories underneath it.
+    """
+    os.makedirs(grid_output_dir, exist_ok=True)
+
+    # Load models once — SD3.5, SD 1.x, or GLIGEN depending on cfg
+    device = torch.device(cfg.device)
+    sd_legacy = _is_sd_legacy_model_id(cfg.model_id)
+    if cfg.gligen:
+        print(f"Loading GLIGEN ({cfg.gligen_model_id}) for grid run ...")
+        models = get_gligen_models(cfg.gligen_model_id, dtype=cfg.dtype, device=device)
+    elif sd_legacy:
+        dtype = torch.float16 if cfg.dtype == torch.bfloat16 else cfg.dtype
+        print(f"Loading SD 1.x ({cfg.model_id}) for grid run ...")
+        models = get_sd_models(cfg.model_id, dtype=dtype, device=device)
+    else:
+        print(f"Loading SD3.5 Medium ({cfg.model_id}) for grid run ...")
+        models = get_sd3_models(cfg.model_id, dtype=cfg.dtype, device=device)
+    print("  Models loaded.")
+
+    grid_data: List[Tuple] = []
+
+    if cfg.projection != "mds" or not cfg.uniform_color:
+        print("  Grid manifold output forces projection=mds and uniform_color=True.")
+
+    # For SD 1.x grids: override latent dims, dtype, and superdiff variant so
+    # collect_trajectories uses the legacy U-Net dispatch for all conditions.
+    sd_legacy_overrides = (
+        dict(
+            z_channels=4,
+            latent_height=64,
+            latent_width=64,
+            dtype=torch.float16,
+            superdiff_variant="author_stoch",
+        )
+        if sd_legacy else {}
+    )
+
+    for prompt_a, prompt_b in pairs:
+        slug = f"{prompt_a.replace(' ', '_')}__x__{prompt_b.replace(' ', '_')}"
+        pair_cfg = replace(
+            cfg,
+            prompt_a=prompt_a,
+            prompt_b=prompt_b,
+            monolithic_prompt="",          # auto-derive from the pair
+            output_dir=os.path.join(grid_output_dir, slug),
+            projection="mds",
+            uniform_color=True,
+            **sd_legacy_overrides,
+        )
+        print(f"\n{'='*60}")
+        print(f"  Grid pair: \"{prompt_a}\" x \"{prompt_b}\"")
+        print(f"{'='*60}")
+        result = run_experiment(pair_cfg, preloaded_models=models)
+        if result is not None:
+            grid_data.append(result)
+
+    if grid_data:
+        decoded_grid_path = os.path.join(grid_output_dir, "decoded_images_grid.png")
+        manifold_grid_path = os.path.join(grid_output_dir, "trajectory_manifold_grid.png")
+        print(f"\nAssembling {len(grid_data)}-row grid figures ...")
+        _model_tag = ("GLIGEN" if cfg.model_id == "" else
+                      "SD 1.x" if _is_sd_legacy_model_id(cfg.model_id) else "SD3.5")
+        _col_headers = [
+            f"{_model_tag}: A",
+            f"{_model_tag}: B",
+            f"{_model_tag}: A\u2227B",
+            "PoE A\u00d7B",
+            "SuperDiff A\u2227B",
+        ]
+        plot_decoded_images_grid(grid_data, decoded_grid_path, column_headers=_col_headers)
+        plot_trajectory_manifold_grid(
+            grid_data,
+            manifold_grid_path,
+            projection_method="mds",
+            uniform_color=True,
+            max_plots=4,
+        )
+    else:
+        print("No pair data collected; grid figure not generated.")
 
 
 # ---------------------------------------------------------------------------
@@ -2937,6 +3884,9 @@ def main():
     parser.add_argument("--steps", type=int, default=50)
     parser.add_argument("--guidance", type=float, default=4.5)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--taxonomy-group", type=str, default="",
+                        help="Phase 1 taxonomy group label stored in summary.json "
+                             "(e.g. group1_cooccurrence, group2_disentangled, group3_ood, group4_collision).")
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--projection", type=str, default="pca",
                         choices=["pca", "mds"])
@@ -2956,6 +3906,9 @@ def main():
                              "'author_stoch' runs notebook-compatible SD v1.4 backend.")
     parser.add_argument("--no-poe", action="store_true",
                         help="Skip PoE (Product of Experts) condition")
+    parser.add_argument("--no-superdiff", action="store_true",
+                        help="Skip all SuperDIFF AND conditions (demote SuperDiff; "
+                             "enabled by default in --taxonomy-grid mode)")
     parser.add_argument("--guided", action="store_true",
                         help="Add SuperDIFF-Guided hybrid: (1-α)·v_mono + α·v_superdiff")
     parser.add_argument("--alpha", type=float, nargs="+", default=[0.3],
@@ -2995,7 +3948,192 @@ def main():
                              '\'[[0.0,0.25,0.5,0.75],[0.5,0.25,1.0,0.75]]\'')
     parser.add_argument("--gligen-beta", type=float, default=0.3,
                         help="Fraction of denoising steps with grounding enabled (default 0.3)")
+    parser.add_argument(
+        "--taxonomy-grid", action="store_true",
+        help=(
+            "Run the full Phase 1 taxonomy across all four groups using SD 1.4 + PoE "
+            "(SuperDiff AND excluded by default). Pairs are sourced from TAXONOMY_GROUPS "
+            "(aligned with phase_1.tex). --model-id, --no-superdiff, --no-poe, --seed, "
+            "--steps, --guidance are forwarded to each run; --grid-output-dir controls output."
+        ),
+    )
+    parser.add_argument(
+        "--taxonomy-groups", nargs="+",
+        choices=list(TAXONOMY_GROUPS.keys()),
+        default=list(TAXONOMY_GROUPS.keys()),
+        help="Restrict --taxonomy-grid to specific groups (default: all four).",
+    )
+    parser.add_argument(
+        "--grid-pairs", type=str, default=None,
+        help=(
+            'JSON list of [prompt_a, prompt_b] pairs for a multi-concept-pair grid figure. '
+            'E.g.: \'[["a cat","a dog"],["a bird","a book"]]\'. '
+            'Models are loaded once and shared across all pairs. '
+            'Outputs are saved under --grid-output-dir.'
+        ),
+    )
+    parser.add_argument(
+        "--grid-output-dir", type=str, default="",
+        help="Parent directory for grid experiment outputs (default: auto-timestamped).",
+    )
+    parser.add_argument(
+        "--dtype", type=str, default="auto",
+        choices=["auto", "float32", "float16", "bfloat16"],
+        help="Model dtype. 'auto' uses bfloat16 for SD3, float16 for SD1.x/GLIGEN. "
+             "Use float32 to match the composable diffusion repo's default precision.",
+    )
     args = parser.parse_args()
+
+    _dtype_map = {"float32": torch.float32, "float16": torch.float16, "bfloat16": torch.bfloat16}
+    if args.dtype == "auto":
+        resolved_dtype = None  # TrajectoryExperimentConfig default (bfloat16) applies; model loading overrides for SD1.x
+    else:
+        resolved_dtype = _dtype_map[args.dtype]
+
+    # -----------------------------------------------------------------------
+    # Taxonomy-grid mode: Phase 1 proposal figures using SD 1.4 + PoE
+    # -----------------------------------------------------------------------
+    if args.taxonomy_grid:
+        grid_out = args.grid_output_dir
+        if not grid_out:
+            grid_out = str(
+                PROJECT_ROOT / "experiments" / "eccv2026" / "taxonomy_qualitative"
+            )
+        os.makedirs(grid_out, exist_ok=True)
+
+        # SD 1.4 via legacy backend; SuperDiff excluded by default
+        tax_model_id = (
+            args.model_id
+            if args.model_id != "stabilityai/stable-diffusion-3.5-medium"
+            else AUTHOR_STOCH_NOTEBOOK_MODEL_ID
+        )
+        tax_no_superdiff = True  # always demote SuperDiff in taxonomy mode
+
+        tax_seeds = [args.seed + i for i in range(max(1, args.num_seeds))]
+        tax_multi_seed = len(tax_seeds) > 1
+
+        print(f"\nPhase 1 taxonomy-grid mode")
+        print(f"  Model    : {tax_model_id}  (SD 1.4 PoE)")
+        print(f"  Groups   : {', '.join(args.taxonomy_groups)}")
+        print(f"  Seeds    : {tax_seeds}")
+        print(f"  SuperDiff: excluded")
+        print(f"  Output   : {grid_out}\n")
+
+        base_cfg_kwargs = dict(
+            model_id=tax_model_id,
+            num_inference_steps=args.steps,
+            guidance_scale=args.guidance,
+            seed=args.seed,
+            batch_size=args.batch_size,
+            projection=args.projection,
+            lift=args.lift,
+            superdiff_variant="author_stoch",
+            no_poe=args.no_poe,
+            no_superdiff=tax_no_superdiff,
+            no_clip_probe=args.no_clip_probe,
+        )
+        if resolved_dtype is not None:
+            base_cfg_kwargs["dtype"] = resolved_dtype
+
+        # For the decoded-images grid we only collect results from the first seed
+        all_pairs: list[tuple] = []
+        first_seed = tax_seeds[0]
+
+        for seed_idx, tax_seed in enumerate(tax_seeds):
+            seed_label = f"seed_{tax_seed:03d}"
+            if tax_multi_seed:
+                print(f"\n{'─'*55}")
+                print(f"  Seed {seed_idx+1}/{len(tax_seeds)}  ({seed_label})")
+                print(f"{'─'*55}")
+
+            for gkey in args.taxonomy_groups:
+                ginfo = TAXONOMY_GROUPS[gkey]
+                group_pairs = ginfo["pairs"]
+                print(f"{'='*55}")
+                print(f"  {ginfo['label']}  ({len(group_pairs)} pairs)")
+                print(f"{'='*55}")
+
+                for prompt_a, prompt_b in group_pairs:
+                    pair_slug = f"{prompt_a}__x__{prompt_b}".replace(" ", "_")[:60]
+                    pair_base = os.path.join(grid_out, gkey, pair_slug)
+                    # Seed subdirectory only when running multiple seeds
+                    pair_out = os.path.join(pair_base, seed_label) if tax_multi_seed else pair_base
+                    cfg = TrajectoryExperimentConfig(
+                        **{**base_cfg_kwargs, "seed": tax_seed},
+                        prompt_a=prompt_a,
+                        prompt_b=prompt_b,
+                        taxonomy_group=gkey,
+                        output_dir=pair_out,
+                    )
+                    result = run_experiment(cfg)
+                    if result is not None and tax_seed == first_seed:
+                        final_latents, viz_labels, vae, pkm, projected, labels_out, n_steps = result
+                        all_pairs.append(
+                            (final_latents, viz_labels, vae, pkm, projected, labels_out, n_steps)
+                        )
+
+        # Decoded-images grid (4 columns: solo A, solo B, monolithic, PoE)
+        media_dir = str(
+            PROJECT_ROOT / "proposal" / "proposal_stage_3"
+            / "chapters" / "research_method" / "media"
+        )
+        os.makedirs(media_dir, exist_ok=True)
+
+        if all_pairs:
+            grid_path = os.path.join(grid_out, "decoded_images_grid.png")
+            plot_decoded_images_grid(
+                all_pairs,
+                output_path=grid_path,
+                column_order=_TAXONOMY_COLUMN_ORDER,
+                column_headers=_TAXONOMY_COLUMN_HEADERS,
+            )
+            import shutil
+            shutil.copy(grid_path, os.path.join(media_dir, "decoded_images_grid.png"))
+            print(f"\nDecoded images grid  → {grid_path}")
+            print(f"  (copied to {media_dir}/decoded_images_grid.png)")
+
+            traj_grid_path = os.path.join(grid_out, "trajectory_manifold_grid.png")
+            if os.path.exists(traj_grid_path):
+                shutil.copy(traj_grid_path, os.path.join(media_dir, "trajectory_manifold_grid.png"))
+
+        return
+
+    # Grid mode: load models once, run all pairs, produce combined figure
+    if args.grid_pairs is not None:
+        pairs = json.loads(args.grid_pairs)
+        if not pairs or not isinstance(pairs[0], list):
+            raise ValueError("--grid-pairs must be a JSON list of [prompt_a, prompt_b] lists.")
+        grid_out = args.grid_output_dir
+        if not grid_out:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            grid_out = str(PROJECT_ROOT / "experiments" / "trajectory_dynamics" / f"grid_{timestamp}")
+        base_cfg_kwargs = dict(
+            model_id=args.model_id,
+            num_inference_steps=args.steps,
+            guidance_scale=args.guidance,
+            seed=args.seed,
+            batch_size=args.batch_size,
+            projection=args.projection,
+            lift=args.lift,
+            superdiff_variant=args.superdiff_variant,
+            uniform_color=args.uniform_color,
+            no_poe=args.no_poe,
+            no_superdiff=args.no_superdiff,
+            guided=args.guided,
+            alphas=args.alpha,
+            no_clip_probe=args.no_clip_probe,
+            taxonomy_group=args.taxonomy_group,
+            gligen=args.gligen,
+            gligen_model_id=args.gligen_model_id,
+            gligen_phrases=json.loads(args.gligen_phrases) if args.gligen_phrases else [],
+            gligen_boxes=json.loads(args.gligen_boxes) if args.gligen_boxes else [],
+            gligen_scheduled_sampling_beta=args.gligen_beta,
+        )
+        if resolved_dtype is not None:
+            base_cfg_kwargs["dtype"] = resolved_dtype
+        base_cfg = TrajectoryExperimentConfig(**base_cfg_kwargs)
+        run_grid_experiment(base_cfg, pairs, grid_out)
+        return
 
     seeds = [args.seed + i for i in range(args.num_seeds)]
 
@@ -3009,7 +4147,7 @@ def main():
         if args.num_seeds > 1 and not out_dir:
             out_dir = ""  # let auto-timestamp handle it per seed
 
-        cfg = TrajectoryExperimentConfig(
+        cfg_kwargs = dict(
             prompt_a=args.prompt_a,
             prompt_b=args.prompt_b,
             monolithic_prompt=args.monolithic,
@@ -3027,6 +4165,7 @@ def main():
             neg_lambda=args.neg_lambda,
             solo=args.solo,
             no_poe=args.no_poe,
+            no_superdiff=args.no_superdiff,
             guided=args.guided,
             alphas=args.alpha,
             no_clip_probe=args.no_clip_probe,
@@ -3043,6 +4182,9 @@ def main():
             gligen_boxes=json.loads(args.gligen_boxes) if args.gligen_boxes else [],
             gligen_scheduled_sampling_beta=args.gligen_beta,
         )
+        if resolved_dtype is not None:
+            cfg_kwargs["dtype"] = resolved_dtype
+        cfg = TrajectoryExperimentConfig(**cfg_kwargs)
         run_experiment(cfg)
 
 

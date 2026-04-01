@@ -1,0 +1,71 @@
+% !TEX root = ../../../proposal.tex
+
+\section{Diffusion Models}
+\label{sec:diffusion_models}
+
+\subsection{Denoising Diffusion Probabilistic Models}
+
+Diffusion models~\citep{pmlr-v37-sohl-dickstein15, Ho2020} define a two-process framework
+for generative modelling. The \emph{forward process} gradually corrupts a data sample
+$x_0 \sim q(x_0)$ by adding Gaussian noise over $T$ discrete steps:
+\begin{equation}
+    q(x_t \mid x_{t-1}) = \mathcal{N}\!\left(x_t;\,\sqrt{1-\beta_t}\,x_{t-1},\,\beta_t I\right),
+\end{equation}
+where $\beta_1, \ldots, \beta_T$ is a fixed variance schedule. Marginalising over
+intermediate steps gives a closed-form expression for $x_t$ given $x_0$ directly:
+\begin{equation}
+    q(x_t \mid x_0) = \mathcal{N}\!\left(x_t;\,\sqrt{\bar\alpha_t}\,x_0,\,(1-\bar\alpha_t)I\right),
+    \qquad \bar\alpha_t = \prod_{s=1}^t (1-\beta_s),
+\end{equation}
+so that $x_t = \sqrt{\bar\alpha_t}\,x_0 + \sqrt{1-\bar\alpha_t}\,\varepsilon$ for
+$\varepsilon \sim \mathcal{N}(0,I)$. As $t \to T$, $\bar\alpha_t \to 0$ and $x_T$ is
+approximately isotropic Gaussian noise. The \emph{reverse process} learns to invert this
+corruption:
+\begin{equation}
+    p_\theta(x_{t-1} \mid x_t) = \mathcal{N}\!\left(x_{t-1};\,\mu_\theta(x_t, t),\,\sigma_t^2 I\right).
+\end{equation}
+Rather than predicting $\mu_\theta$ directly, Ho et al.~\citep{Ho2020} parameterise the
+model as a noise predictor $\varepsilon_\theta(x_t, t)$ and train with the simplified
+objective
+\begin{equation}
+    \mathcal{L}_{\mathrm{simple}} = \mathbb{E}_{t,\,x_0,\,\varepsilon}\!\left[
+    \|\varepsilon - \varepsilon_\theta(x_t, t)\|^2\right].
+\end{equation}
+Sampling proceeds by drawing $x_T \sim \mathcal{N}(0,I)$ and iteratively denoising through
+$x_T \to x_{T-1} \to \cdots \to x_0$ using $\varepsilon_\theta$.
+
+\subsection{Score-Based Formulation}
+
+Song et al.~\citep{song2021scorebased} reframed diffusion models in continuous time via
+stochastic differential equations. The forward SDE takes the form $\mathrm{d}x =
+f(x,t)\,\mathrm{d}t + g(t)\,\mathrm{d}w$, and the corresponding reverse SDE requires
+the \emph{score function} $\nabla_x \log p_t(x)$. A score network $s_\theta(x,t) \approx
+\nabla_x \log p_t(x)$ is learned by denoising score matching, and it is connected to the
+DDPM noise predictor by
+\begin{equation}
+    s_\theta(x_t, t) = -\frac{\varepsilon_\theta(x_t, t)}{\sqrt{1-\bar\alpha_t}}.
+    \label{eq:score_noise}
+\end{equation}
+This score-function perspective is central to Phase~1: all compositional operators studied
+there act by combining score functions from independently conditioned model passes, rather
+than by modifying model weights or the decoding architecture.
+
+\subsection{Conditional Generation and Classifier-Free Guidance}
+
+To condition generation on a context $c$ (a text prompt, class label, or embedding), the
+model learns a conditional noise predictor $\varepsilon_\theta(x_t, t, c)$ jointly with an
+unconditional predictor $\varepsilon_\theta(x_t, t, \varnothing)$ via random conditioning
+dropout. Classifier-free guidance (CFG)~\citep{ho2022classifier} amplifies the conditional
+direction in score space at inference time:
+\begin{equation}
+    \tilde\varepsilon(x_t, t, c)
+    = \varepsilon_\theta(x_t, t, \varnothing)
+    + w\bigl[\varepsilon_\theta(x_t, t, c) - \varepsilon_\theta(x_t, t, \varnothing)\bigr],
+    \label{eq:cfg}
+\end{equation}
+where $w > 1$ is the guidance weight. Increasing $w$ sharpens the sample toward $c$ at the
+cost of diversity. In Phase~1, single-prompt CFG serves as the \emph{semantic composition}
+baseline --- the monolithic joint prompt $c = \text{``a cat and a dog''}$ --- against which
+product-of-experts logical composition is compared. In Phase~3, per-disease CFG conditioning
+provides the individual score fields that are combined at inference time to synthesise
+co-morbid chest X-rays.

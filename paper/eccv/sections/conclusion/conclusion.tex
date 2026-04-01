@@ -1,0 +1,11 @@
+% !TEX root = ../../eccv2016submission.tex
+
+\section{Conclusion}
+
+This paper introduced and measured a \emph{composability gap} between two notions of conjunction in text-to-image generation: semantic conjunction from monolithic text prompting and logical conjunction from score-space composition (PoE/SuperDiff AND). Under shared-noise initialization, these mechanisms consistently follow different latent trajectories and terminate in different regions, showing that the mismatch is not a decoding artifact but a trajectory-level property of the denoising dynamics.
+
+Across concept pairs and seeds, divergence emerges early but is amplified most strongly in late denoising, where fine-grained identity and attribute conflicts are resolved. This provides a temporal account of the gap: semantic and logical objectives may start from the same stochastic state, yet accumulate most of their separation near the end of sampling.
+
+We further used VLM-based prompt recovery as a counterfactual test of language-space recoverability. BLIP-2 captions used as \(p^*\) move SD outputs closer to SuperDiff AND, but a persistent residual remains in endpoint, trajectory, and pooled distributional analyses. This indicates that the gap is not only prompt-selection error; part of it reflects a structural mismatch between language-conditioned generation and logical score-space intersection.
+
+A practical next step is to design guidance schemes that explicitly trade off semantic naturalness and logical fidelity over time (for example, scheduled or learned hybrid guidance). A broader extension is to test whether the same dynamics hold across other model families, composition operators, and richer multi-concept settings.

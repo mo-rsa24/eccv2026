@@ -1,0 +1,35 @@
+\subsection{Categorization Of Diffusion Models}
+This section distinguishes between \textbf{unconditional} and \textbf{conditional} diffusion models by examining their objectives, formulations, and applications.
+
+While the above formulation defines the foundation of \emph{unconditional diffusion models}, practical applications often demand controlled or semantically guided generation — such as synthesizing specific classes, attributes, or text-aligned imagery.
+This introduces the need for \emph{conditional diffusion models}, where additional information \(y\) (e.g., labels, text embeddings, or medical attributes) guides the reverse process.
+Recent extensions, such as \emph{classifier} and \emph{classifier-free guidance}, further refine this conditioning by explicitly or implicitly modulating the score function to balance fidelity and diversity during sampling.
+
+\paragraph{Unconditional Diffusion Models.}
+An \textit{unconditional diffusion model} learns to generate samples from the marginal data distribution \(p(x)\) without any auxiliary information or labels. During training, the model only observes unlabeled samples \(x_0\) drawn from \(p_{\text{data}}(x)\), and it is optimized to predict the noise injected at each diffusion step:
+\begin{equation}
+\mathcal{L}_{\text{uncond}} = \mathbb{E}_{x_0, t, \epsilon}\!\left[\|\epsilon - \epsilon_\theta(x_t, t)\|^2\right].
+\end{equation}
+The process is therefore \textit{self-supervised}: the target signal (the noise) is synthetically generated from the data itself rather than provided as an external label. When sampling, the model begins from a random Gaussian latent \(x_T \sim \mathcal{N}(0, I)\) and denoises step-by-step to produce a realistic image. Unconditional diffusion models are thus fully unsupervised—they model \(p(x)\) directly without any conditioning variable.
+
+\paragraph{Conditional Diffusion Models.}
+A \textit{conditional diffusion model} extends this framework to model the conditional distribution \(p(x \mid y)\), where \(y\) provides additional context such as a class label, text prompt, or spatial map. In essence, this means that we learn to predict the conditional score function $\nabla_x \log p(x \mid y)$ \citep{dieleman2022guidance}. The model learns to generate data consistent with the given condition. The training objective is modified to include this conditioning:
+\begin{equation}
+\mathcal{L}_{\text{cond}} = \mathbb{E}_{x_0, t, \epsilon, y}\!\left[\|\epsilon - \epsilon_\theta(x_t, t, y)\|^2\right].
+\end{equation}
+Here, the conditioning variable \(y\) is injected into the model through mechanisms such as class embeddings, cross-attention, or concatenation with the input. During sampling, the denoising trajectory is guided by the condition \(y\), allowing controllable generation---for example, synthesizing an image corresponding to a specific class or text prompt. Conditional diffusion thus transforms an unsupervised generative process into a supervised or guided one.
+
+\input{chapters/background/diffusion_models/extensions_of_diffusion_models/guidance}
+
+% \subsubsection{Summary}
+% In summary, \textbf{unconditional diffusion models} learn to approximate the data distribution \(p(\mathbf{x})\) by predicting the score \(\nabla_{\mathbf{x}_t}\log p(\mathbf{x}_t)\) without auxiliary inputs.  
+% \textbf{Conditional models} extend this to \(p(\mathbf{x}\mid\mathbf{y})\), incorporating side information \(\mathbf{y}\) to guide generation toward semantically consistent outputs.  
+% To strengthen conditioning, \textbf{Classifier Guidance} introduces an external classifier gradient \( \nabla_{\mathbf{x}_t}\log p(\mathbf{y}\mid\mathbf{x}_t) \), scaled by \(\gamma\) to balance fidelity and diversity.  
+% In contrast, \textbf{Classifier-Free Guidance} unifies unconditional and conditional diffusion within a single network, combining their learned score functions as  
+% \begin{equation}
+% \nabla_{\mathbf{x}_t}\log p(\mathbf{x}_t\mid\mathbf{y})
+% = \gamma\,\nabla_{\mathbf{x}_t}\log p(\mathbf{x}_t\mid\mathbf{y})
+% + (1-\gamma)\,\nabla_{\mathbf{x}_t}\log p(\mathbf{x}_t),
+% \end{equation}
+% thus eliminating the need for a separate classifier while offering flexible control over the conditioning strength.  
+% Together, these formulations provide a continuum from unguided to strongly guided generation, forming the foundation for modern diffusion-based generative models.

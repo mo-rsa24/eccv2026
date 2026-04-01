@@ -1,0 +1,636 @@
+% !TEX root = ../../proposal.tex
+
+\section{Phase 2: Explaining the Composability Gap}
+\label{sec:phase_2}
+
+Phase~1 characterised the composability gap across concept regimes, and Phase~2 investigates its cause.
+
+Compositional diffusion methods combine pretrained models at inference time by modifying the score field rather than retraining a joint model.
+\citet{du2024compositional} derive this approach from a probabilistic perspective, showing that under conditional independence assumptions, the score of a joint distribution can be expressed as a combination of conditional scores relative to an unconditional model.
+In practice, they further show that the behaviour of this composed system depends on inference-time choices such as guidance weighting and sampling dynamics, which can improve stability and sample quality but do not alter the underlying assumptions required for successful composition.
+
+Subsequent theoretical work clarifies when such composition should succeed.
+\citet{mechanisms2025projective} show that successful composition depends on the existence of a feature space in which the component concepts act on separable parts of the representation.
+In that space, the relevant conditionals become approximately factorised, potentially only after an unknown transformation $A$ of the data.
+
+Instead of assuming that a suitably factorised feature space already exists, Phase~2 asks whether
+learning such a representation improves compositional generation under a shared downstream
+conditional latent diffusion setup.
+A \emph{representation problem} occurs when the model lacks a feature space in which the target concepts are separated enough to support factorised conditionals.
+Phase~2 focuses specifically on whether better factorisation by itself improves composition, rather than on ruling out all other possible inference-time improvements.
+This leads to a central claim:
+\begin{center}
+{\setlength{\fboxsep}{6pt}%
+\fbox{%
+\parbox{\dimexpr 0.96\linewidth - 2\fboxsep - 2\fboxrule\relax}{%
+\textbf{{If representation quality is a limiting factor for composition, then more factorised latent
+spaces should yield more reliable compositional generation under the same downstream conditional
+diffusion architecture.}
+}
+}}}
+\end{center}
+
+H2 formalises this claim.
+If the representation is improved, composition success should increase when the same conditional
+latent diffusion architecture, conditioning scheme, and compositional inference procedure are used.
+
+This distinction is difficult to test directly in a large pretrained foundation model such as Stable Diffusion \citep{rombach2022high}, where the learned representation and the inference-time composition rule are tightly coupled and cannot be varied independently without substantial confounds.
+To test H2 cleanly, Phase~2 moves to a controlled setting in which representation quality can be
+varied while the composition rule is kept fixed.
+
+To test this hypothesis, we investigate VAE-based methods for learning a factorised latent space that
+approximates the transformation required for factorised conditionals, and then evaluate each learned
+latent space with the same downstream conditional latent diffusion architecture.
+
+
+\subsection{Dataset Selection}
+\label{subsec:p2_testbeds}
+
+To test the claim that compositional failure is primarily a representation problem, Phase~2
+requires a domain in which representation quality can be manipulated independently of the
+inference rule. We therefore use the standard dSprites dataset~\citep{dsprites17} and a
+correlated variant~\citep{roth2023disentanglement}. Within the correlated setting, we then
+introduce a representation intervention to test whether better factorisation restores
+composition.
+
+The dSprites dataset is well suited for this phase because it is simple, controlled, and
+fully interpretable. Each image contains a single object whose appearance varies along a
+small number of known attributes: shape, scale, orientation, and x/y position. 
+In other words, the task defined by this dataset is not composition across distinct objects in a scene, but recombination of multiple attributes of a single object.
+If held-out recombination improves here, that improvement can be likened more to improved quality of the learned representation.
+Because the true factors of variation are known, dSprites also allows
+held-out composition analysis and disentanglement metrics \citep{disentengaled_representation_learning, on_disentangled_representation_learning} to be evaluated together.
+
+% \begin{table}[H]
+%     \centering
+%     \small
+%     \caption{Factor structure of dSprites in Phase~2. Color is fixed; Regime~C2 later supervises
+%     the scale and orientation factors directly.}
+%     \label{tab:dsprites_factor_table}
+%     \begin{tabularx}{0.82\linewidth}{@{}l c X@{}}
+%         \toprule
+%         Factor & \# values & Notes \\
+%         \midrule
+%         color & 1 & fixed white foreground \\
+%         shape & 3 & square, ellipse, heart \\
+%         scale & 6 & physical values 0.5 to 1.0 (e.g classes 0-5 correspond to physical values 0.5, 0.6, 0.7, 0.8, 0.9)\\
+%         orientation & 40 & angles from 0 to $2\pi$ radians in uniform $\approx 9.2^\circ$ steps \\
+%         posX & 32 & horizontal position \\
+%         posY & 32 & vertical position \\
+%         \midrule
+%         \multicolumn{3}{@{}l@{}}{\textbf{Total images:} $3 \times 6 \times 40 \times 32 \times 32 = 737{,}280$} \\
+%         \bottomrule
+%     \end{tabularx}
+% \end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.26\textwidth]{chapters/research_method/media/dsprites_standard.png}
+    \caption{Illustrative samples from the standard dSprites dataset~\citep{dsprites17}. The
+    dataset varies a single sprite along known attributes including shape, scale,
+    orientation, and position, making it a clean controlled setting for testing attribute
+    recombination.}
+    \label{fig:p2_dsprites_standard}
+\end{figure}
+
+We use standard dSprites as the Phase~2 positive control due to its independently sampled attributes. 
+Formally, this is captured by $p(\mathbf{z}) = \prod_i p(z_i)$, meaning factors like orientation and scale do not constrain one another.
+To test for held-out recombination, we remove a single orientation-scale combination from the training set.
+This setup determines if a model can recover a withheld combination in the absence of shortcut correlations, as the training distribution itself encourages no such dependencies.
+If a model fails to recover a withheld orientation-scale combination, that failure reflects the learned representation itself.
+
+\paragraph{Correlated dSprites:}
+Correlated dSprites preserves the same visual domain as standard dSprites while modifying the sampling procedure.
+We intentionally make orientation and scale correlated in part of the training set.
+For a selected subset of the training data, we sample scale from an orientation-dependent distribution rather than independently of orientation. 
+Specifically, once an orientation is fixed, one scale is given higher probability than the others. 
+This makes some orientation-scale combinations appear much more often than others, while some are rare or missing entirely. 
+Following \citet{traeuble2021disentangled}, this yields a controlled setting in which orientation and scale are no longer sampled independently.
+Figure~\ref{fig:p2_dsprites_structured} illustrates this visually: once some combinations appear much more often than others, recombination is no longer learned from an evenly represented set of factor combinations.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{chapters/research_method/media/dsprites_structured_exclusions.png}
+    \caption{Illustrative dSprites train/test exclusions and their effect on latent usage in dSprites \citep{montero2021role}. \textbf{(a)} Example image pairs for three
+    generalisation settings: recombination to element, recombination to range, and
+    extrapolation. Within each setting, the two columns show representative \emph{training}
+    and \emph{test} samples, while the rows indicate the \emph{reference} image, the
+    \emph{transform} to be applied, and the resulting \emph{transformed} image. The labels
+    beneath the images indicate which factor is being changed, such as shape, orientation, or
+    x-position. \textbf{(b)} Corresponding latent-factor association patterns for the same
+    three settings. Here, rows correspond to the ground-truth factors (shape, scale,
+    orientation, posX, posY), columns correspond to latent dimensions, and brighter cells
+    indicate stronger usage or alignment of a latent dimension with a factor. Taken together,
+    the figure illustrates how structured exclusions create uneven support over factor
+    combinations and alter how factors are represented, making recombination and
+    generalisation harder than in the standard factorised dSprites setting.}
+    \label{fig:p2_dsprites_structured}
+\end{figure}
+
+In standard dSprites, a left-oriented sprite can appear at both small and large scales, and the same is true for a right-oriented sprite.
+In constrast, the correlated dSprites training set may contain many examples of left+small and right+large, while left+large and right+small are rare or absent. 
+The factors are therefore coupled through sampling rather than varying independently. 
+This matters because the model can learn the shortcut that one attribute predicts the other, instead of learning orientation and scale as separate attributes. 
+Correlated dSprites keeps the visual domain unchanged while altering the training distribution, providing a controlled setting to study representation learning under correlated attributes.
+
+\subsection{Experiment Design}
+\label{subsec:p2_models}
+
+Our experimental design consists of four regimes that progressively test the representation hypothesis under controlled changes to the training distribution and model class. 
+Regimes~A and~B establish the basic comparison by keeping the VAE fixed and changing only the training support, from factorised to correlated.
+Based on prior work on disentanglement under correlated training data \citep{traeuble2021disentangled, funke2022disentanglement,roth2023disentanglement}, we expect Regime~B to fail on correlated dSprites. 
+Regime~C then keeps the correlated setting fixed and asks whether stronger disentanglement objectives improve held-out recombination, comparing standard unsupervised training (C1) with label-based factor supervision in C2. 
+Regime~D keeps the same correlated support and evaluation setting but replaces the monolithic latent with SP-VAE, allowing us to test whether explicit factor-addressable partitioning improves composition.
+Each regime therefore provides a learned latent space in which the same conditional latent diffusion
+architecture is trained. This allows the comparison to ask whether better latent factorisation leads
+to more reliable compositional generation under a shared downstream setup.
+
+\paragraph{Outcome interpretation.}
+\begin{itemize}
+    \item \textbf{Case 1:} If Regime~A succeeds, Regime~B fails, Regime~C1 partially recovers, Regime~C2 improves
+    further, and Regime~D improves again, this supports the claim that supervision helps but
+    factor-addressable partitioning helps more.
+    \item \textbf{Case 2:} If Regime~A succeeds, Regime~B fails, Regime~C1 improves only modestly, and
+    Regime~C2 already matches Regime~D, then label-based factor supervision may be sufficient for most of the
+    desired factor separation in this setting.
+    \item \textbf{Case 3:} If Regime~A succeeds, Regime~B fails, Regime~C1 and Regime~C2 remain limited, and
+    Regime~D improves clearly, this supports the stronger interpretation that neither independence
+    pressure nor supervision alone is sufficient under correlation without additional structural
+    allocation.
+    \item \textbf{Case 4:} If Regime~A already fails, the composition setup itself is not valid even in the control
+    setting, and H2 is not supported.
+\end{itemize}
+
+\subsubsection{Regime A: Control}
+
+Regime~A uses the standard dSprites dataset together with a baseline VAE, illustrated in Figure~\ref{fig:baseline_vae}. It tests whether
+held-out recombination works when the data support is clean and factorised. The expected
+outcome is that the model learns a representation that is sufficiently well aligned with
+the underlying attributes for composition to recover both target factors.
+
+The model in this regime is a vanilla variational autoencoder trained to encode dSprites
+images into a continuous latent distribution and reconstruct them from that latent representation.
+Its role in Phase~2 is to provide a standard generative model for testing how well a learned
+latent space supports reconstruction and held-out attribute recombination.
+
+The input data are the dSprites images from the standard split in Regime~A. The held-out
+orientation--scale combination used for evaluation is removed from the training set, and the same
+preprocessing is applied throughout Phase~2. Each example is represented as a single-channel
+$64 \times 64$ sprite image.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{chapters/research_method/media/vae.drawio.pdf}
+    \caption{Baseline VAE architecture used in Regimes~A and~B. An input dSprites image is encoded
+    into the parameters of an approximate posterior, sampled via the reparameterization trick, and
+    decoded into a reconstruction.}
+    \label{fig:baseline_vae}
+\end{figure}
+
+Architecturally, the model follows the standard encoder--decoder VAE formulation. Given an input
+image $x$, the encoder produces the parameters of an approximate posterior distribution,
+$\mu(x)$ and $\log \sigma^2(x)$, from which a latent sample $z$ is drawn using the
+reparameterization trick. The decoder then maps $z$ back to a reconstructed image $\hat{x}$ with
+the same spatial dimensions as the input.
+
+Its training objective is the negative ELBO, written as
+\begin{align}
+    \mathcal{L}_{\mathrm{VAE}}(x)
+    &= \mathcal{L}_{\mathrm{rec}}(x, \hat{x}) + \mathcal{L}_{\mathrm{KL}}(x) \\
+    &= -\mathbb{E}_{q_{\phi}(z \mid x)} \left[\log p_{\theta}(x \mid z)\right]
+    + D_{\mathrm{KL}}\left(q_{\phi}(z \mid x)\,\|\,p(z)\right).
+\end{align}
+For binary dSprites images, the reconstruction term is the Bernoulli negative log-likelihood,
+\begin{equation}
+    \mathcal{L}_{\mathrm{rec}}(x, \hat{x})
+    = -\sum_{i=1}^{64 \times 64}
+    \left[x_i \log \hat{x}_i + (1 - x_i)\log(1 - \hat{x}_i)\right],
+\end{equation}
+and, assuming a diagonal Gaussian approximate posterior
+$q_{\phi}(z \mid x) = \mathcal{N}\!\left(\mu(x), \mathrm{diag}(\sigma^2(x))\right)$ and a standard
+normal prior $p(z) = \mathcal{N}(0, I)$, the KL term has the closed form
+\begin{equation}
+    \mathcal{L}_{\mathrm{KL}}(x)
+    = \frac{1}{2}\sum_{j=1}^{d}
+    \left(\mu_j(x)^2 + \sigma_j(x)^2 - \log \sigma_j(x)^2 - 1\right).
+\end{equation}
+The reconstruction term encourages $\hat{x}$ to match the observed image, while the KL term
+regularises the approximate posterior toward the prior so that the model learns a smooth and
+structured latent space.
+
+In this way Regime~A establishes the positive control for Phase~2: if held-out recombination works
+here, then the overall task is feasible before correlation is introduced. Regime~B keeps this same
+architecture and ELBO objective fixed and changes only the data support.
+
+\subsubsection{Regime B:  Correlated dSprites Setting}
+
+Regime~B uses correlated dSprites with the same baseline VAE. It tests whether correlation in the
+training distribution is sufficient to degrade the learned representation even when the image
+domain, model, and evaluation procedure remain unchanged. The expected outcome is worse
+held-out composition than in Regime~A, reflecting shortcut learning and latent entanglement
+induced by the biased support.
+
+Regime~B keeps the encoder-decoder architecture shown in
+Figure~\ref{fig:baseline_vae}, the reparameterised latent code, and the ELBO objective from
+Regime~A unchanged, but trains on the correlated dSprites split defined earlier. The held-out
+orientation--scale combination is removed from training under the same protocol, so any
+degradation relative to Regime~A can be attributed to the change in data support rather than to a
+change in the model family or composition rule.
+
+If performance degrades here, the failure setting is established and the next question becomes
+whether benchmark disentanglement methods can recover any of the lost compositional performance
+under the same correlated support.
+
+\subsubsection{Regime C: Disentangling Correlated dSprites}
+Regime~C is motivated by prior work showing that standard disentanglement objectives are brittle under correlated training data \citep{challeau2019challenging}, whereas weak supervision can mitigate this difficulty \citep{weakly_supervised_disentanglement}. 
+\citet{traeuble2021disentangled} show that factorization-based inductive biases are insufficient when factors are correlated, and further show that weak supervision can help resolve the resulting latent entanglement. 
+Regime~C asks whether composition under correlated support improves through stronger disentanglement objectives alone (C1), or through adding factor-label supervision while keeping the latent structure unchanged (C2).
+
+Regime~C keeps the correlated dSprites dataset of Regime~B but replaces the baseline VAE with disentanglement models evaluated under two internal conditions:
+\begin{itemize}
+    \item \textbf{C1: Disentanglement.} Standard $\beta$-VAE \citep{Higgins2016betaVAELB} and
+    FactorVAE~\citep{disentangling_by_factorising} test whether stronger independence
+    objectives alone can recover compositional performance under correlation.
+    \item \textbf{C2: Label-Based Factor Supervision.} We augment the C1 models with small
+    auxiliary predictor networks (MLP heads) trained to recover the ground-truth scale (6-class)
+    and orientation (40-class) labels from the encoder mean $\mu_\phi(x)$. The heads are
+    training-only and are discarded at test
+    time, leaving the generative model and composition interface identical to C1. This adds
+    deterministic label-based guidance without altering the latent structure itself. To keep the
+    comparison fair, we use the same labels and supervised loss terms as in Regime~D, isolating
+    whether supervision alone improves composition.
+\end{itemize}
+We do not expect C1 to close the gap fully. 
+$\beta$-VAE and FactorVAE encourage the latent space to separate factors, but this works best when those factors are not strongly correlated in the training data. 
+Under correlation, that bias becomes less effective, so we expect only partial recovery in C1, consistent with \citet{traeuble2021disentangled}. 
+C2 may improve further by adding factor-level supervision without changing the latent structure itself. 
+If Regime~D still performs better, this would suggest that supervision alone is not enough, and that explicit factor-addressable partitioning provides an additional benefit.
+
+At the representational and objective levels, these benchmark models retain a single latent code
+$z \in \mathbb{R}^{d}$ and ask whether factor separation will emerge within that shared space
+through stronger global regularisation:
+\begin{equation}
+\begin{aligned}
+\text{$\beta$-VAE:}\qquad
+& z \in \mathbb{R}^{d},
+&& \mathcal{L}_{\beta\text{-VAE}}
+= \mathcal{L}_{\mathrm{ELBO}} + \beta\,\mathcal{L}_{\mathrm{KL}}
+\\[4pt]
+\text{FactorVAE:}\qquad
+& z \in \mathbb{R}^{d},
+&& \mathcal{L}_{\mathrm{FactorVAE}}
+= \mathcal{L}_{\mathrm{ELBO}} + \gamma\,\mathrm{TC}(q(z)).
+\end{aligned}
+\end{equation}
+$\beta$-VAE
+strengthens the KL bottleneck to encourage more factorised latent usage, while FactorVAE adds a
+Total Correlation penalty that more directly discourages dependence across latent dimensions.
+
+In \textbf{C1}, these models are evaluated in their standard unsupervised form. This condition
+tests whether statistical independence objectives alone provide the right inductive bias for
+composition under correlated support. Any improvement they achieve would indicate that generic
+disentanglement pressure helps under bias; any remaining failure would suggest that improving independence alone does not guarantee that factors can be separately identified and recombined.
+
+In \textbf{C2}, the same $\beta$-VAE and FactorVAE backbones are augmented with two
+label-supervised auxiliary predictors $g_{\mathrm{scale}}$ and $g_{\mathrm{orient}}$, each a small
+two-layer MLP, attached to the encoder mean $\mu_\phi(x)$ rather than to the stochastic latent
+sample~$z$. Using $\mu_\phi(x)$ makes the supervised signal deterministic: the auxiliary
+gradients do not flow through the reparameterisation noise $\varepsilon$, which reduces variance
+in the label-supervision signal and is consistent with standard disentanglement evaluation
+practice that assesses factor information through $\mu$ rather than
+$z$~\citep{eastwood2018framework, challeau2019challenging}. The two predictors produce logits
+\begin{equation}
+\hat{y}_s = g_{\mathrm{scale}}\!\left(\mu_\phi(x)\right) \in \mathbb{R}^6,
+\qquad
+\hat{y}_o = g_{\mathrm{orient}}\!\left(\mu_\phi(x)\right) \in \mathbb{R}^{40},
+\end{equation}
+and are trained with cross-entropy against the dSprites dataset labels
+$y_s \in \{0,\ldots,5\}$ and $y_o \in \{0,\ldots,39\}$ for scale and orientation respectively.
+The full C2 objective is
+\begin{equation}
+\label{eq:c2_objective}
+\mathcal{L}_{\mathrm{C2}}
+= \mathcal{L}_{\mathrm{backbone}}
++ \lambda_s\,\mathrm{CE}(\hat{y}_s,\, y_s)
++ \lambda_o\,\mathrm{CE}(\hat{y}_o,\, y_o),
+\end{equation}
+where $\mathcal{L}_{\mathrm{backbone}}$ is either the $\beta$-VAE or FactorVAE objective defined
+above, and $\lambda_s$, $\lambda_o$ are scalar weights matched to those used in Regime~D.
+Figure~\ref{fig:c2_architecture} then illustrates the complete C2 forward pass.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{chapters/research_method/media/c2_architecture.pdf}
+    \caption{C2 architecture. The $\beta$-VAE or FactorVAE backbone is unchanged. Two auxiliary
+    MLP heads ($g_{\mathrm{scale}}$, $g_{\mathrm{orient}}$) receive the encoder mean
+    $\mu_\phi(x)$ and are trained with cross-entropy against the 6-class scale and 40-class
+    orientation labels introduced in Figure~\ref{fig:c2_factor_targets}. Both heads are discarded
+    at test time; composition proceeds in the unchanged shared latent space~$z$.}
+    \label{fig:c2_architecture}
+\end{figure}
+
+Both auxiliary heads are training-only and are discarded at test time: the composition rule
+operates in the same shared latent space $z$ as in Regimes~A and~C1, without modification.
+This follows the established pattern of training-only auxiliary branches in representation
+learning, where removing the auxiliary head at inference is precisely the mechanism by which it
+shapes the main encoder representation without coupling the downstream interface to the
+supervision signal~\citep{chen2020simple}.
+
+C2 is architecturally distinct from the M2 semi-supervised VAE~\citep{kingma2014semi}, which
+conditions the decoder on the label $y$ and marginalises over it during inference, thereby
+changing the generative model structure. In C2, the decoder sees only $z$ and labels never
+enter the generative path. Labels are used solely as a training-time signal to shape the
+encoder's representation of $\mu_\phi(x)$, keeping the generative model and the composition
+interface identical to Regimes~A and~B.
+
+These adaptations use the same factor labels, prediction losses, and predictor-loss weights
+later used in SP-VAE, following the broader logic of weakly supervised disentanglement
+comparisons in which limited factor supervision is introduced explicitly rather than left
+implicit in the latent structure~\citep{locatello2020weakly}. Regime~C2 therefore serves as a
+supervision-only control: if it matches SP-VAE, then additional structure may not be necessary;
+if SP-VAE improves beyond C2, the remaining gain is more plausibly attributable to the explicit
+latent partitioning introduced in Regime~D rather than to the shared supervision signal.
+
+\subsubsection{Regime D: Partitioned Representation}
+\label{subsec:p2_spvae}
+
+Regimes~A--C all operate in a single shared latent space, $z \in \mathbb{R}^d$. When downstream
+composition requires orientation and scale to act as separable conditioning signals, that shared
+representation does not guarantee a clean separation: if these factors overlap in the same latent
+dimensions, the model can still represent them jointly rather than compositionally. SP-VAE
+addresses this by assigning preserved context, orientation, and scale to separate latent parts,
+making that separation more explicit.
+
+Regime~D keeps the correlated dSprites support, the held-out combinations, and the same downstream
+evaluation setting used in Regimes~B and~C, but changes the representation itself.
+This makes it the clearest Phase~2 test of H2: when supervision is matched to Regime~C2 and the downstream evaluation architecture and inference
+procedure are held fixed, any additional gain is most directly attributable to how the
+latent variables are organised rather than to a different inference mechanism.
+
+SP-VAE is inspired by SepVAE's common-versus-salient partitioning~\citep{louiset2024sepvae}, but
+is adapted here to Phase~2's single-dataset, multi-factor setting. SepVAE cannot be used unchanged
+because its contrastive background/target split and associated objectives rely on a dataset
+asymmetry that correlated dSprites does not provide. SP-VAE therefore keeps the C2 supervision
+setting but replaces the shared latent with a partitioned code
+\(
+z=(z_c,z_{d1},z_{d2}),
+\)
+where \(z_c\) stores shared context, \(z_{d1}\) stores orientation, and \(z_{d2}\) stores scale.
+Figure~\ref{fig:spvae_architecture} summarises this architecture.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{chapters/research_method/media/spvae_architecture.pdf}
+    \caption{SP-VAE architecture for Regime~D. A shared encoder produces three posterior heads for shared
+context, orientation, and scale. Their samples are concatenated and decoded to reconstruct
+\(\hat{x}\). Training-only classifiers supervise the intended branch and probe the opposite branch
+through GRL.}
+    \label{fig:spvae_architecture}
+\end{figure}
+
+Unlike $\beta$-VAE, FactorVAE, and Regime~C2, which all retain a single shared latent and try to
+organize factors within it, SP-VAE separates shared context, orientation, and scale into different
+latent parts. This matters especially under correlated support: when orientation and scale co-occur
+systematically in training, a shared latent can still exploit that shortcut and store them
+together, even under stronger regularization or label supervision. SP-VAE addresses this in three
+steps: first, it assigns each role to a separate latent part; second, it uses training-time
+classifiers to align each factor-specific part with its intended attribute; and third, it applies
+adversarial wrong-head supervision to discourage redundant leakage across those parts. The result is
+a representation designed not just to be cleaner in the abstract, but to support the later
+substitution operation directly.
+
+Figure~\ref{fig:spvae_architecture} shows the resulting SP-VAE architecture. Given an input image
+$x$, the encoder produces three posterior parameter heads,
+\((\mu_c, \log \sigma_c^2)\), \((\mu_{d1}, \log \sigma_{d1}^2)\), and
+\((\mu_{d2}, \log \sigma_{d2}^2)\), corresponding to shared context, orientation, and scale.
+Reparameterized samples $z_c$, $z_{d1}$, and $z_{d2}$ are then concatenated into \(z\) and passed
+to the decoder to reconstruct \(\hat{x}\).
+
+During training, supervision is applied directly to the encoder means of the two factor latents.
+The orientation classifier takes \(\mu_{d1}\) as input and produces 40 orientation logits, while
+the scale classifier takes \(\mu_{d2}\) as input and produces 6 scale logits. These logits are
+compared with the ground-truth labels using cross-entropy, which pushes \(\mu_{d1}\) to encode
+orientation and \(\mu_{d2}\) to encode scale. We use the posterior means rather than sampled
+latents so that this supervised signal remains stable and is not perturbed by reparameterization
+noise, matching the supervision setup already used in Regime~C2.
+
+Correct-head supervision alone does not guarantee exclusivity: even if
+\(g_{\mathrm{orient}}(\mu_{d1})\) predicts orientation well and
+\(g_{\mathrm{scale}}(\mu_{d2})\) predicts scale well, orientation may still be encoded in
+\(\mu_{d2}\) and scale may still be encoded in \(\mu_{d1}\) if that helps reconstruction. In other
+words, the positive cross-entropy terms push the right factor into the right latent part, but they
+do not push the wrong factor out of the wrong one. An additional mechanism is therefore needed to
+actively suppress this cross-factor leakage.
+
+To provide that suppression, we apply each classifier to the opposite latent mean through a
+gradient reversal layer, giving the wrong-head branches
+\(g_{\mathrm{orient}}(\mathrm{GRL}(\mu_{d2}))\) and
+\(g_{\mathrm{scale}}(\mathrm{GRL}(\mu_{d1}))\). The GRL is identity in the forward pass, so the
+classifier receives the real latent activation and produces an ordinary cross-entropy loss, but in
+the backward pass it reverses the gradient sent to the encoder~\citep{ganin2015unsupervised,
+ganin2016domain}. Without this reversal, the wrong-head loss would encourage the encoder to make the
+non-target factor easier to predict, that is, the unreversed gradient would push the encoder to
+encode that factor more strongly in the wrong latent part. 
+With GRL, the classifier still tries to predict the non-target factor from the wrong latent part.
+The encoder, however, receives the reversed gradient and is therefore trained to make that
+prediction harder. In this way, the classifier and encoder are optimized in opposite directions: the
+classifier becomes better at detecting any leakage that remains, while the encoder becomes better at
+removing it. This is the same basic idea used in domain-adversarial training, where gradient
+reversal is used to remove domain information from features; here, the unwanted signal is not domain
+identity, but the wrong factor~\citep{attribute_disentanglement}.
+
+The final SP-VAE objective consists of four parts: the ELBO, correct-head supervision, wrong-head suppression, and residual separation penalties:
+\begin{equation}
+\begin{aligned}
+\mathcal{L}_{\mathrm{SP\mbox{-}VAE}}
+&= \mathcal{L}_{\mathrm{rec}}(x,\hat{x})
++ \beta_c \, D_{\mathrm{KL}}\!\left(q_\phi(z_c \mid x)\,\|\,p(z_c)\right)
++ \beta_{d1} \, D_{\mathrm{KL}}\!\left(q_\phi(z_{d1} \mid x)\,\|\,p(z_{d1})\right) \\
+&\quad
++ \beta_{d2} \, D_{\mathrm{KL}}\!\left(q_\phi(z_{d2} \mid x)\,\|\,p(z_{d2})\right)
++ \lambda^{+}_{o}\,\mathrm{CE}(g_{\mathrm{orient}}(\mu_{d1}), y_o)
++ \lambda^{+}_{s}\,\mathrm{CE}(g_{\mathrm{scale}}(\mu_{d2}), y_s) \\
+&\quad
++ \lambda^{-}_{o}\,\mathrm{CE}(g_{\mathrm{orient}}(\mathrm{GRL}(\mu_{d2})), y_o)
++ \lambda^{-}_{s}\,\mathrm{CE}(g_{\mathrm{scale}}(\mathrm{GRL}(\mu_{d1})), y_s) \\
+&\quad
++ \lambda_{\mathrm{mi}} \hat{I}(z_{d1}; z_{d2})
++ \lambda_{\mathrm{orth}} \lVert \mathrm{Cov}(z_{d1}, z_{d2}) \rVert_F^2 .
+\end{aligned}
+\end{equation}
+
+where:
+\begin{itemize}
+    \item \(\mathcal{L}_{\mathrm{ELBO}}\) is the standard variational objective, combining
+    reconstruction and KL regularization. It keeps SP-VAE a generative model and preserves the
+    sampling and reconstruction behaviour expected of a VAE.
+
+    \item \(\lambda^{+}_{o}\,\mathrm{CE}(g_{\mathrm{orient}}(\mu_{d1}), y_o)\) and
+    \(\lambda^{+}_{s}\,\mathrm{CE}(g_{\mathrm{scale}}(\mu_{d2}), y_s)\) are the correct-head
+    supervision terms. Following weakly supervised disentanglement and attribute-specific
+    supervision, they align each factor latent with its intended label, pushing orientation into
+    \(z_{d1}\) and scale into \(z_{d2}\)~\citep{weakly_supervised_disentanglement,
+    attribute_disentanglement}.
+
+    \item \(\lambda^{-}_{o}\,\mathrm{CE}(g_{\mathrm{orient}}(\mathrm{GRL}(\mu_{d2})), y_o)\) and
+    \(\lambda^{-}_{s}\,\mathrm{CE}(g_{\mathrm{scale}}(\mathrm{GRL}(\mu_{d1})), y_s)\) are the
+    wrong-head suppression terms. Through gradient reversal, they encourage the encoder to remove
+    orientation from \(z_{d2}\) and scale from \(z_{d1}\), following domain-adversarial training and
+    GRL-based attribute disentanglement~\citep{ganin2015unsupervised, ganin2016domain,
+    attribute_disentanglement}.
+
+    \item \(\lambda_{\mathrm{mi}} \hat{I}(z_{d1}; z_{d2})\) penalizes residual statistical
+    dependence between the two factor latents. This follows the broader disentanglement literature on
+    reducing dependence between latent subspaces, and is included here because classifier-based terms
+    may still leave weaker correlations behind~\citep{disentangling_by_factorising,
+    funke2022disentanglement}.
+
+    \item \(\lambda_{\mathrm{orth}} \lVert \mathrm{Cov}(z_{d1}, z_{d2}) \rVert_F^2\) penalizes
+    cross-covariance between the factor latents, reducing geometric overlap between their subspaces.
+    This complements the mutual-information term by discouraging linear overlap even when residual
+    dependence is too weak to be detected reliably by the classifiers~\citep{disentengaled_representation_learning}.
+\end{itemize}
+
+This design is meant to produce a latent space in which orientation and scale are cleanly separated
+before they are passed to the shared downstream conditional diffusion evaluator. Direct slot
+substitution therefore serves as an architecture-specific sanity check on SP-VAE's interpretability,
+while the main cross-regime evaluation uses the common conditional diffusion setup described below.
+We therefore design the representation to match the operation
+we want to perform on it. The expected outcome is stronger held-out composition than in Regime~C2,
+which would support H2 by showing that giving preserved context and each target factor its own
+cleanly organized latent part makes recombination easier.
+
+\subsection{Evaluation}
+\label{subsec:p2_eval}
+
+Phase~2 evaluates each regime as a downstream stress test of representational usefulness. First, we
+measure how well the learned latent code isolates the known dSprites factors. Second, we train the
+same conditional latent diffusion architecture in each regime's learned latent space and test
+whether that shared downstream setup can recover held-out orientation-scale combinations. The same
+external attribute classifiers are then used to score every generated image.
+
+\paragraph{Attribute Classifiers.}
+Two attribute classifiers are trained on data splits disjoint from VAE training:
+\begin{itemize}
+    \item $f_{\mathrm{or}}$: predicts the orientation value of an input image.
+    \item $f_{\mathrm{sc}}$: predicts the scale value of an input image.
+\end{itemize}
+These classifiers are external evaluators, not training-time heads. Given a generated image,
+$f_{\mathrm{or}}$ predicts its orientation and $f_{\mathrm{sc}}$ predicts its scale. Their
+predictions are used to determine whether the generated sample has recovered the intended target
+factors.
+
+Each composed image is evaluated with the orientation and scale classifiers. The composition success
+rate is the proportion of held-out source pairs for which the generated image is classified as
+recovering both the target orientation and the target scale.
+
+% \paragraph{Disentanglement Metric.}
+% H2 claims that composition success is limited by representation quality, so we also report a
+% standard disentanglement diagnostic alongside the output-level composition results. We use
+% DCI~\citep{eastwood2018framework}, computed on the deterministic encoder representation:
+% $\mu_\phi(x)$ for Regimes~A--C and $[\mu_c,\mu_{d1},\mu_{d2}]$ for Regime~D. Operationally, DCI fits
+% predictors from the latent code to the known dSprites factors and summarises how selectively that
+% information is organised in the representation.
+
+% \begin{itemize}
+%     \item \textbf{Disentanglement}: whether each latent dimension is associated mainly with one
+%     factor rather than several.
+%     \item \textbf{Completeness}: whether each factor is concentrated in a small number of latent
+%     dimensions rather than spread broadly across the code.
+%     \item \textbf{Informativeness}: whether the known factors are recoverable from the latent code
+%     at all.
+% \end{itemize}
+
+% Higher disentanglement and completeness therefore indicate cleaner factor separation, while
+% informativeness confirms that the code still preserves usable information. These scores are reported
+% for all regimes as explanatory evidence for why composition succeeds or fails under correlated
+% support
+
+\paragraph{Held-out composition test.}
+For each regime $r$, the learned encoder-decoder pair defines a latent space in which images can be
+encoded and decoded. We then train the same conditional latent diffusion architecture in that latent
+space, using orientation and scale labels as conditioning variables. At inference time, composition
+is performed with the same score-composition rule in every regime, combining the unconditional,
+orientation-conditioned, and scale-conditioned denoising estimates following the standard
+compositional diffusion literature~\citep{liu2022compositional, du2024compositional}. The resulting
+latent sample is decoded with the regime's decoder to produce the composed image $x_{\mathrm{comp}}$.
+\begin{equation}
+\hat{\epsilon}^{\,\mathrm{comp}}_r(z_t,t)
+=
+\hat{\epsilon}_r(z_t,t,\emptyset)
++
+w_{\mathrm{or}}\bigl(\hat{\epsilon}_r(z_t,t,y_{\mathrm{or}})-\hat{\epsilon}_r(z_t,t,\emptyset)\bigr)
++
+w_{\mathrm{sc}}\bigl(\hat{\epsilon}_r(z_t,t,y_{\mathrm{sc}})-\hat{\epsilon}_r(z_t,t,\emptyset)\bigr).
+\end{equation}
+Each composed image is evaluated with the orientation and scale classifiers. The composition success
+rate is the proportion of held-out source pairs for which the generated image is classified as
+recovering both the target orientation and the target scale.
+
+% \paragraph{Stress Test Limitation}
+% Because each regime defines a different latent geometry, each regime also requires a separately
+% trained conditional diffusion model. The comparison is therefore controlled at the level of
+% architecture, conditioning scheme, inference procedure, and output scoring, but it does not isolate
+% representation alone in the strongest causal sense. Phase~2 should therefore be read as a shared
+% downstream stress test of whether better latent factorisation supports compositional diffusion more
+% reliably.
+
+\paragraph{Trajectory-level gap closure.}
+We also compare the denoising trajectory under composed
+conditioning with the trajectory obtained from a single joint condition on the same target pair. The
+terminal-gap diagnostic $d_T$ is then used as a secondary indicator of whether the
+composability gap narrows under improved representation learning: smaller terminal gaps indicate
+that the composed trajectory tracks the jointly conditioned trajectory more closely.
+
+\subsection{Summary}
+\label{subsec:p2_bridge}
+
+Phase~2 addresses the gap identified in Phase~1 by testing H2 in a controlled synthetic setting.
+Regime~A provides the control, Regime~B creates the failure setting, Regimes~C1 and~C2 test
+whether stronger disentanglement or supervision recover performance, and Regime~D tests whether
+explicit factor structure helps further. If performance drops from Regime~A to Regime~B and then
+improves through Regimes~C1, C2, and especially~D, Phase~2 supports H2 by showing that better
+representations can improve downstream compositional generation and help reduce the gap in this
+controlled setting. Conversely, if Regimes~C1, C2, and~D do not improve clearly over Regime~B, then Phase~2 does not support H2: in this setting, learning a more factorised latent space is not sufficient to improve composition, and any further gains may require changes to the composition rule or other inference-time mechanisms.
+
+Phase~3 then asks whether the same idea remains useful for chest X-rays, where
+conditional independence is approximate and success must be judged by radiological plausibility.
+
+
+\begin{table}[H]
+    \centering
+    \small
+    \caption{Summary of the Phase~2 representation regimes. Regime~C is split into C1 and C2 so
+    that standard disentanglement objectives, label-based factor supervision, and structured latent
+    partitioning can be compared under the same correlated dSprites support and held-out
+    composition test.}
+    \label{tab:p2_representation_regimes}
+    \begin{tabularx}{\linewidth}{|l|p{4.2cm}|X|X|}
+        \hline
+        Regime & Model and training condition & Question & Expected outcome \\
+        \hline
+        A & Baseline VAE trained on standard dSprites with the ELBO only. & Can held-out
+        recombination succeed under clean, factorised support? & High composition success in the
+        control setting. \\
+        \hline
+        B & Baseline VAE trained on correlated dSprites with the ELBO only. & Does correlation in
+        the training support induce entanglement and degrade held-out composition? & Lower
+        composition success than Regime~A. \\
+        \hline
+        C1 & Standard $\beta$-VAE and FactorVAE trained on correlated dSprites with their native
+        disentanglement objectives and no auxiliary predictors. & Are standard disentanglement
+        objectives alone sufficient to recover performance under correlation? & Partial recovery
+        relative to Regime~B if independence pressure helps. \\
+        \hline
+        C2 & $\beta$-VAE and FactorVAE trained on correlated dSprites with label-based auxiliary
+        predictors for scale and orientation in addition to their native objectives. & Does label-based factor supervision
+        improve composition without changing the monolithic latent structure? & Additional recovery
+        relative to C1 if supervision alone helps. \\
+        \hline
+        D & SP-VAE trained on correlated dSprites with the same auxiliary factor supervision, explicit
+        latent partitioning, and the additional separation constraints introduced below. & Does
+        factor-addressable latent allocation add beyond label-based factor supervision alone? & Stronger
+        recovery than Regime~C if structured partitioning matters. \\
+        \hline
+    \end{tabularx}
+\end{table}

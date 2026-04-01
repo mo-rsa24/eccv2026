@@ -1,0 +1,22 @@
+\subsubsection{Comparative Analysis: Discrete vs. Continuous Diffusion}
+
+Although discrete and continuous diffusion models share a common probabilistic foundation, they differ in formulation, flexibility, and computational behavior. Discrete-time DDPMs define generation as a sequence of finite denoising steps, while continuous-time models describe generation as a smooth flow governed by differential equations. This distinction leads to different trade-offs in accuracy, efficiency, and interpretability.
+
+\vspace{1em}
+
+\textbf{1. Sampling and Stability.}  
+Discrete DDPMs provide a straightforward and empirically stable training process with fixed variance schedules but require hundreds to thousands of sampling iterations for high-quality generation. Continuous formulations, by contrast, allow adaptive step sizes and theoretically grounded convergence via SDE solvers, reducing computational cost when implemented with efficient ODE integrators.
+
+\vspace{0.5em}
+
+\textbf{2. Theoretical Generality.}  
+Continuous diffusion offers a unifying view connecting score-based modelling, energy-based learning, and differential flows. The forward SDE and its corresponding Fokker–Planck equation describe the same stochastic process that discrete diffusion approximates with finite differences. Consequently, the discrete models can be interpreted as numerical solvers for continuous SDEs.
+
+\vspace{0.5em}
+
+\textbf{3. Medical Imaging Implications.}  
+In medical imaging, discrete diffusion aligns well with static reconstruction tasks such as denoising, super-resolution, and artifact correction, where noise is discretely removed in successive refinement stages. Continuous diffusion, on the other hand, better captures temporally coherent processes such as disease progression, anatomical motion, or latent space interpolation between diagnostic states. Recent studies such as \cite{dorj2023ddpm_ct} and \cite{wolleb2022sddpm} demonstrate that continuous formulations enable smoother and more clinically plausible transitions between disease manifolds, enhancing interpretability and compositional synthesis.
+
+\vspace{1em}
+
+In summary, discrete diffusion models provide empirical simplicity and robustness, while continuous formulations offer theoretical elegance and dynamic flexibility. Both paradigms serve complementary roles in advancing the compositional generative diffusion models proposed in this work, where shared latent structures and score field compositions are explored for chest radiography pathology synthesis.

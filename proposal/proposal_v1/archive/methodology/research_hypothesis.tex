@@ -1,0 +1,8 @@
+\section{Hypothesis}
+We hypothesise that inference-time compositional diffusion can be used to synthesise clinically valid chest X-ray images that capture the nuanced interplay between silicosis and pulmonary infections common in South African miners. Specifically, we posit that:
+
+\begin{enumerate}
+    \item \textbf{Generative fidelity:} Compositional prompts that bind silicosis-specific texture priors with TB lesion representations will produce radiographs that are indistinguishable from real mixed-pathology scans to thoracic radiologists and quantitative image quality metrics.
+    \item \textbf{Latent factor disentanglement:} The diffusion model's latent factors can be recombined to isolate and control the severity of occupational lung insults (e.g., silica load) independently of infectious manifestations (e.g., cavitary TB), enabling systematic exploration of co-morbidity spectra without retraining.
+    \item \textbf{Downstream utility:} Augmenting scarce training sets with these controllable synthetic images will measurably improve the robustness and calibration of silicosis screening classifiers when evaluated on out-of-distribution hospital sources and X-ray machines.
+\end{enumerate}

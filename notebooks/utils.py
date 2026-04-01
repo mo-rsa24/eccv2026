@@ -1,9 +1,24 @@
 import torch
 import torch.nn.functional as F
-from transformers import CLIPTextModel, CLIPTextModelWithProjection, CLIPTokenizer, T5EncoderModel, T5TokenizerFast
-from diffusers import AutoencoderKL, UNet2DConditionModel, SD3Transformer2DModel, StableDiffusionGLIGENPipeline
+from transformers import CLIPTextModel, CLIPTokenizer
+try:
+    from transformers import CLIPTextModelWithProjection, T5EncoderModel, T5TokenizerFast
+except ImportError:
+    CLIPTextModelWithProjection = None
+    T5EncoderModel = None
+    T5TokenizerFast = None
+from diffusers import AutoencoderKL, UNet2DConditionModel
+try:
+    from diffusers import SD3Transformer2DModel, StableDiffusionGLIGENPipeline
+except ImportError:
+    SD3Transformer2DModel = None
+    StableDiffusionGLIGENPipeline = None
 from PIL import Image
 import matplotlib.pyplot as plt
+
+# transformers < 4.26 does not accept use_safetensors in from_pretrained
+import inspect as _inspect
+_TRANSFORMERS_SAFETENSORS = "use_safetensors" in _inspect.signature(CLIPTextModel.from_pretrained).parameters
 
 
 def get_sd_models(
@@ -17,13 +32,15 @@ def get_sd_models(
     tokenizer = CLIPTokenizer.from_pretrained(model_id, subfolder="tokenizer")
     unet = UNet2DConditionModel.from_pretrained(model_id, subfolder="unet", torch_dtype=dtype, use_safetensors=True).to(device)
 
+    _st = {"use_safetensors": True} if _TRANSFORMERS_SAFETENSORS else {}
+
     if is_sdxl:
         text_encoder = CLIPTextModel.from_pretrained(
-            model_id, subfolder="text_encoder", torch_dtype=dtype, use_safetensors=True
+            model_id, subfolder="text_encoder", torch_dtype=dtype, **_st
         ).to(device)
         tokenizer_2 = CLIPTokenizer.from_pretrained(model_id, subfolder="tokenizer_2")
         text_encoder_2 = CLIPTextModelWithProjection.from_pretrained(
-            model_id, subfolder="text_encoder_2", torch_dtype=dtype, use_safetensors=True
+            model_id, subfolder="text_encoder_2", torch_dtype=dtype, **_st
         ).to(device)
         return {
             "vae": vae,
@@ -36,7 +53,7 @@ def get_sd_models(
         }
 
     text_encoder = CLIPTextModel.from_pretrained(
-        model_id, subfolder="text_encoder", torch_dtype=dtype, use_safetensors=True
+        model_id, subfolder="text_encoder", torch_dtype=dtype, **_st
     ).to(device)
     return {
         "vae": vae,
@@ -53,6 +70,8 @@ def get_gligen_models(
     device=torch.device("cuda"),
 ):
     """Load GLIGEN pipeline components (UNet + single CLIP text encoder + VAE)."""
+    if StableDiffusionGLIGENPipeline is None:
+        raise ImportError("StableDiffusionGLIGENPipeline is not available in this diffusers version.")
     pipe = StableDiffusionGLIGENPipeline.from_pretrained(
         model_id, torch_dtype=dtype,
     ).to(device)
@@ -73,6 +92,8 @@ def get_sd3_models(
     device=torch.device("cuda"),
 ):
     """Load SD3 transformer + triple text encoders + VAE."""
+    if SD3Transformer2DModel is None:
+        raise ImportError("SD3Transformer2DModel is not available in this diffusers version.")
     vae = AutoencoderKL.from_pretrained(
         model_id, subfolder="vae", torch_dtype=dtype, use_safetensors=True,
     ).to(device)

@@ -1,0 +1,19 @@
+% !TEX root = ../../proposal.tex
+
+\chapter{Background}
+\label{chap:background}
+
+This chapter provides the technical foundations a reviewer needs to follow the three-phase
+research programme. Section~\ref{sec:vae_disentanglement} covers variational autoencoders
+and disentangled representation learning, which underpins Phase~2. Section~\ref{sec:diffusion_models}
+introduces diffusion models and score-based generation, which underpins all three phases.
+Section~\ref{sec:compositional_diffusion} presents the compositional diffusion framework ---
+the product-of-experts operator, its theoretical validity conditions, and why representational
+factorisation determines whether composition succeeds --- which motivates Phases~1, 2, and~3.
+Section~\ref{sec:medical_imaging_background} covers chest radiography generation and
+domain-specific encoders relevant to Phase~3.
+
+\input{chapters/background/vae_disentanglement/main}
+\input{chapters/background/diffusion_models/main}
+\input{chapters/background/compositional_diffusion/main}
+\input{chapters/background/medical_imaging_context/main}

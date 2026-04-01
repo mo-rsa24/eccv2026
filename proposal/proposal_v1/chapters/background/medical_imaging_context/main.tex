@@ -1,0 +1,87 @@
+\section{Deep Generative Models for Medical Imaging}
+\label{sec:medical_imaging_context}
+Deep generative models have transformed how imaging problems are formulated and addressed in biomedical research. 
+Unlike traditional deterministic frameworks that rely on handcrafted priors or model-based regularization, 
+modern generative paradigms employ learned probabilistic representations to synthesize, reconstruct, and infer 
+data under uncertainty \citep{diffusion_survey_2025}. 
+These methods differ primarily in how they represent and learn the data distribution \(P_{\text{data}}(x)\), 
+ranging from adversarial and likelihood-based formulations to diffusion and energy-based perspectives. 
+Figure~\ref{fig:deep_generative_models_overview} summarises the principal categories of deep generative models 
+and their core mechanisms, illustrating how each family balances interpretability, likelihood tractability, and sample fidelity 
+across diverse applications in medical image analysis.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{chapters/background/media/medical_imaging/medical_examples_of_dgm.png}
+    \caption{
+        \textbf{Overview of Deep Generative Models \citep{kazerouni2022diffusion}.}
+        Major families of generative models include (a) Generative Adversarial Networks (GANs), which train a generator and discriminator adversarially; 
+        (b) Energy-Based Models (EBMs), which learn an unnormalized energy landscape over data; 
+        (c) Variational Autoencoders (VAEs), which encode data into a latent distribution and decode samples from it; 
+        (d) Normalizing Flows (NFs), which learn invertible mappings for exact likelihood computation; 
+        and (e) Diffusion Models, which progressively corrupt and denoise data through a forward–reverse stochastic process.
+    }
+    \label{fig:deep_generative_models_overview}
+\end{figure}
+
+
+
+\subsection{Generative Formulations in Medical Imaging}
+
+Medical imaging problems can be broadly categorized by the objective that generative modeling aims to address. 
+These include reconstruction-oriented tasks, inverse imaging problems, image translation, denoising and restoration, 
+data augmentation, and recently, compositional or prior-based inference frameworks. 
+
+\subsubsection{Inverse Imaging and Reconstruction Problems}
+Inverse problems in biomedical imaging \citep{accelerated_mri_motion_correction_2023, score_based_diffusion_mri_2022, cao2022spiritdiffusion}, often applied in MRI reconstruction, sparse-view CT, and low-dose denoising, arise when the observed measurements \( y \) are an indirect or incomplete observation of the true physical image \( x \). 
+Formally, such problems are described by the forward model:
+\[
+y = A(x) + \epsilon,
+\]
+where \( A(\cdot) \) denotes the measurement or imaging operator (e.g., Fourier transform in MRI, Radon transform in CT, 
+or projection operator in X-ray imaging), and \( \epsilon \) denotes measurement noise.
+
+\paragraph{Generative Perspective.}
+Generative models are used as data-driven priors, replacing handcrafted regularizers. 
+A Bayesian reconstruction is then written as:
+\[
+p(x|y) \propto p(y|x)\,p_\theta(x),
+\]
+where \( p_\theta(x) \) is a learned generative prior such as a diffusion or score-based model. 
+This allows reconstructions that are both \emph{data-consistent} and \emph{anatomically plausible}. 
+
+\subsubsection{Image-to-Image Translation and Synthesis}
+In Image-to-Image translation tasks, generative models such as GANs, VAEs, and diffusion models are used to translate between domains \citep{Lyu2022ConversionBC, Meng2022ANU}:
+\[
+x_\text{target} = G_\theta(x_\text{source}),
+\]
+where \( G_\theta \) is a learned mapping from source modality \( x_\text{source} \) to target modality \( x_\text{target} \).
+Common applications include cross-modality synthesis, for example, synthesizing CT images from MR, or generating contrast-enhanced from non-contrast scans. 
+These approaches rely on learned joint distributions \( p_\theta(x_\text{target}, x_\text{source}) \) and enable 
+cross-modality synthesis for diagnostic or data augmentation purposes.
+
+\subsubsection{Data Augmentation and Distribution Learning}
+A major use case of generative models is to learn the data distribution \( p_\theta(x) \approx p_\text{data}(x) \) 
+and sample from it to generate realistic synthetic examples:
+\[
+x \sim p_\theta(x).
+\]
+Such models are used to balance class distributions, enhance rare-pathology representation, or augment limited datasets \citep{generative_ai_medical_imaging_2025}. 
+Diffusion models have shown remarkable fidelity in generating realistic medical images, including chest radiographs, 
+brain MRIs, and retinal scans.
+
+\subsection{Problem Categories for Chest Radiography}
+
+Within this taxonomy, chest radiographs occupy a distinctive position. 
+They are typically \emph{fully reconstructed 2D projections} of thoracic anatomy, 
+so classical reconstruction-based inverse problems (as seen in MRI or CT) are generally not applicable to standard X-rays.
+Instead, generative modeling for chest radiography primarily addresses \citep{generative_ai_medical_imaging_2025}:
+\begin{itemize}
+    \item \textbf{Data augmentation:} generating realistic X-rays for rare diseases such as tuberculosis (TB) or silicosis;
+    \item \textbf{Denoising and artifact removal:} treating noise and motion artifacts as mild inverse problems;
+    \item \textbf{Representation learning:} capturing latent manifolds of disease progression and pathology;
+\end{itemize}
+
+To the best of our knowledge, there has not yet been a case study where researchers leverage compositionality or pretrained diffusion models \emph{at inference time} to solve a problem pertinent to medical imaging. 
+The work presented in this research explores precisely this space: it falls within the realm of \emph{compositional generative modeling}, where pretrained diffusion models trained on distinct chest X-ray subsets (e.g., Normal and TB) are combined at inference to produce hybrid or interpolated samples representing compositional pathology manifolds. 
+This formulation can be regarded as a generalization of mixture-of-experts and guided diffusion sampling.

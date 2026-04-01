@@ -1,0 +1,32 @@
+In Figure \ref{fig:two_types_of_generative_models}, we illustrate how generative models can broadly be categorised according to whether they define an \emph{explicit} or \emph{implicit} probability density over the data space. This distinction determines both how the model represents \(P_\theta(x)\) and how learning is performed.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{chapters/background/media/generative_models/two_types_of_generative_models.png}
+    \caption{Two Types of Generative Models. Explicit density models explicitly define and evaluate a probability distribution \(P_\theta(x)\), whereas implicit density models define a stochastic process capable of generating samples without computing explicit likelihoods.}
+    \label{fig:two_types_of_generative_models}
+\end{figure}
+ \noindent\textbf{Explicit Density Models.} 
+Explicit generative models are those that provide a tractable or computable expression for the probability density \(P_\theta(x)\) of the data. These models explicitly quantify how likely a particular observation is under the learned distribution, thereby enabling likelihood-based training and evaluation. Formally, given a dataset \(\{x_i\}_{i=1}^{N}\) drawn from the empirical distribution \(P_{\text{data}}\), the parameters \(\theta\) are optimised by maximising the likelihood of the observed data:
+\begin{equation}
+    \theta^* = \arg\max_\theta \sum_{i=1}^{N} \log P_\theta(x_i),
+\end{equation}
+where \(P_\theta(x)\) is the model’s density function.  
+This approach, known as \emph{maximum likelihood estimation} (MLE), encourages \(P_\theta(x)\) to approximate \(P_{\text{data}}(x)\) by assigning higher probability to the samples observed in the training set.  
+
+Explicit density models can be further divided into two subclasses:
+\begin{itemize}
+    \item \textbf{Tractable Density Models}: such as autoregressive models and normalising flows \allowbreak where the exact likelihood \(P_\theta(x)\) is computationally feasible to evaluate and \allowbreak differentiate. These models enable precise density estimation and sampling through \allowbreak invertible or sequential transformations.
+    \item \textbf{Approximate Density Models}: including variational autoencoders (VAEs) where the likelihood is intractable but can be approximated via variational inference. In this case, a lower bound on the log-likelihood (the evidence lower bound, or ELBO) is optimised instead of the true likelihood.
+\end{itemize}
+Because explicit models know the exact or approximate probability of each generated example, they provide clear statistical interpretability, making them useful for uncertainty estimation and likelihood-based anomaly detection.
+
+% \paragraph
+\noindent\textbf{Implicit Density Models.}
+Implicit generative models, by contrast, define a stochastic mechanism capable of sampling from the data distribution without ever computing an explicit probability for each data point. Instead of evaluating a closed-form likelihood \(P_\theta(x)\), these models learn to generate samples that are indistinguishable from real data according to some learned or predefined criterion.  
+Formally, the model defines a transformation or stochastic process \(G_\theta\) that maps a noise variable \(z \sim P_z\) to a sample \(x = G_\theta(z)\), thereby inducing an implicit model distribution \(P_\theta(x)\). However, since the probability density corresponding to \(G_\theta\) is generally intractable, the likelihood \(P_\theta(x)\) cannot be computed directly.
+
+Implicit models therefore rely on alternative learning objectives that do not require evaluating \(P_\theta(x)\). For example, Generative Adversarial Networks (GANs) train a discriminator to distinguish between real and generated samples, effectively minimising a divergence between the two distributions through adversarial learning. Similarly, diffusion and score-based models learn to approximate the \emph{score function} \(\nabla_x \log P_\theta(x)\) rather than the density itself, allowing them to sample through stochastic differential equations.  
+
+Although implicit models cannot assign explicit likelihoods to generated samples—if asked how probable a specific image is, they provide no numerical answer—they often produce highly realistic outputs that surpass explicit models in visual fidelity. Their strength lies in sample quality and diversity rather than exact probabilistic interpretability.  
+
+Together, explicit and implicit density models form the theoretical foundation of modern generative modelling. The former provide mathematical tractability and clear likelihood semantics, while the latter prioritise expressiveness and sample realism through implicit learning mechanisms. These complementary paradigms converge in recent hybrid approaches, such as diffusion models, which combine the theoretical interpretability of likelihood-based learning with the perceptual fidelity of implicit generative processes.

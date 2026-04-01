@@ -1,0 +1,51 @@
+\documentclass[runningheads]{llncs}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{color}
+\usepackage[width=122mm,left=12mm,paperwidth=146mm,height=193mm,top=12mm,paperheight=217mm]{geometry}
+\newcommand{\figlabel}[1]{%
+  \special{pdf:dest (#1) [ @thispage /XYZ @xpos @ypos null ]}%
+  \label{#1}%
+}
+\newcommand{\figref}[1]{%
+  \special{pdf:bann << /Subtype /Link /Border [0 0 0] /A << /S /GoTo /D (#1) >> >>}%
+  Figure~\ref{#1}%
+  \special{pdf:eann}%
+}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{5}
+\renewcommand{\topfraction}{0.95}
+\renewcommand{\bottomfraction}{0.9}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\floatpagefraction}{0.85}
+\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
+\raggedbottom
+
+\begin{document}
+\pagestyle{headings}
+\mainmatter
+\def\ECCV16SubNumber{14798}
+
+\title{Comparing Semantic and Logical Composition in Latent Diffusion Models}
+\titlerunning{ECCV-16 submission ID \ECCV16SubNumber}
+\authorrunning{ECCV-16 submission ID \ECCV16SubNumber}
+\author{Molefe Molefe Devon Jarvis Richard Klein}
+\institute{14798}
+
+\maketitle
+
+\begin{abstract}
+By leveraging the compositional structure of natural language, text-to-image diffusion is able to create coherent scenes with multiple objects while respecting their respective spatial structure. Yet, training these models remains highly data inefficient, as examples of the object pairings that have the desired semantic relationship are needed, motivating the exploration of compositional diffusion techniques. These methods use \emph{logical} rather than \emph{textual} composition by combining specialist diffusion models at inference time to generate complex scenes and aim to generalize to unseen combinations. However, the extent to which the logical composition respects the semantic relationship between objects remains unclear, with examples of ``a cat'' AND ``a dog'' creating chimeras rather than two animals side-by-side. We demonstrate the differences between the two paradigms through a trajectory-level analysis that shows how they diverge early in the diffusion process and favour substantially different endpoints in latent space. Further, we identify the text prompt stable diffusion would need to reproduce a given logical composition, using this to characterize the gap between what logical operators produce and what language can express. Finally, we show that a simple linear interpolation of velocities can provide a semantic grounding of logical composition.
+\end{abstract}
+
+\input{sections/introduction/introduction}
+\input{sections/background/background}
+\input{sections/method/method}
+\input{sections/experiments/experiments}
+\input{sections/conclusion/conclusion}
+
+\bibliographystyle{splncs}
+\bibliography{egbib}
+\end{document}

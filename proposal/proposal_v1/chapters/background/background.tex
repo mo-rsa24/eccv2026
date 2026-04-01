@@ -1,0 +1,64 @@
+\chapter{Background}
+\label{chap:background}
+
+\noindent
+This chapter provides the theoretical background necessary for understanding the
+compositional diffusion framework developed in later chapters.  
+Section~\ref{sec:deep_generative_models} introduces the foundations of deep
+generative modelling, outlining core probabilistic principles and contrasting
+major generative families.  
+Section~\ref{sec:diffusion_models} then reviews diffusion models in detail,
+covering their DDPM formulation, continuous-time SDE interpretation, and the
+main variants relevant to compositionality.  
+Section~\ref{sec:compositional_generative_modeling} surveys existing approaches
+to compositional generative modelling, including score-based, energy-based, and
+density-based operators, together with their assumptions and limitations.  
+Section~\ref{sec:context_guided_diffusion} introduces context-guided diffusion
+and its role in stabilising generation under structured constraints.  
+Finally, Section~\ref{sec:riemannian_diffusion_models} introduces Riemannian
+diffusion models, which generalise diffusion to non-Euclidean manifolds and
+provide geometric concepts useful for describing relationships between
+generative models.
+Together, these sections establish the conceptual and mathematical foundations
+underpinning the research methodology developed in
+Chapter~\ref{chap:research_method}.
+
+
+\section{Generative Modeling}
+\label{sec:deep_generative_models}
+Generative modelling is a subfield of machine learning that provides a principled framework for algorithms to learn the underlying probability distribution of data, enabling models to synthesise new samples that exhibit the statistical and structural characteristics of the training set. Neural networks were first incorporated into generative frameworks in the 1980s \citep{optimal_perceptual_inference, bond2021deep}, marking an important step toward using computational models to approximate complex data distributions.
+At the core of this field lies the recognition that discriminative models—those which parameterize conditional distributions \( p_{\theta}(y \mid x) \), where \( x \) denotes the input (e.g., an image) and \( y \) the corresponding label—are inherently limited, as they do not model the underlying data-generating process \( p_{\text{data}}(x, y) \). In contrast, generative models introduce a parameterized approximation \( p_{\theta}(x, y) \) (often factorized via latent variables, e.g., \( p_{\theta}(x, y) = \!\int\! p_{\theta}(x, y \mid z)\,p_{\theta}(z)\,dz \)), thereby capturing the joint structure between inputs and outputs \citep{tomczak2024deep}.
+
+
+While effective for classification and regression, discriminative models do not capture the joint statistical relationships or latent semantics of the input space, making them sensitive to covariate shifts and distributional perturbations that often lead to performance degradation \citep{fetaya2019understanding}.
+Unlike discriminative models, which learn the conditional probability $p(y \mid x)$, generative approaches aim to approximate the \emph{joint distribution} $p(x, y)$, or equivalently the class-conditional likelihood $p(x \mid y)$ together with the prior $p(y)$ \citep{NIPS2001_7b7a53e2,fetaya2019understanding}. 
+This formulation enables such models to capture dependencies and correlations within the input space and between inputs and labels, providing a richer probabilistic description of how the data are generated.
+
+% Formally, let the data be drawn from an unknown target distribution \(P_{X}\) over an input space \(\mathcal{X}\) (e.g., medical images, text, or signals), such that \(\mathbf{x} \sim P_{X}\). 
+% The goal of generative modelling is to learn a parameterized model distribution \(P_{\theta}(x)\) that approximates the true data distribution, i.e. \(P_{\theta}(x) \approx P_{X}(x)\) \citep{abdollahzadeh2023survey}. 
+
+Latent-variable models assume that observed data \(\mathbf{x} \in \mathcal{X}\) are generated from unobserved variables \(\mathbf{z} \in \mathcal{Z}\) through a parameterized mapping \(G_{\theta}: \mathcal{Z} \rightarrow \mathcal{X}\).  
+The latent variables capture low-dimensional structure that explains the variability in the data and serve as coordinates on a manifold underlying \(\mathcal{X}\).  
+A prior distribution \(P_{\mathcal{Z}}\) is imposed on the latent space, typically an isotropic Gaussian, to regularize the representation and enable efficient sampling.  
+% The Gaussian prior is favored for its rotational invariance and analytic tractability under reparameterization, which facilitates gradient-based optimization and smooth latent interpolation.
+
+% Given \(\mathbf{z} \sim P_{\mathcal{Z}}\), samples are generated as \(\mathbf{x} = G_{\theta}(\mathbf{z})\), defining the model distribution as the pushforward measure \(P_{\theta}(x) = G_{\theta\#} P_{\mathcal{Z}}\).  
+% This formulation establishes a probabilistic link between latent and observed variablDifferent generative frameworks instantiate this principle through distinct learning objectives or inference schemes—variational inference in VAEs, contrastive estimation in EBMs, adversarial optimization in GANs, and stochastic score-based learning in diffusion models \citep{mohamed2016learning,kingma2013auto,kingma2019introduction}.
+
+Generative models can be broadly categorised according to whether they define an \emph{explicit} or \emph{implicit} probability density over the data space, determining how \(P_\theta(x)\) is represented and learned.
+As depicted in Figure \ref{fig:two_types_of_generative_models}, this division provides a conceptual taxonomy from which subclasses such as autoregressive, flow-based, and energy-based models emerge.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{chapters/background/media/generative_models/two_types_of_generative_models.png}
+    \caption{
+        \textbf{Two Types of Generative Models.}
+        Explicit models define tractable likelihoods \(P_\theta(x)\), whereas implicit models generate samples through stochastic processes without computing explicit densities.
+    }
+    \label{fig:two_types_of_generative_models}
+\end{figure}
+
+% \input{chapters/background/deep_generative_models/main}
+\input{chapters/background/diffusion_models/main}
+\input{chapters/background/compositional_generative_modeling/main}
+\input{chapters/background/context_guided_diffusion/main}
+\input{chapters/background/riemannian_diffusion_models/main}

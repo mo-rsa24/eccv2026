@@ -1,0 +1,140 @@
+% !TEX root = ../../../proposal.tex
+
+\section{Variational Autoencoders}
+\label{sec:vae_disentanglement}
+
+A standard autoencoder can learn a compact representation for reconstructing an input, but this representation is not necessarily suitable for generation.
+A variational autoencoder (VAE)~\citep{kingma2013auto} addresses this limitation by making the latent
+representation probabilistic and regularising it toward a simple reference distribution.
+The result is a model that can both reconstruct observed examples and generate new ones
+from sampled latent codes.
+
+During training, the encoder takes an input image $x$ and produces an approximate
+posterior distribution $q_\phi(z \mid x)$ over latent codes where $\phi$ denotes the
+encoder's learnable parameters. In the standard Gaussian case, this distribution is
+summarised by a mean $\mu_\phi(x)$ and a diagonal covariance
+$\mathrm{diag}(\sigma_\phi^2(x))$. A latent sample $z$ drawn from this distribution is
+then passed to the decoder to reconstruct the input. At inference time, we sample $z \sim p(z) = \mathcal{N}(0, I)$ from the prior and decode
+it directly. 
+
+More formally, a VAE defines a latent-variable generative model
+$p_\theta(x) = \int p_\theta(x \mid z)\,p(z)\,\mathrm{d}z$, where $\theta$ denotes the
+learnable parameters of a model intended to approximate the data distribution,
+$p(z) = \mathcal{N}(0, I)$ is a standard Gaussian prior, and $p_\theta(x \mid z)$ is a
+learned decoder. 
+Because the
+marginal likelihood is intractable, training maximises the evidence lower bound (ELBO) such that the objective function becomes:
+\begin{equation}
+    \mathcal{L}_{\mathrm{VAE}}(\theta, \phi; x)
+    = \underbrace{\mathbb{E}_{q_\phi(z \mid x)}\!\left[\log p_\theta(x \mid z)\right]}_{\text{reconstruction}}
+    -\underbrace{D_{\mathrm{KL}}\!\left(q_\phi(z \mid x)\,\|\,p(z)\right)}_{\text{regularisation}},
+    \label{eq:elbo}
+\end{equation}
+where $q_\phi(z \mid x) = \mathcal{N}(\mu_\phi(x), \mathrm{diag}(\sigma^2_\phi(x)))$ is the
+encoder's approximate posterior. The first term rewards reconstructions that explain the
+observed data and the second keeps the posterior close to the prior.
+
+\subsection{Disentangled Representations}
+
+A representation is \emph{disentangled} if each latent dimension encodes at most one
+ground-truth factor of variation, and changing one dimension changes the corresponding
+attribute without affecting others~\citep{disentengaled_representation_learning,
+on_disentangled_representation_learning}. Here, a factor means a ground-truth attribute of the data, such as orientation or scale. 
+In a VAE, disentanglement is desirable because it gives the latent space a separable structure, with different latent dimensions capturing different underlying factors of variation rather than mixing them together. 
+This makes the representation easier to interpret and enables controlled changes in generated data, since one attribute can be varied without unintentionally affecting others.
+
+
+One common way to encourage this structure is to modify the VAE objective. 
+By scaling the KL term by $\beta > 1$ in Equation~\ref{eq:elbo}, $\beta$-VAE \citep{Higgins2016betaVAELB} restricts how much information can pass through the model. 
+This pressure encourages the encoder to organise data into a set of distinct, unrelated traits.
+FactorVAE~\citep{disentangling_by_factorising} pursues the same goal through a different modification of the objective, replacing the $\beta$ multiplier with a Total Correlation penalty $\gamma\,\mathrm{TC}(q(z))$.
+This term, $\mathrm{TC}(q(z)) = D_{\mathrm{KL}}(q(z)\,\|\,\prod_j q(z_j))$, specifically measures how much the different features overlap or depend on one another, pushing them to be more independent.
+Both methods try to force independence within a single shared code $z \in \mathbb{R}^d$. 
+This works when the data's features are independent, but if the training data contains hidden patterns or correlations, the model will use them as a shortcut. 
+In those cases, simply adding more regularization is not enough to prevent the model from following correlations in the data \citep{challeau2019challenging}. 
+\citet{challeau2019challenging} show that unsupervised disentanglement is unreliable without inductive bias, that is, assumptions in the model or training procedure that favour certain latent structures over others. 
+Without such constraints, different random seeds and hyperparameter settings can lead to inconsistent results, and models that appear well disentangled cannot be selected or reproduced reliably without some form of supervision. 
+Moreover, for the datasets they study, higher disentanglement does not consistently improve downstream sample efficiency. 
+
+\subsection{Weakly Supervised Disentanglement}
+To address this limitation, inductive bias is introduced in two main ways: weak supervision through factor labels \citep{weakly_supervised_disentanglement, on_disentangled_representation_learning} and structural partitioning of the latent space \citep{louiset2024sepvae}. 
+Both approaches aim to make factors easier to separate under correlated training data, where independence-based objectives alone are often insufficient
+
+\paragraph{Weak supervision through training-time predictor heads.}
+The first approach uses training-only predictor heads attached to the encoder representation, as in weakly supervised disentanglement \citep{weakly_supervised_disentanglement} and and subsequent work on attribute disentanglement \citep{attribute_disentanglement}.
+In this setting, the relevant bias comes from auxiliary supervision, that is,
+an additional label-based training signal used to shape the representation without being required at inference time. 
+This supervision encourages the encoder to keep selected
+factors explicitly predictable from the latent code, rather than allowing them to mix
+arbitrarily with other sources of variation.
+For each known factor $k$, a small MLP $g_k$ is applied
+to the deterministic encoder mean $\mu_\phi(x)$ and trained against the ground-truth label
+$y_k$ using either a cross-entropy or regression loss, depending on the factor type. These
+heads are used only during training and are discarded at inference, so the supervision helps organise the representation while leaving the generative model unchanged at inference time. 
+Applying the auxiliary loss to $\mu_\phi(x)$ rather than to a stochastic sample $z$ provides a stable,
+low-variance training signal and matches the deterministic representation typically used in
+disentanglement evaluation \citep{eastwood2018framework, challeau2019challenging}. Under
+correlated training data, this form of weak supervision has been shown to recover part of
+the factor structure that independence-based objectives alone fail to separate
+\citep{traeuble2021disentangled}.
+
+\paragraph{Correct-head supervision and adversarial exclusion.}
+Auxiliary supervision can make a selected factor predictable from a designated latent
+region, but it does not guarantee that the same factor is absent from the rest of the
+latent code \citep{weakly_supervised_disentanglement, attribute_disentanglement}. In
+other words, supervision can place information in the intended region without fully
+preventing it from leaking into others. To describe this setup clearly, we refer to the
+predictor attached to the intended latent region as the \emph{correct-head}, and to
+predictors attached to other regions as \emph{wrong-heads}. The correct-head encourages a
+factor to be recoverable from the right region, while the wrong-heads are used to detect
+whether that factor is still readable from regions where it should not appear.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.60\linewidth]{chapters/background/vae_disentanglement/media/dann_grl.png}
+    \caption{Domain-Adversarial Neural Networks (DANN) illustrate the gradient reversal
+    mechanism introduced by \citet{ganin2016domain}. The architecture describes a label predictor that is trained to solve the main task while a domain
+    classifier is attached through a gradient reversal layer so that the learned features
+    remain uninformative about domain. The same idea can be reused for factor-specific
+    exclusion: a wrong-head tries to detect whether a factor is still present in the wrong
+    latent region, while the reversed gradient pushes the encoder to remove that factor
+    from that region.}
+    \label{fig:dann_grl}
+\end{figure}
+
+Figure~\ref{fig:dann_grl} shows the core idea behind wrong-head suppression. A standard
+classification loss on a wrong-head would be counterproductive, because it would train the
+encoder to make the leaked factor easier to predict. To avoid this, \citet{attribute_disentanglement} use the gradient reversal layer (GRL), originally
+introduced by \citet{ganin2016domain} for domain-invariant representation learning. 
+In that setting, the goal is to learn
+features that support the main task while suppressing information about whether an example
+comes from the source or target domain. The same mechanism can be used here to suppress
+factor leakage. The GRL leaves the forward pass unchanged, so the wrong-head still learns
+to detect residual leakage, but during backpropagation it multiplies the gradient sent to
+the encoder by $-\lambda$. As a result, the wrong-head becomes better at exposing leaked
+factor information, while the encoder is trained to remove that information from the wrong
+region. Together, correct-head supervision and GRL-based wrong-head suppression encourage
+each factor to appear in its designated latent partition and nowhere else, yielding
+cleaner factor separation than supervision alone \citep{attribute_disentanglement}.
+
+\paragraph{Structural latent partitioning across datasets, groups, and modalities.}
+Structural latent partitioning addresses the same problem at the level of model design. 
+Instead of asking a single shared latent code to separate all factors through regularisation alone, these methods assign different sources of variation to different parts of the latent representation from the outset. 
+In practice, this means splitting the latent code into components with different roles, so that shared variation and factor-specific variation are modeled separately from the start. 
+The exact split depends on the structure available in the data, for example whether the setting involves background and target datasets, grouped observations, or multiple aligned modalities.
+
+Contrastive VAE is motivated by settings in which the variation of interest is enriched in
+a target dataset relative to a background dataset \citep{abid2019cvae}. It partitions the
+latent space into a common subspace, which captures variation present in both datasets, and
+a salient subspace, which captures variation specific to the target set. Background
+samples are reconstructed without using the salient code, which pushes target-specific
+structure into the salient partition.
+
+Multimodal VAEs are motivated by settings in which the same underlying example is observed through more than one modality, such as paired image and text, or image and segmentation mask \citep{hsu2018pvae, shi2019mmvae}. 
+Their latent spaces are therefore divided into a shared component, which captures information present in all modalities, and private components, which capture variation specific to each modality. 
+This partition is useful for tasks such as joint generation and predicting one modality from another. 
+In practice, however, recovering this separation reliably remains difficult when modality-specific variation dominates \citep{martens2024sharedprivate}.
+
+SepVAE applies the same partitioning logic in a contrastive medical setting \citep{louiset2024sepvae}. 
+Like contrastive VAE, it uses common and salient latent partitions, but it adds constraints designed to reduce leakage between them and to make the salient space more specific to target pathology. 
+In this setting, that means separating normal anatomy shared across cohorts from pathology-specific deviations.

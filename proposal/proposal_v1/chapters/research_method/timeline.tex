@@ -1,0 +1,108 @@
+\section{Timeline}
+\label{sec:research_method}
+
+This section outlines the overall research plan, presenting the structured progression of activities aligned with the three core research questions (RQ1–RQ3) and the corresponding theoretical and experimental phases of this PhD project. 
+The timeline of activities, shown in Table~\ref{table:project_timeline}, illustrates how the investigation evolves from foundational experimentation on compositional diffusion (\textbf{RQ1}) to the assessment of clinical and ecological validity (\textbf{RQ2}), and finally to the exploration of geometric and Riemannian diffusion formulations (\textbf{RQ3}).  
+Each phase builds upon the previous, ensuring a cohesive and cumulative investigation into composable diffusion models for medical imaging.
+
+
+\begin{table}[htpb]
+% \centering
+\begin{ganttchart}[
+  expand chart=\textwidth,
+  y unit title=0.85cm,
+  y unit chart=0.9cm,
+  bar height=0.6,
+  vgrid, hgrid,
+  x unit=0.52cm,
+  bar/.append style={fill=blue!22, draw=blue!45},
+  group right shift=0, group top shift=0,
+  title/.append style={draw=black, fill=gray!10},
+  bar label font=\small,       % larger task labels (like the screenshot)
+  title label font=\bfseries\footnotesize
+]{1}{21}  % 2025-03 .. 2027-12  => 34 month slots
+
+  % ===== Title rows =====
+  \gantttitle{2025}{3}
+  \gantttitle{2026}{12}
+  \gantttitle{2027}{6}\\
+  % Month numbers: 03..12 | 01..12 | 01..12
+  \gantttitlelist{10,11,12}{1}
+  \gantttitlelist{01,02,03,04,05,06,07,08,09,10,11,12}{1}
+  \gantttitlelist{01,02,03,04,05,06}{1}\\
+
+
+  % ===== Tasks (bars) — positions chosen to visually match the screenshot =====
+  \ganttbar{Composition(RQ1) }{1}{3}\\                           % Mar'25–Dec'25
+  \ganttbar{Clinical Validity(RQ2)}{4}{9}\\                                % Mar'25–Mar'26
+  \ganttbar{Riemannian Diffusion(RQ3)}{10}{15}\\                            % Aug'25–Jul'26
+  \ganttbar{Experiments}{1}{15}\\                                  % Mar'25–Oct'27
+  \ganttbar{Write Thesis}{16}{21}                                  % Oct'26–Dec'27
+\end{ganttchart}
+\caption{
+Project timeline showing major research phases aligned with the core research questions. 
+\textbf{RQ1} focuses on latent-space composition of disease-specific diffusion models; 
+\textbf{RQ2} evaluates the clinical and ecological validity of composed samples; and 
+\textbf{RQ3} explores curvature-aware Riemannian diffusion for geometric alignment. 
+The \textbf{Experiments} phase spans model training and validation, while the final stage involves thesis writing and integration of results.
+}
+\label{table:project_timeline}
+\end{table}
+\paragraph{Key Assumptions.}
+This research is grounded on several key assumptions that underlie the feasibility and validity of the proposed approach.  
+First, it is assumed that large-scale public chest X-ray datasets such as CheXpert \citep{Chexpert}, NIH ChestX-ray8 \citep{wang2017chestxray8}, and MIMIC-CXR \citep{johnson2016mimiciii_dataset} capture sufficient radiographic diversity to enable the training of transferable latent priors that generalize to South African mining populations.  
+A second assumption concerns latent alignment: the shared autoencoder is expected to learn a unified latent manifold within which disease-specific submanifolds (e.g., tuberculosis and silicosis) remain locally composable, enabling meaningful superposition during inference.  
+Furthermore, the research assumes that expert radiologists can provide consistent interpretability assessments to evaluate the ecological and diagnostic plausibility of the generated co-morbidities, serving as a qualitative validation of clinical realism.  
+Finally, the study assumes ethical compliance by ensuring that all generated synthetic data remain privacy-preserving and non-identifiable. This will be verified through membership inference and memorisation audits to confirm that no patient-specific information is reproduced or recoverable from the model outputs.
+
+\paragraph{Risk Factors.}
+The research also recognises several potential risks that could impact methodological robustness or experimental validity.  
+Foremost among these is data imbalance: the scarcity of real co-morbid Silico-TB cases may bias the generative priors, leading to poor generalisation or overrepresentation of dominant classes.  
+Another risk arises from latent drift, where independently trained latent diffusion models may yield disjoint or misaligned score fields, causing instability or semantic incoherence during composition.  
+There is also the possibility of clinical misinterpretation, where synthetic radiographic anomalies might be perceived as artefacts or diagnostically implausible patterns by experts.  
+Finally, there exists a fundamental uncertainty regarding whether compositional operations in latent space can meaningfully capture the joint statistical structure of multiple diseases.  
+If the learned priors represent mutually incompatible manifolds, their superposition may fail to produce clinically realistic co-morbid images, revealing intrinsic limits of composability in diffusion models.
+
+\paragraph{Limitations.}
+The scope of this study is defined by certain methodological and practical limitations.  
+First, the investigation is restricted to two-dimensional chest radiographs; the extension of compositional diffusion models to volumetric modalities such as CT or MRI lies beyond the current scope.  
+Second, the interpretability assessment of generated images depends heavily on expert availability and consensus, introducing an element of subjectivity that may affect evaluation consistency.  
+Lastly, the compositional operations explored in this work are primarily linear in score space.  
+While this formulation enables tractable experimentation, it may not fully capture non-linear or higher-order interactions between complex disease processes, suggesting the need for future research into non-linear compositional frameworks.
+
+
+% \paragraph{Progress and Readiness.}
+% Foundational progress has been achieved toward establishing the computational framework required for this investigation.  
+% A shared variational autoencoder (VAE) has been successfully trained on a combined dataset of normal and tuberculosis (TB) chest radiographs, providing a unified latent representation suitable for training latent diffusion models (LDMs).  
+% Using this shared encoder–decoder backbone, two unconditional LDMs were independently trained—one on normal chest X-rays and the other on TB X-rays—to serve as disease-specific generative priors.  
+% Initial compositional experiments conducted using the SuperDiff framework demonstrate that score-space superposition between these models can be meaningfully controlled: setting the weight of one model to zero reproduces the distribution of the other, effectively yielding a logical OR operation in generative space.  
+% These preliminary findings indicate that the models can generate plausible samples representative of their respective training domains, validating the soundness of the pipeline for subsequent compositional investigations.  
+% Figure~\ref{fig:progress_readiness_ldm} illustrates representative samples from the trained diffusion models, which serve as a readiness milestone for future experiments examining latent-space composition under both Euclidean and Riemannian diffusion formulations.
+
+% \begin{figure}[H]
+%     \centering
+%     % --- First image: Normal X-rays ---
+%     \begin{subfigure}[t]{0.48\textwidth}
+%         \centering
+%         \includegraphics[width=\textwidth]{chapters/research_method/media/normal_ldm_samples.png}
+%         \caption{Samples from the unconditional diffusion SDE trained on Normal chest X-rays.}
+%         \label{fig:normal_ldm_samples}
+%     \end{subfigure}
+%     \hfill
+%     % --- Second image: TB X-rays ---
+%     \begin{subfigure}[t]{0.48\textwidth}
+%         \centering
+%         \includegraphics[width=\textwidth]{chapters/research_method/media/tb_ldm_samples.png}
+%         \caption{Samples from the unconditional diffusion SDE trained on Tuberculosis (TB) chest X-rays.}
+%         \label{fig:tb_ldm_samples}
+%     \end{subfigure}
+
+%     % --- Unified caption ---
+%     \caption{
+%         Visual demonstration of the experimental readiness phase.
+%         Each panel shows images synthesized by separately trained unconditional diffusion SDEs, one on Normal and one on Tuberculosis (TB) chest X-ray datasets. 
+%         These models serve as proxies for studying compositionality in diffusion processes—specifically, whether latent manifolds of distinct disease distributions are geometrically and statistically composable under the SuperDiff framework.
+%         The ongoing investigation tests whether such manifolds admit coherent superposition through score-space operations, providing an empirical basis for evaluating the mathematical foundations of composable diffusion models.
+%     }
+%     \label{fig:progress_readiness_ldm}
+% \end{figure}

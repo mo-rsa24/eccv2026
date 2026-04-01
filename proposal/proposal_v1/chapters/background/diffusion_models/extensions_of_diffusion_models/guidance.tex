@@ -1,0 +1,94 @@
+Classifier guidance was introduced by \citet{NEURIPS2021_49ad23d1} as a mechanism for steering the
+reverse diffusion trajectory toward samples that satisfy a desired condition $y$.  Instead of
+modifying the DDPM mean parameter, the formulation is more naturally expressed in terms of the
+noise-prediction parameterization
+\[
+\nabla_{x_t} \log p(x_t)
+=
+-\frac{1}{\sqrt{1-\bar\alpha_t}}\,\epsilon_\theta(x_t,t),
+\]
+which relates the score to the model’s predicted noise. 
+The authors observed that the classifier gradient
+\[
+\nabla_{x_t} \log p_\phi(y \mid x_t)
+\]
+can be used as an additional force that biases the sampling process toward regions where the 
+classifier assigns higher likelihood to the target condition.
+
+Using the identity
+\[
+\nabla_{x_t}\log p(y \mid x_t)
+=
+\nabla_{x_t}\log p(x_t \mid y)
+-
+\nabla_{x_t}\log p(x_t),
+\]
+we note that the term $\nabla_{x_t}\log p(y)$ vanishes because $p(y)$ does not depend on the image 
+variable $x_t$.  
+This follows directly from Bayes’ rule,
+\[
+p(y \mid x_t) = \frac{p(x_t \mid y)\,p(y)}{p(x_t)},
+\]
+whose logarithm yields 
+\[
+\log p(y \mid x_t)
+=
+\log p(x_t \mid y)
++
+\log p(y)
+-
+\log p(x_t),
+\]
+and differentiation with respect to $x_t$ eliminates the constant $\log p(y)$.
+Thus the classifier gradient can be written purely as a difference of conditional and 
+unconditional data scores.
+
+Substituting the score--noise relation, the guided noise predictor takes the form \citep{NEURIPS2021_49ad23d1, weng2021diffusion}:
+\begin{equation}
+\tilde{\epsilon}_\theta(x_t,t,y)
+=
+\epsilon_\theta(x_t,t,y)
++
+w\bigl(\epsilon_\theta(x_t,t,y) - \epsilon_\theta(x_t,t)\bigr)
+=
+(1+w)\,\epsilon_\theta(x_t,t,y)
+-
+w\,\epsilon_\theta(x_t,t).
+\label{eq:guided_eps_classifier}
+\end{equation}
+Here $w \ge 0$ is the guidance weight.  
+Larger values of $w$ increase adherence to the target condition at the cost of reduced sample
+diversity.  
+This expression makes clear that classifier guidance amplifies the difference between the
+conditional and unconditional denoising directions.
+
+\paragraph{Classifier-Free Guidance.}
+
+Classifier-free guidance (CFG) \citep{ho2022classifier} achieves the same effect without requiring a
+separate classifier.  
+A single diffusion model is trained so that it learns both the conditional and unconditional noise
+predictors:
+\[
+\epsilon_{\mathrm{cond}}(x_t,t,y), \qquad
+\epsilon_{\mathrm{uncond}}(x_t,t),
+\]
+by randomly dropping the conditioning variable $y$ during training.  
+With these two predictors, \citet{ho2022classifier} showed that the same guided update used in
+classifier guidance can be reproduced purely from the model itself:
+\begin{equation}
+\tilde{\epsilon}_\theta(x_t,t,y)
+=
+(1+w)\,\epsilon_{\mathrm{cond}}(x_t,t,y)
+-
+w\,\epsilon_{\mathrm{uncond}}(x_t,t),
+\label{eq:guided_eps_cfg}
+\end{equation}
+which is algebraically equivalent to applying classifier guidance with weight $w+1$ to an
+unconditional diffusion model.  
+The hyperparameter $w$ again determines the strength of conditioning: $w=0$ yields standard
+conditional generation, while $w>1$ produces extrapolative guidance that strengthens the conditional
+signal at the cost of diversity.
+
+This formulation has become the dominant approach in conditional diffusion models, as it retains the
+effectiveness of classifier guidance while avoiding the need for a separate classifier and enabling
+conditional and unconditional behavior to be learned jointly within one network.

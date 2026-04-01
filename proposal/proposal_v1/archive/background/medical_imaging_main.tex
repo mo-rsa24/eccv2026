@@ -1,0 +1,68 @@
+\subsection{Inverse-Problem-Like Formulations in Chest Pathology Imaging}
+
+While chest X-rays are not inverse problems in the strict physical sense (as reconstruction from projections is handled by the scanner), 
+several problem formulations in chest pathology imaging exhibit inverse characteristics where 
+the underlying cause (disease, lesion, or anatomy) must be inferred from incomplete or noisy effects (observed image data). 
+Below we summarize key examples.
+
+\paragraph{Denoising and Artifact Removal.}
+Given a noisy or artifact-corrupted chest X-ray \( y = x + \epsilon \), 
+the goal is to recover the clean image \( x \). 
+A diffusion prior acts as a strong denoiser:
+\[
+x^* = \arg\max_x \, p(y|x)\,p_\theta(x),
+\]
+where \( p_\theta(x) \) constrains the solution to anatomically plausible radiographs. 
+\textit{Application:} low-dose or mobile X-ray correction.
+
+\paragraph{Limited-Angle or Sparse-View Reconstruction.}
+When only partial X-ray projections are available (e.g., for dose reduction or portable imaging),
+the forward model is:
+\[
+y = A(x) + \epsilon,
+\]
+with \( A \) representing the limited projection operator. 
+The inverse task is to reconstruct the full radiograph \( x \) consistent with \( y \), 
+regularized by a diffusion prior \( p_\theta(x) \). 
+\textit{Application:} dose-efficient imaging and fast screening systems.
+
+\paragraph{2D-to-3D Chest Reconstruction.}
+Given a 2D projection \( y \) of an unknown 3D volume \( x \), 
+the physical process can be described as:
+\[
+y = A_\text{proj}(x),
+\]
+where \( A_\text{proj} \) denotes the X-ray projection operator. 
+The goal is to infer \( x \) that could plausibly produce \( y \). 
+A generative model supplies the anatomical prior \( p_\theta(x) \) over valid 3D chest geometries. 
+\textit{Application:} reconstructing volumetric lung structure or estimating lesion depth from a single X-ray.
+
+\paragraph{Semantic Inference of Pathologies.}
+Here, the observed image \( y \) is used to infer the latent pathology state \( z \), 
+with a generative decoder \( p_\theta(y|z) \) modeling disease appearance:
+\[
+p(z|y) \propto p(y|z)p(z).
+\]
+This constitutes an \textit{inverse inference} problem in latent space, 
+where the goal is to infer the hidden pathological cause from observed image evidence. 
+\textit{Application:} disease localization, severity estimation, and progression modeling.
+
+\paragraph{Compositional Generative Inference (Our Formulation).}
+In this research, we introduce a compositional generative inference framework for chest X-rays, 
+where pretrained diffusion models trained on disjoint datasets (e.g., TB vs.~Normal) are combined at inference time. 
+Formally, let \( s_\text{TB}(x,t) \) and \( s_\text{Normal}(x,t) \) denote the score fields 
+from the respective pretrained models. 
+Following the \emph{SuperDiff} formulation, a composite score field is defined as:
+\[
+s_\text{comp}(x,t) = \kappa\, s_\text{TB}(x,t) + (1 - \kappa)\, s_\text{Normal}(x,t),
+\]
+where \( \kappa \in [0,1] \) controls the compositional weighting. 
+The corresponding reverse diffusion process integrates this composite score to synthesize novel samples that 
+lie on the shared manifold between the TB and Normal data distributions. 
+
+\textit{Application:} 
+generation of intermediate or novel pathology states for data augmentation, interpretability, and 
+latent-space exploration of disease semantics. 
+Although not an inverse problem in the classical physics sense, this formulation constitutes an 
+\emph{inverse-problem-like inference} in the latent semantic space of disease composition, 
+where the goal is to infer plausible intermediate states from disjoint learned priors.

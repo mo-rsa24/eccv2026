@@ -1,0 +1,10 @@
+\paragraph{Variational Autoencoders.}
+Another likelihood-based approach is the Variational Autoencoder (VAE) \citep{kingma2013auto, pmlr-v32-rezende14}, which introduces latent variables $z$ to capture hidden structure. The true likelihood
+\begin{equation}
+p_\theta(x) = \int p_\theta(x \mid z) p(z) \, dz
+\end{equation}
+is generally intractable, so VAEs optimize the evidence lower bound (ELBO):
+\begin{equation}
+\log p_\theta(x) \geq \mathbb{E}_{q_\phi(z \mid x)} \big[ \log p_\theta(x \mid z) \big] - \mathrm{KL}\big(q_\phi(z \mid x) \,\|\, p(z)\big),
+\end{equation}
+where $q_\phi(z \mid x)$ is an approximate posterior with parameters $\phi$, and $\mathrm{KL}$ denotes the Kullback--Leibler divergence.

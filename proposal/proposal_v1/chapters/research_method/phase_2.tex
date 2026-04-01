@@ -1,0 +1,70 @@
+\section{Phase 2: Property-Guided and Context-Aware Composition}
+
+Phase~2 extends compositional generative modelling beyond unconditional
+hybridisation and investigates whether \textit{property-guided} sampling can
+improve the semantic reliability and clinical plausibility of composed
+distributions. This phase directly supports \textbf{Research Goal~2} and tests
+\textbf{Hypothesis~H2}, which states that meaningful property-guided
+compositional generation requires guidance models that are smooth,
+well-calibrated, and robust to distribution shift. In particular, models must
+avoid producing out-of-distribution (OOD) pathological structures when steering
+composed samples toward continuous clinical attributes such as lesion severity
+or spatial involvement.
+
+Where Phase~1 evaluates whether composition alone can produce coherent hybrid
+pathology, Phase~2 asks a more refined question: when we condition the composed
+distribution on a continuous attribute, does guided sampling remain anatomically
+and semantically plausible? This question is crucial for medical imaging, where
+severity, extent, and localisation of disease are fundamental descriptors, and
+where naive guidance can easily hallucinate unrealistic or clinically dangerous
+patterns. Property-guided composition therefore provides a demanding test of
+compositional robustness, sensitivity to OOD behaviour, and the structural
+conditions needed for reliable continuous attribute control.
+
+\paragraph{Naive Property Guidance.}
+We begin by training severity or location predictors on TB, Silicosis, or
+combined datasets and applying their gradients to steer samples from the
+composed models. This allows us to determine whether gradient-based guidance
+interacts coherently with the composed density. Failure modes—such as
+exaggerated lesions, anatomically implausible cavity shapes, or misplaced
+nodules—indicate that the guidance model is overconfident, insufficiently
+smooth, or misaligned with the composed latent space. These observations offer
+direct evidence for or against Hypothesis~H2 by revealing whether naive guidance
+can preserve semantic meaning or destabilises composition.
+
+\paragraph{Context-Guided and Uncertainty-Aware Predictors.}
+To test the second part of Hypothesis~H2, we train context-aware, uncertainty-
+calibrated guidance models that incorporate additional latent or image features
+before producing severity or localisation predictions. The goal is to ensure
+that the guidance model remains reliable when operating on composed samples,
+which differ from pure TB or pure Silicosis images. By comparing these models
+to naive predictors, we evaluate whether improved calibration and contextual
+conditioning mitigate OOD hallucinations and yield more stable control during
+sampling. Success indicates that property-guided composition requires guidance
+models that explicitly account for uncertainty, distribution shift, and latent
+structure. Failure highlights the structural gaps between composition and
+attribute control.
+
+\paragraph{Guided Composition Evaluation.}
+Across both naive and context-guided approaches, we evaluate the clinical
+plausibility of property-steered composite samples by examining whether the
+resulting images respect anatomical boundaries, generate realistic lesion
+patterns, and maintain coherence with known co-morbidity presentations. The
+goal is to determine whether guided operators reflect genuine continuous factors
+of variation—such as increasing cavitation severity—or whether guidance drives
+the model into regions of latent space that do not correspond to real
+pathology. Observing whether composition and guidance reinforce or conflict with
+each other provides insight into the structural compatibility of these two
+processes.
+
+\paragraph{Contribution of This Phase.}
+Phase~2 contributes a unified framework for evaluating how property guidance
+interacts with compositional generative modelling. It clarifies when guided
+sampling can enhance semantic meaning and when it destabilises composition,
+particularly in clinically complex domains. By contrasting naive guidance with
+context-aware, uncertainty-calibrated predictors, we identify the structural
+conditions under which property-guided composition preserves anatomical
+plausibility and yields interpretable continuous variation. This phase therefore
+provides a rigorous test of Hypothesis~H2 and establishes the methodological and
+theoretical groundwork for integrating continuous attribute control into
+compositional generative models.

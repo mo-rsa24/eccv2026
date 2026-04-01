@@ -27,7 +27,11 @@ from sklearn.manifold import TSNE
 from scipy.spatial.distance import cdist
 from scipy.stats import gaussian_kde
 
-from diffusers import EulerDiscreteScheduler, FlowMatchEulerDiscreteScheduler
+from diffusers import EulerDiscreteScheduler
+try:
+    from diffusers import FlowMatchEulerDiscreteScheduler
+except ImportError:
+    FlowMatchEulerDiscreteScheduler = None
 from notebooks.dynamics import stochastic_super_diff_and, get_latents, get_vel
 from notebooks.utils import (
     get_sd_models, get_sd3_models,
@@ -620,6 +624,8 @@ class CompositionExperimentSuite:
             self.text_encoder_3 = models["text_encoder_3"]
             self.transformer = models["transformer"]
             self.unet = None
+            if FlowMatchEulerDiscreteScheduler is None:
+                raise ImportError("FlowMatchEulerDiscreteScheduler is not available in this diffusers version.")
             self.scheduler = FlowMatchEulerDiscreteScheduler.from_pretrained(
                 config.model_id, subfolder="scheduler"
             )

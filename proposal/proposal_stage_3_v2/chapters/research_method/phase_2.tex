@@ -1,0 +1,101 @@
+% !TEX root = ../../proposal.tex
+
+\section{Phase 2: Explaining the Composability Gap}
+\label{sec:phase_2}
+
+Phase~1 characterised the composability gap across concept regimes. Phase~2 asks whether that gap is partly a representation problem. The key claim is that if composition is limited by the quality of the learned representation, then more factorised latent spaces should yield more reliable composition under the same downstream conditional diffusion setup.
+
+This distinction is difficult to test directly in a large pretrained model such as Stable Diffusion \citep{rombach2022high}, where the learned representation and the inference-time compositional method are tightly coupled. Phase~2 therefore moves to a controlled synthetic setting in which the representation can be varied while the downstream composition pipeline is kept fixed.
+This leads to a central claim:
+\begin{center}
+{\setlength{\fboxsep}{6pt}%
+\fbox{%
+\parbox{\dimexpr 0.96\linewidth - 2\fboxsep - 2\fboxrule\relax}{%
+\textbf{{If representation quality is a limiting factor for composition, then more factorised latent
+spaces should yield more reliable compositional generation under the same downstream conditional
+diffusion architecture.}
+}
+}}}
+\end{center}
+
+H2 is supported if better factorised latent spaces improve held-out composition under this shared evaluator.
+
+
+\subsection{Dataset Selection}
+\label{subsec:p2_testbeds}
+
+We use dSprites~\citep{dsprites17} and a correlated dSprites variant~\citep{roth2023disentanglement} because the underlying factors are known and held-out recombination can be measured directly. Standard dSprites serves as the positive control: orientation and scale are sampled independently, and one orientation--scale combination is removed from training. If a model fails to recover that held-out combination in this setting, the limitation is already present before support bias is introduced.
+
+\paragraph{Correlated dSprites:}
+Correlated dSprites keeps the visual domain unchanged but biases orientation--scale co-occurrence. Some combinations become common while others are rare or missing, creating a controlled setting in which the model can rely on shortcut correlations rather than learning the factors separately. This makes it well suited for testing whether better latent factorisation restores held-out composition.
+
+\subsection{Experiment Design}
+\label{subsec:p2_models}
+
+The experiment compares four regimes under the same downstream evaluation. Regimes~A and~B establish the baseline effect of changing the training support, Regime~C tests whether disentanglement or weak supervision recover performance in the correlated setting, and Regime~D tests whether explicit latent partitioning improves further.
+
+\subsubsection{Regime A: Control}
+
+Regime~A trains a baseline VAE on standard dSprites. It asks whether held-out recombination is feasible when the training support is factorised. Success here establishes that the task itself is valid before correlation is introduced.
+
+\subsubsection{Regime B:  Correlated dSprites Setting}
+
+Regime~B keeps the same baseline VAE but trains it on correlated dSprites. This isolates the effect of biased support: if performance drops relative to Regime~A, then the failure can be attributed to support-induced entanglement rather than a change in model family or evaluation rule.
+
+\subsubsection{Regime C: Disentangling Correlated dSprites}
+Regime~C keeps the correlated support of Regime~B but strengthens representation learning in two ways. C1 uses standard disentanglement models such as $\beta$-VAE and FactorVAE. C2 adds weak supervision on orientation and scale through training-time auxiliary heads while leaving the latent space shared. This regime tests whether stronger independence pressure or limited supervision alone can recover held-out composition under correlation.
+
+\subsubsection{Regime D: Partitioned Representation}
+\label{subsec:p2_spvae}
+
+Regime~D keeps the same correlated support and matched supervision as C2, but replaces the shared latent with a partitioned representation. The latent code is organised as \(z=(z_c,z_{d1},z_{d2})\), where \(z_c\) stores shared context, \(z_{d1}\) orientation, and \(z_{d2}\) scale. If Regime~D improves beyond C2, the gain is most plausibly due to explicit factor-addressable structure rather than supervision alone.
+
+\subsection{Evaluation}
+\label{subsec:p2_eval}
+
+Phase~2 uses the same evaluation setup in every regime. Generated images are scored with external orientation and scale classifiers trained separately from the representation-learning stage. Each learned latent space is then paired with the same conditional latent diffusion model, so differences in performance can be attributed to the representation rather than the downstream architecture.
+
+
+% \paragraph{Disentanglement Metric.}
+% H2 claims that composition success is limited by representation quality, so we also report a
+% standard disentanglement diagnostic alongside the output-level composition results. We use
+% DCI~\citep{eastwood2018framework}, computed on the deterministic encoder representation:
+% $\mu_\phi(x)$ for Regimes~A--C and $[\mu_c,\mu_{d1},\mu_{d2}]$ for Regime~D. Operationally, DCI fits
+% predictors from the latent code to the known dSprites factors and summarises how selectively that
+% information is organised in the representation.
+
+% \begin{itemize}
+%     \item \textbf{Disentanglement}: whether each latent dimension is associated mainly with one
+%     factor rather than several.
+%     \item \textbf{Completeness}: whether each factor is concentrated in a small number of latent
+%     dimensions rather than spread broadly across the code.
+%     \item \textbf{Informativeness}: whether the known factors are recoverable from the latent code
+%     at all.
+% \end{itemize}
+
+% Higher disentanglement and completeness therefore indicate cleaner factor separation, while
+% informativeness confirms that the code still preserves usable information. These scores are reported
+% for all regimes as explanatory evidence for why composition succeeds or fails under correlated
+% support
+
+\paragraph{Held-out composition test.}
+For each regime, we train the same conditional latent diffusion model in the learned latent space and test composition on held-out orientation--scale combinations. The primary outcome is composition success rate: the proportion of held-out cases in which both target attributes are recovered in the generated image.
+
+% \paragraph{Stress Test Limitation}
+% Because each regime defines a different latent geometry, each regime also requires a separately
+% trained conditional diffusion model. The comparison is therefore controlled at the level of
+% architecture, conditioning scheme, inference procedure, and output scoring, but it does not isolate
+% representation alone in the strongest causal sense. Phase~2 should therefore be read as a shared
+% downstream stress test of whether better latent factorisation supports compositional diffusion more
+% reliably.
+
+\paragraph{Trajectory-level gap closure.}
+As a secondary diagnostic, we compare the composed denoising trajectory with the jointly conditioned trajectory for the same target pair. Smaller terminal gaps indicate that improved representation learning narrows the composability gap rather than only improving decoded outputs.
+
+\subsection{Summary}
+\label{subsec:p2_bridge}
+
+Phase~2 addresses the gap identified in Phase~1 by testing H2 in a controlled synthetic setting. Regime~A provides the control, Regime~B creates the failure setting, Regime~C tests whether disentanglement or weak supervision recover performance, and Regime~D tests whether explicit latent partitioning improves further. If performance falls from Regime~A to Regime~B and then improves most clearly in Regime~D, Phase~2 supports the claim that representation quality is a meaningful limiting factor for composition.
+
+Phase~3 then asks whether the same idea remains useful for chest X-rays, where
+conditional independence is approximate and success must be judged by radiological plausibility.

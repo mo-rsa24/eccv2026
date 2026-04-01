@@ -1,0 +1,11 @@
+\subsubsection{Continuity Equation and Conservation of Probability}
+
+The continuity equation provides the mathematical foundation for understanding how probability mass evolves within a dynamical system over time. In the context of generative modelling, it formalizes the conservation of probability as data undergo transformations governed by deterministic or stochastic flows.  
+
+Let \( p(x, t) \) denote the probability density of a random variable \( x \in \mathbb{R}^D \) at time \( t \). The continuity equation is given by:
+\begin{equation}
+    \frac{\partial p(x, t)}{\partial t} = -\nabla_x \cdot [p(x, t) v(x, t)],
+\end{equation}
+where \( v(x, t) \) is the velocity (or probability flow) field describing how points in the data space evolve over time.  
+
+This equation expresses the principle that any change in local probability density must correspond to a flux of probability elsewhere—analogous to the conservation of mass in fluid dynamics. In generative modelling, this ensures that the total probability across the data manifold remains normalized as distributions evolve under parameterized transformations. The continuity equation therefore underpins both deterministic flows such as Ordinary Differential Equations (ODEs) and stochastic ones such as Stochastic Differential Equations (SDEs), which together form the backbone of diffusion-based generative frameworks.

@@ -1,0 +1,58 @@
+\paragraph{From the Markov Chain to the Continuous Limit.}
+In DDPM, the forward process is a discrete-time Markov chain:
+\[
+\mathbf{x}_i = \sqrt{1 - \beta_i}\,\mathbf{x}_{i-1} + \sqrt{\beta_i}\,\boldsymbol{\epsilon}_{i-1}, 
+\qquad \boldsymbol{\epsilon}_{i-1} \sim \mathcal{N}(\mathbf{0}, \mathbf{I}),
+\]
+where \(\beta_i\) controls the variance of the added Gaussian noise. 
+For small \(\beta_i\), the process evolves slowly, requiring many steps to reach the Gaussian prior; for large \(\beta_i\), the reverse process becomes unstable to learn. 
+To bridge this discrete process to a continuous one, we define a time step \(\Delta t = 1/N\) and rescale the noise variance such that \(\tilde{\beta}_i = N\beta_i\). 
+The update can then be rewritten as
+\[
+\mathbf{x}_i 
+= \sqrt{1 - \tilde{\beta}_i \Delta t}\,\mathbf{x}_{i-1} 
+  + \sqrt{\tilde{\beta}_i \Delta t}\,\boldsymbol{\epsilon}_{i-1}.
+\]
+Identifying \(\mathbf{x}_i = \mathbf{x}(t+\Delta t)\), \(\mathbf{x}_{i-1} = \mathbf{x}(t)\), and \(\tilde{\beta}_i = \beta(t+\Delta t)\), we can express the evolution as
+\[
+\mathbf{x}(t+\Delta t) 
+= \sqrt{1 - \beta(t+\Delta t)\,\Delta t}\,\mathbf{x}(t)
+  + \sqrt{\beta(t+\Delta t)\,\Delta t}\,\boldsymbol{\epsilon}(t).
+\]
+To obtain the infinitesimal form, we expand the square root term using a first-order Taylor approximation around small \(\Delta t\):
+\[
+\sqrt{1 - \beta(t+\Delta t)\,\Delta t} 
+\approx 1 - \tfrac{1}{2}\beta(t+\Delta t)\,\Delta t + \mathcal{O}((\Delta t)^2),
+\]
+which introduces the factor of one-half corresponding to the first-order derivative of the square root.  
+Substituting this approximation yields
+\[
+\mathbf{x}(t+\Delta t) 
+\approx \mathbf{x}(t) 
+  - \tfrac{1}{2}\beta(t+\Delta t)\,\mathbf{x}(t)\,\Delta t 
+  + \sqrt{\beta(t+\Delta t)}\,\sqrt{\Delta t}\,\boldsymbol{\epsilon}(t).
+\]
+Subtracting \(\mathbf{x}(t)\) from both sides gives the increment
+\[
+\mathbf{x}(t+\Delta t) - \mathbf{x}(t)
+\approx -\tfrac{1}{2}\beta(t)\,\mathbf{x}(t)\,\Delta t
+        + \sqrt{\beta(t)}\,\sqrt{\Delta t}\,\boldsymbol{\epsilon}(t),
+\]
+where the dependence on \(t+\Delta t\) has been replaced by \(t\) under the assumption of smoothness in \(\beta(t)\).
+Defining the Wiener increment \(\mathrm{d}\mathbf{W} = \sqrt{\mathrm{d}t}\,\boldsymbol{\epsilon}(t)\),
+which satisfies \(\mathbb{E}[\mathrm{d}\mathbf{W}] = \mathbf{0}\) and \(\mathrm{Var}[\mathrm{d}\mathbf{W}] = \mathrm{d}t\),
+and taking the limit as \(\Delta t \to 0\), we obtain
+\[
+\frac{\mathbf{x}(t+\Delta t) - \mathbf{x}(t)}{\Delta t}
+\;\longrightarrow\;
+-\tfrac{1}{2}\beta(t)\,\mathbf{x}(t)
++ \sqrt{\beta(t)}\,\frac{\boldsymbol{\epsilon}(t)}{\sqrt{\Delta t}}.
+\]
+Recognizing that the second stochastic term defines a differential in the sense of Itô calculus, the discrete diffusion process converges to the Itô stochastic differential equation
+\[
+\boxed{
+\mathrm{d}\mathbf{x} = -\tfrac{1}{2}\beta(t)\,\mathbf{x}\,\mathrm{d}t + \sqrt{\beta(t)}\,\mathrm{d}\mathbf{W},
+}
+\]
+where the first term represents the deterministic \emph{drift} and the second term represents stochastic \emph{diffusion} driven by Brownian motion \(\mathbf{W}(t)\).
+This provides the continuous-time interpretation of the DDPM forward process, establishing the correspondence between discrete diffusion steps and the infinitesimal dynamics of an Itô SDE.

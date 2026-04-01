@@ -1,0 +1,12 @@
+\subsubsection{Compositionality in Generative Models}
+
+Compositionality refers to the ability of a generative model to combine multiple independent concepts or distributions to create coherent new samples representing their logical combination. In diffusion models, compositionality extends conditional guidance by allowing linear or nonlinear composition of score functions associated with distinct generative distributions. Formally, if \( s_1(x, t) \) and \( s_2(x, t) \) denote score functions for two pretrained diffusion models corresponding to different data subsets or attributes, compositional sampling defines a joint score field as:
+\begin{equation}
+    s_{\text{comp}}(x, t)
+    = \alpha_1 s_1(x, t) + \alpha_2 s_2(x, t),
+\end{equation}
+where coefficients \( \alpha_i \) determine the relative influence of each component. Logical operations such as conjunction (AND), disjunction (OR), or negation (NOT) can be expressed through appropriate weighting or normalization of these score components \cite{liu2023compositionaldiffusion}. The resulting composed score is then used in the reverse diffusion or probability flow ODE to generate samples consistent with multiple semantic conditions simultaneously.
+
+Compositional diffusion provides a powerful paradigm for structured generative reasoning. It allows pretrained models to be reused and combined without retraining, enabling scalable synthesis across combinatorial concept spaces. This mechanism supports both latent-level and score-level composition, facilitating explicit control over the blending of attributes or modalities.  
+
+In medical imaging, compositional diffusion models are particularly promising for simulating co-occurring or interacting pathologies. For example, separate diffusion models trained on “healthy” and “diseased” chest X-rays can be combined to generate images exhibiting intermediate or overlapping conditions, such as tuberculosis with cardiomegaly. Similarly, modality-specific score fields (e.g., CT and X-ray) can be composed to enable cross-domain synthesis. These techniques not only expand the generative capacity of diffusion frameworks but also enhance interpretability by enabling explicit, algebraic reasoning in the latent probability space—central to this research on \textit{Compositional Generative Diffusion Models for Chest Radiography Pathologies}.

@@ -1,0 +1,31 @@
+% !TEX root = ../../proposal.tex
+
+\section{Research Hypotheses}
+\label{sec:research_objectives_research_hypothesis}
+
+The main hypotheses of this proposal are:
+\begin{itemize}
+    \item \textbf{H1 (The Composability Gap):}
+    We hypothesise that logical composition via score addition produces a measurable composability gap relative to semantic composition, and that this gap emerges early during inference.
+    Its behaviour is expected to follow a principled ordering:
+    \begin{enumerate}
+        \item concept pairs with strong co-occurrence support in the training distribution should exhibit the smallest gap;
+        \item concept pairs that lack such co-occurrence support but remain approximately disentangled in feature space should exhibit a small to moderate gap;
+        \item concept pairs that satisfy neither condition should exhibit a substantially larger gap;
+        \item concept pairs involving direct semantic-slot competition should exhibit the largest gap and the clearest compositional failures.
+    \end{enumerate}
+
+    Under this hypothesis, the largest-gap outcomes should also be semantically unreachable through natural-language prompting alone, supporting the claim that logical composition steers generation along paths that a single semantic prompt cannot reproduce.
+
+
+    \item \textbf{H2 (The Representation Hypothesis):}
+    We hypothesise that the composability gap is primarily caused by how concepts are represented, rather than by how they are combined during inference.
+    Concretely, when the composition rule is held fixed, a model trained to keep concept representations explicitly separate should produce better compositions than a model that is not.
+
+    \item \textbf{H3 (The Clinical Independence Sufficiency Hypothesis).}
+    We hypothesise that approximate clinical independence between chest X-ray pathologies is sufficient for logical composition to produce realistic co-morbid outputs.
+    Following H2, this hypothesis assumes that successful composition depends on learning a representation in which pathology-specific information remains sufficiently distinct despite shared anatomy and acquisition variation.
+    If that condition can be achieved for clinically distinct pathologies, logical composition should generate plausible co-morbid chest X-rays, including out-of-distribution pathology pairings not jointly observed during training, thereby supporting use in low-resource settings where such cases are scarce.
+
+
+\end{itemize}

@@ -1,0 +1,34 @@
+% !TEX root = ../../proposal.tex
+
+\section{Generative Models for Medical Imaging}
+\label{sec:rw_medical}
+
+Deep generative models have been applied to chest radiography synthesis along several
+axes. GAN-based approaches~\citep{gan_medical_image_augmentation_2018,
+medical_image_synthesis_gans_2018} demonstrated that synthetic images can augment small
+annotated datasets and improve classifier performance, but suffer from mode collapse and
+limited control over pathology location and type. Diffusion-based models have improved
+both fidelity and diversity: Kazerouni et al.~\citep{kazerouni2022diffusion} surveyed
+the growing use of diffusion models across medical imaging modalities, and Hashmi et
+al.~\citep{hashmi2024xreal} showed high-quality X-ray synthesis using latent diffusion.
+These methods condition on a single pathology label or text description; they produce
+plausible single-disease images but cannot synthesise a coherent co-morbid presentation
+because they have no mechanism for independently specifying and combining two disease
+conditions. This is the central limitation Phase~3 addresses.
+
+CheSS~\citep{NEURIPS2022_123d3e81} trained a chest X-ray encoder using a
+self-supervised contrastive objective on large radiograph collections, producing
+domain-calibrated embeddings. This is directly relevant to Phase~3: unlike general-purpose
+CLIP, CheSS similarity scores reflect radiologically meaningful differences between
+images, making it appropriate both for conditioning per-disease experts and for evaluating
+whether composed images are radiologically consistent with real co-morbid cases. The
+VinBigData dataset~\citep{nguyen2022vindr}, used in Phase~3, provides the clinical
+setting: 15{,}000 PA radiographs with 14-class radiologist annotations and bounding box
+localisation, offering both pathology labels and spatial priors that guide the per-disease
+latent factorisation. SepVAE~\citep{louiset2024sepvae}, discussed in
+Section~\ref{sec:rw_disentanglement}, is also relevant here: it demonstrated latent
+partitioning for pathology separation in a contrastive cohort setting. Phase~3 extends
+this idea to a compositional setting in which two co-existing pathologies must be
+simultaneously represented and combined, without a contrastive healthy/pathological split.
+No prior work has applied score-level composition with factorised disease latents to
+co-morbid chest radiograph synthesis; Phase~3 is the first to do so.

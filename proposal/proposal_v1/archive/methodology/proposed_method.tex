@@ -1,0 +1,31 @@
+\section{Composing Pathologies Using Ito Dynamics}
+We propose to adapt a pre-trained chest X-ray latent diffusion model with an It\={o} stochastic sampler that supports compositional guidance during inference. Each pathology of interest---normal anatomy, silicosis scarring, cavitary TB, and bacterial pneumonia---is encoded as a text or attribute embedding learned from curated prompt-image pairs. During sampling, the diffusion trajectory is guided by an additive score combination that fuses the gradients associated with individual embeddings. By tuning the weighting coefficients, we can modulate disease severity or emphasise specific radiographic signatures without altering the underlying diffusion weights. This approach enables rapid generation of clinically meaningful variants tailored to the heterogeneous imaging equipment found across South African mining clinics.
+
+To ground the synthesis process in real clinical appearances, we will fine-tune the conditioning encoders using a small, high-quality set of annotated radiographs from local hospitals. Semantic masks highlighting silicotic nodules, interstitial fibrosis, and infectious opacities will inform auxiliary loss terms that encourage spatially coherent compositions. A lightweight radiomic critic network will provide additional feedback by penalising unrealistic textural statistics or anatomical distortions.
+\subsection{Assumptions}
+\begin{itemize}
+    \item \textbf{Availability of seed data:} We assume access to a limited but diverse collection of labelled chest X-rays capturing normal lungs, isolated silicosis, and TB cases from South African cohorts. We will verify this by partnering with occupational health clinics and ensuring data-sharing agreements cover at least a few hundred images per class.
+    \item \textbf{Transferability of latent priors:} We assume that latent representations learned on large public CXR corpora (e.g., CheXpert, MIMIC-CXR) remain applicable after domain adaptation to mining populations. This will be tested through baseline evaluations of reconstruction error and feature alignment before applying compositional guidance.
+    \item \textbf{Clinical interpretability of synthetic outputs:} We assume that radiologists can reliably interpret compositional samples to provide feedback on plausibility and disease staging. This assumption will be assessed via structured expert review sessions and inter-rater agreement analysis.
+    \item \textbf{Ethical compliance:} We assume that synthetic augmentation will not inadvertently memorise or expose identifiable patient information. Membership inference tests and privacy risk assessments will be conducted to confirm this.
+\end{itemize}
+\subsection{Architecture}
+The generation pipeline consists of four primary modules:
+\begin{enumerate}
+    \item \textbf{Conditioning encoder:} A frozen biomedical language encoder augmented with pathology-specific adapters that map textual or categorical descriptors (e.g., ``moderate silicosis'', ``post-primary TB'') into the diffusion guidance space.
+    \item \textbf{Latent diffusion backbone:} A denoising UNet operating in the latent space of a variational auto-encoder trained on global CXR datasets. The backbone is adapted with LoRA layers to better capture South African anatomical nuances while preserving generalisation.
+    \item \textbf{Compositional controller:} An inference-time module that aggregates conditional score estimates, adjusts weighting coefficients, and enforces anatomical priors via lung field masks and cardiac silhouette constraints.
+    \item \textbf{Radiomic critic and filter:} A lightweight classifier-regressor that evaluates generated samples for texture statistics, structural symmetry, and exposure consistency, rejecting outliers prior to downstream use.
+\end{enumerate}
+\subsection{Experiments}
+\subsubsection{Experiment 1: Generative Fidelity and Clinical Validity}
+We will generate cohorts of synthetic radiographs across combinations (normal, silicosis, TB, silico-TB) and compare them to real datasets using Fr\'echet Inception Distance (FID) adapted for medical images, multi-scale structural similarity (MS-SSIM), and radiologist blind grading. Success is defined as synthetic silico-TB images achieving parity with real counterparts on quantitative metrics and exceeding 80\% clinician acceptability.
+
+\subsubsection{Experiment 2: Controllability and Factor Disentanglement}
+We will systematically vary compositional weights to simulate gradients of silica exposure and infectious burden. Latent traversals will be evaluated using disentanglement metrics (e.g., mutual information gap) and by measuring how well radiologists can order image sets by severity. This experiment validates whether the model affords meaningful, independent control over co-morbidity attributes.
+
+\subsubsection{Experiment 3: Downstream Classification Robustness}
+We will augment a baseline silicosis classifier with synthetic samples and evaluate performance on cross-hospital test sets and mixed-pathology benchmarks. Metrics include area under the ROC curve, calibration error, and decision boundary shift under domain shifts (e.g., different X-ray machines). We will also examine failure cases where synthetic data harms performance to refine compositional prompts.
+
+\subsubsection{Experiment 4: Generalisation to Additional Co-morbidities}
+To demonstrate extensibility without retraining, we will compose additional pathologies such as pneumonia overlays and assess classifier performance on these rare cases. This tests the hypothesis that inference-time compositionality can rapidly support new diagnostic targets as occupational health priorities evolve.

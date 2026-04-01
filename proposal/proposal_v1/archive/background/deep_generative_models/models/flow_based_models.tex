@@ -1,0 +1,6 @@
+\paragraph{Flow-Based Models.}
+Flow-based models such as RealNVP \citep{dinh2016density} and Glow \citep{kingma2018glow} provide exact likelihood computation by learning invertible mappings $f_\theta$ between data and latent space. If $z = f_\theta(x)$, the likelihood follows from the change of variables formula:
+\begin{equation}
+p_\theta(x) = p(z) \left| \det \frac{\partial f_\theta}{\partial x} \right|,
+\end{equation}
+where $\det \frac{\partial f_\theta}{\partial x}$ is the determinant of the Jacobian of the transformation.

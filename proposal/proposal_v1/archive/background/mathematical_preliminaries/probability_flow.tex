@@ -1,0 +1,16 @@
+\subsubsection{Probability Flow and Deterministic Reformulations}
+
+A central insight in modern diffusion modelling is that the stochastic diffusion process governed by an SDE can be equivalently represented as a deterministic Ordinary Differential Equation (ODE) known as the probability flow ODE.  
+
+Given an SDE:
+\begin{equation}
+    dx = f(x, t)\,dt + g(t)\,d\mathbf{w},
+\end{equation}
+the corresponding probability flow ODE is expressed as:
+\begin{equation}
+    \frac{dx}{dt} = f(x, t) - \frac{1}{2} g(t)^2 \nabla_x \log p_t(x).
+\end{equation}
+
+This formulation produces the same marginal probability densities \( p_t(x) \) as the original SDE but allows deterministic sample generation by integrating the ODE backward in time. In practice, the score term \( \nabla_x \log p_t(x) \) is approximated using a neural network \( s_\theta(x, t) \).  
+
+Probability flow reformulations provide two major benefits. First, they establish a bridge between diffusion models and continuous normalizing flows by enabling exact likelihood computation through instantaneous change-of-variable formulations. Second, they permit efficient sampling and interpretability—properties that are crucial for medical imaging applications where controlled, reproducible, and explainable synthesis is required. This deterministic perspective therefore serves as a key theoretical tool for compositional generative diffusion models that rely on combining multiple score fields across disease distributions.

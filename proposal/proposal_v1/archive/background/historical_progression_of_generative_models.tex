@@ -1,0 +1,164 @@
+\subsection{Historical Progression of Generative Models}
+\label{subsec:history}
+From autoregressive models to VAEs and GANs, culminating in diffusion and score-based methods.
+\subsubsection{Denoising Autoencoders (DAEs)}
+Denoising Autoencoders (DAEs) \cite{vincent2008dae} represent a fundamental precursor to both Variational Autoencoders (VAEs) and Denoising Diffusion Probabilistic Models (DDPMs). Their core idea is to learn robust representations by reconstructing clean inputs from artificially corrupted versions, thereby capturing the structure of the underlying data manifold. Given an input sample \( x \) and a corruption process \( q(\tilde{x}|x) \) that introduces noise (e.g., Gaussian, masking, or dropout), the autoencoder learns a mapping \( f_\theta(\tilde{x}) \) that minimizes the reconstruction loss  
+
+\begin{equation}
+    \mathcal{L}_{\text{DAE}} = 
+    \mathbb{E}_{x \sim p_{\text{data}}}
+    \mathbb{E}_{\tilde{x} \sim q(\tilde{x}|x)}
+    \left[ \| x - f_\theta(\tilde{x}) \|^2 \right].
+\end{equation}
+
+Through this process, DAEs implicitly learn the gradient of the log data density, i.e., the score function \( \nabla_x \log p(x) \), which describes the direction toward higher probability regions on the data manifold \cite{alain2014score}. This connection establishes DAEs as early score-based models, directly influencing the development of modern diffusion frameworks where denoising steps are formalized as stochastic differential equations that progressively remove noise from data.  
+
+\vspace{1em}
+
+Beyond their theoretical significance, DAEs have been widely applied in medical imaging for noise suppression, artifact removal, and unsupervised representation learning. For example, \cite{chen2019dae_mri} used convolutional DAEs for MRI denoising and undersampled reconstruction, improving signal-to-noise ratios in low-dose settings. Similarly, \cite{xu2020dae_cxr} employed DAEs to enhance chest X-rays degraded by motion blur, while \cite{li2021dae_ct} demonstrated their efficacy in CT artifact correction. These models learn intrinsic anatomical priors without explicit supervision, offering a pathway toward generative inference where denoising aligns with probabilistic reasoning.  
+
+\vspace{1em}
+
+The conceptual bridge between DAEs and diffusion models lies in the interpretation of denoising as score estimation. In diffusion models, each denoising step refines noisy samples toward higher-probability regions in a continuous manner, formalizing the intuition behind DAEs as a stochastic, multi-scale process. Consequently, diffusion-based methods extend DAEs from deterministic reconstruction to fully generative modelling, enabling compositional inference and structured sampling across disease manifolds—key objectives in this research on compositional generative diffusion models for medical imaging.  
+\subsubsection{Generative Adversarial Networks (GANs)}
+Generative Adversarial Networks (GANs) \cite{goodfellow2014gan} introduced an adversarial learning paradigm that transformed deep generative modelling by framing generation as a two-player minimax game between a generator and a discriminator. The generator \( G_\theta(z) \) learns to map latent noise vectors \( z \sim p(z) \) to synthetic samples \( \hat{x} = G_\theta(z) \), while the discriminator \( D_\phi(x) \) learns to distinguish real samples from generated ones. The joint objective is defined as  
+
+\begin{equation}
+    \min_{\theta} \max_{\phi} \; \mathcal{L}_{\text{GAN}}(\theta, \phi)
+    = \mathbb{E}_{x \sim p_{\text{data}}}[\log D_\phi(x)]
+    + \mathbb{E}_{z \sim p(z)}[\log(1 - D_\phi(G_\theta(z)))].
+\end{equation}
+
+This adversarial formulation implicitly drives the generator to learn the underlying data distribution \( p_{\text{data}} \) by minimizing a Jensen–Shannon divergence between real and generated samples. Various improvements—such as the Wasserstein GAN (WGAN) \cite{arjovsky2017wgan} and Least Squares GAN (LSGAN) \cite{mao2017lsgan}—stabilized training by replacing the divergence metric and enforcing Lipschitz continuity.  
+
+\vspace{1em}
+
+GANs achieve remarkable visual fidelity and have been extensively used for high-resolution medical image synthesis, enhancement, and domain adaptation. For example, \cite{nie2018gan_mri} employed a GAN framework for CT-to-MRI translation to reduce radiation exposure, while \cite{frid2018gan_cxr} used adversarial training to generate chest X-rays for data augmentation in rare pathologies. Similarly, \cite{zhao2021gan_retinal} applied conditional GANs for retinal vessel segmentation and pathology simulation. Despite their empirical success, GANs face several limitations that restrict their suitability for compositional and uncertainty-aware tasks: training instability due to adversarial dynamics, lack of explicit likelihood estimation, and mode collapse leading to reduced sample diversity.  
+
+\vspace{1em}
+
+These challenges motivated the exploration of alternative generative paradigms—most notably, diffusion models—which retain GAN-level sample quality while offering explicit probabilistic interpretability and stable optimization. In particular, diffusion models reinterpret adversarially learned implicit densities as tractable energy landscapes navigated through iterative denoising steps, providing a natural pathway for compositional and pathology-conditioned generation in medical imaging.  
+
+\vspace{2em}
+\subsubsection{Energy-Based Models (EBMs)}
+Energy-Based Models (EBMs) represent one of the earliest probabilistic frameworks for generative modelling. They are founded on the principle that any probability density function \( p(x) \) for data \( x \in \mathbb{R}^D \) can be expressed through an energy function \( E_\theta(x): \mathbb{R}^D \rightarrow \mathbb{R} \), which assigns low energy to realistic configurations and high energy to implausible ones. The probability of a data point is therefore defined as a Boltzmann distribution over an energy landscape:
+
+\begin{equation}
+    p_\theta(x) = \frac{e^{-E_\theta(x)}}{Z_\theta}, \quad \text{where} \quad 
+    Z_\theta = \int_{\tilde{x} \in \mathcal{X}} e^{-E_\theta(\tilde{x})} \, d\tilde{x}.
+\end{equation}
+
+Here, \( Z_\theta \) is the partition function that ensures normalization but is typically intractable for high-dimensional data. This makes direct likelihood optimization computationally expensive, motivating the use of approximate methods such as contrastive divergence. In practice, training involves reducing the energy of true data samples while increasing the energy of synthetic ones sampled from the model distribution. The approximate gradient of the negative log-likelihood can be expressed as:
+
+\begin{equation}
+    \nabla_\theta \mathcal{L} = 
+    \mathbb{E}_{x^+ \sim p_{\text{data}}} \left[ \nabla_\theta E_\theta(x^+) \right] -
+    \mathbb{E}_{x^- \sim p_\theta} \left[ \nabla_\theta E_\theta(x^-) \right],
+\end{equation}
+
+where \( x^+ \) denotes positive samples from the dataset and \( x^- \) negative samples generated from the model using Markov Chain Monte Carlo (MCMC) sampling.
+
+\vspace{1em}
+
+Among early instantiations of EBMs, the \textit{Boltzmann Machine (BM)} and its simplified variant, the \textit{Restricted Boltzmann Machine (RBM)}, became foundational models in unsupervised representation learning. A Boltzmann Machine defines a joint energy function over visible units \( v \) and hidden units \( h \) as:
+
+\begin{equation}
+    E(v, h) = -v^\top W h - b^\top v - c^\top h,
+\end{equation}
+
+where \( W \) denotes the weight matrix connecting visible and hidden units, and \( b, c \) are bias terms. The probability of a visible configuration is derived by marginalizing over hidden variables:
+
+\begin{equation}
+    p(v) = \frac{1}{Z} \sum_h e^{-E(v, h)}.
+\end{equation}
+
+Restricted Boltzmann Machines (RBMs) impose bipartite connectivity between visible and hidden layers, eliminating intra-layer connections and allowing efficient training via Gibbs sampling. RBMs became integral to early deep generative architectures, serving as building blocks for Deep Belief Networks (DBNs) and pretraining schemes that influenced modern deep generative methods, including Variational Autoencoders (VAEs) and Diffusion Models. In essence, EBMs provided the theoretical basis for learning energy landscapes that diffusion models later reformulated as stochastic denoising processes over probability flows.
+
+\vspace{1em}
+\subsubsection{Denoising Diffusion Probabilistic Models (DDPMs)}
+
+Denoising Diffusion Probabilistic Models (DDPMs) \cite{ho2020denoising} have emerged as a powerful class of likelihood-based generative models that build upon the theoretical underpinnings of stochastic thermodynamics and Markov Chain Monte Carlo (MCMC) methods. At their core, DDPMs define a two-step stochastic process: a forward \textit{diffusion process} that gradually corrupts data with Gaussian noise, and a reverse \textit{denoising process} that learns to invert this corruption through neural parameterization. This bidirectional formulation enables the model to transform a simple isotropic Gaussian prior into a complex data distribution via a sequence of learned transitions, effectively learning the score (gradient of the log probability) of the data distribution.  
+
+\vspace{1em}
+
+Formally, the forward diffusion process is defined as a Markov chain that progressively adds Gaussian noise to data \( x_0 \) over \( T \) time steps:
+\begin{equation}
+    q(x_t | x_{t-1}) = \mathcal{N}\left(x_t; \sqrt{1 - \beta_t} x_{t-1}, \beta_t \mathbf{I}\right),
+\end{equation}
+where \( \beta_t \in (0, 1) \) is a small variance schedule controlling the noise magnitude at each step. After sufficient steps, the data distribution becomes indistinguishable from an isotropic Gaussian \( q(x_T) \approx \mathcal{N}(0, \mathbf{I}) \). The generative process seeks to reverse this chain by learning the conditional probability \( p_\theta(x_{t-1} | x_t) \), parameterized by a neural network that predicts the mean or noise component at each step:
+\begin{equation}
+    p_\theta(x_{t-1} | x_t) = \mathcal{N}\left(x_{t-1}; \mu_\theta(x_t, t), \Sigma_\theta(x_t, t)\right).
+\end{equation}
+
+Training proceeds by minimizing a variational bound on the negative log-likelihood, which simplifies to a denoising score-matching objective:
+\begin{equation}
+    \mathcal{L}_{\text{DDPM}} = 
+    \mathbb{E}_{x_0, t, \epsilon \sim \mathcal{N}(0, \mathbf{I})}
+    \left[ \left\| \epsilon - \epsilon_\theta(x_t, t) \right\|^2 \right],
+\end{equation}
+where the model learns to predict the injected noise \(\epsilon\) given a corrupted sample \(x_t\).  
+
+\vspace{1em}
+
+From a probabilistic perspective, diffusion models can be viewed as a continuous-time extension of MCMC sampling. In traditional MCMC, samples from a target distribution \(p(x)\) are generated through an iterative stochastic process governed by a transition kernel that satisfies detailed balance. In diffusion models, this transition is generalized to continuous stochastic dynamics described by Stochastic Differential Equations (SDEs):
+\begin{equation}
+    dx = f(x, t)\,dt + g(t)\,d\mathbf{w},
+\end{equation}
+where \(f(x, t)\) defines the drift (deterministic component) and \(g(t)\,d\mathbf{w}\) represents the diffusion term driven by Wiener noise. The learned reverse SDE effectively replaces traditional MCMC updates with neural approximations of the score function \(\nabla_x \log p_t(x)\), providing a flexible and differentiable alternative to sample from complex high-dimensional distributions without the convergence and mixing limitations of conventional MCMC chains.  
+
+\vspace{1em}
+
+In medical imaging, DDPMs have rapidly gained traction due to their ability to generate anatomically coherent and clinically realistic data. For example, \cite{kaur2023ddpm_xray} utilized diffusion models to synthesize chest radiographs conditioned on disease labels, achieving high structural fidelity while maintaining diagnostic interpretability. Similarly, \cite{dorj2023ddpm_ct} employed DDPMs for CT-to-MRI translation, surpassing GAN-based baselines in image sharpness and modality consistency. More recent work by \cite{kim2024ddpm_tb} leveraged diffusion processes for tuberculosis lesion synthesis in chest X-rays, enabling controllable severity progression during sampling. The connection between diffusion dynamics and MCMC-inspired inference underpins their success: by iteratively denoising toward the data manifold, these models implicitly perform structured sampling that mirrors posterior inference over anatomical variability—making them particularly suited for compositional and pathology-aware generative reasoning in radiological applications.  
+
+
+
+\subsubsection{Autoregressive Models}
+Autoregressive (AR) models constitute one of the most direct and interpretable families of generative models, grounded in the factorization of the joint probability distribution of data into a product of conditional distributions. For a data vector \( x = (x_1, x_2, \ldots, x_D) \in \mathbb{R}^D \), the autoregressive assumption expresses the joint likelihood as  
+
+\begin{equation}
+    p_\theta(x) = \prod_{i=1}^{D} p_\theta(x_i \,|\, x_{<i}),
+\end{equation}
+
+where \( x_{<i} = (x_1, \ldots, x_{i-1}) \) denotes all previous components. Each conditional factor \( p_\theta(x_i | x_{<i}) \) is typically parameterized by a neural network that predicts the next element given its context. This decomposition ensures an exact and tractable likelihood, allowing stable maximum likelihood estimation without adversarial training or variational approximations.  
+
+\vspace{1em}
+
+Early neural autoregressive models such as the Neural Autoregressive Distribution Estimator (NADE) \cite{larochelle2011nade} and the Masked Autoencoder for Distribution Estimation (MADE) \cite{germain2015made} demonstrated that deep networks could efficiently learn high-dimensional distributions through masked connections that enforce autoregressive ordering. In the image domain, PixelRNN and PixelCNN \cite{oord2016pixelrnn, oord2016pixelcnn} extended this concept by conditioning each pixel’s intensity on previously generated pixels in a raster-scan sequence. The training objective minimizes the negative log-likelihood of the true data,  
+
+\begin{equation}
+    \mathcal{L}_{\text{AR}} = - \sum_{i=1}^{D} \log p_\theta(x_i \,|\, x_{<i}),
+\end{equation}
+
+enabling models to learn local and global spatial dependencies. More recent advances employ Transformer architectures to capture long-range relationships, forming the basis of large-scale text-to-image systems such as ImageGPT \cite{chen2020imagegpt} and autoregressive diffusion hybrids like MaskGIT \cite{chang2022maskgit}, which sample complex structures in parallel while maintaining probabilistic consistency.  
+
+\vspace{1em}
+
+Conceptually, autoregressive models differ from latent-variable approaches (e.g., VAEs) and energy-based formulations (e.g., EBMs) by operating directly in data space without an explicit latent representation. However, their sequential factorization implicitly defines a structured dependency graph that captures the manifold of valid data configurations. This property makes them particularly expressive for modalities where local continuity and contextual correlation are paramount—such as medical images, where subtle spatial gradients or textures encode diagnostic cues. Furthermore, autoregressive models can be interpreted as a discrete approximation to Markov processes, establishing a conceptual link to the iterative denoising procedures in diffusion models.  
+
+\vspace{1em}
+
+In medical imaging, autoregressive architectures have been successfully applied for both generative synthesis and diagnostic reconstruction. For example, \cite{peng2021pixelcnn_mri} used PixelCNNs for MRI super-resolution by learning intensity-consistent conditional dependencies between adjacent voxels, while \cite{liu2022transformer_cxr} implemented Transformer-based autoregressive models to synthesize chest X-rays conditioned on radiology reports, improving visual realism and clinical alignment. Similarly, \cite{zhao2023ar_ct} applied 3D autoregressive volume models to simulate CT scans for dose reduction studies. These works demonstrate that autoregressive formulations can capture the structured dependencies intrinsic to medical imagery while maintaining exact likelihoods—an essential property that complements diffusion-based and compositional generative frameworks explored in this research.  
+
+\subsubsection{Variational Autoencoder (VAE)}
+\label{subsubsec:auto-gan-vae}
+Variational Autoencoders (VAEs)\cite{kingma2013vae, rezende2014vae} represent one of the most influential classes of latent-variable generative models. They combine probabilistic inference with deep neural networks to learn compact latent representations capable of generating realistic data samples. Unlike purely implicit models such as Generative Adversarial Networks (GANs), VAEs provide a tractable lower bound on the data likelihood, making them mathematically grounded and suitable for uncertainty-aware generative reasoning—an essential feature for medical applications where interpretability and probabilistic calibration are critical.  
+
+\vspace{1em}
+
+The foundation of VAEs lies in the assumption that the observed data \( x \in \mathbb{R}^D \) arises from latent variables \( z \in \mathbb{R}^d \) through a generative process governed by \( p_\theta(x, z) = p_\theta(x|z)p(z) \). Directly computing the marginal likelihood \( p_\theta(x) = \int p_\theta(x|z)p(z) \, dz \) is intractable, so VAEs introduce a variational distribution \( q_\phi(z|x) \) to approximate the true posterior \( p_\theta(z|x) \). The model parameters are optimized by maximizing the Evidence Lower Bound (ELBO):
+
+\begin{equation}
+    \log p_\theta(x) \geq 
+    \mathbb{E}_{q_\phi(z|x)}[\log p_\theta(x|z)] 
+    - D_{\text{KL}}(q_\phi(z|x) \, \| \, p(z)),
+\end{equation}
+
+where the first term encourages faithful reconstruction of input data and the second term regularizes the latent space toward the prior \( p(z) \), often taken as a standard normal distribution \( \mathcal{N}(0, \mathbf{I}) \). The encoder network \( q_\phi(z|x) \) learns to map data into a structured latent space, while the decoder \( p_\theta(x|z) \) reconstructs samples from latent codes. The reparameterization trick enables differentiable sampling through \( z = \mu_\phi(x) + \sigma_\phi(x) \odot \epsilon \), where \( \epsilon \sim \mathcal{N}(0, \mathbf{I}) \), allowing end-to-end training via stochastic gradient descent.
+
+\vspace{1em}
+
+VAEs can be viewed as probabilistic autoencoders that learn both a generative model and an inference mechanism simultaneously. This duality provides a natural pathway toward more expressive frameworks such as Diffusion Models and Energy-Based Models, which refine the modelling of complex data manifolds while maintaining probabilistic interpretability. Extensions such as the \textit{$\beta$-VAE} \cite{higgins2017beta_vae} introduce a scaling factor on the Kullback–Leibler divergence to promote disentangled latent representations, while hierarchical and conditional VAEs extend the base model to handle structured data and multimodal distributions. These developments have been pivotal in enabling compositionality and conditional synthesis—core principles that underpin this research on compositional generative diffusion models.  
+
+\vspace{1em}
+
+In medical imaging, VAEs have been extensively applied for both reconstruction and synthesis tasks, offering a probabilistic framework for learning anatomical variability. For example, \cite{chartsias2018vae_mri} used VAEs to learn unsupervised anatomical representations from brain MRIs for improved disease classification, while \cite{jimenez2020vae_cxr} demonstrated VAE-based anomaly detection in chest X-rays by modelling healthy distributions and flagging deviations as potential pathologies. Furthermore, \cite{xiang2021vae_petct} applied conditional VAEs for cross-modality translation between PET and CT images, improving tumor localization. These studies illustrate that VAEs capture structured and interpretable latent representations—properties that later diffusion-based models inherit and extend through stochastic denoising dynamics. As such, VAEs form a conceptual bridge between latent-variable modelling and the continuous-time generative diffusion frameworks central to this research.  

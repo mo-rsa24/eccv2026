@@ -1,0 +1,30 @@
+\subsection{Motivations for Diffusion-Based Approaches}
+
+While Energy-Based Models (EBMs), Variational Autoencoders (VAEs), and Autoregressive (AR) models each contributed foundational insights into generative learning, they also exposed critical limitations that motivated the emergence of diffusion-based methods. EBMs provide explicit density modelling but require computationally expensive Markov Chain Monte Carlo (MCMC) sampling to approximate gradients, often resulting in slow convergence and poor scalability to high-dimensional data. VAEs introduce efficient amortized inference through a latent space but tend to produce blurry samples due to the assumption of simple Gaussian posteriors and over-regularization by the Kullback–Leibler term. In contrast, Autoregressive models achieve exact likelihood estimation yet suffer from sequential generation, limiting their efficiency and long-range spatial coherence.  
+
+\vspace{1em}
+
+Diffusion-based generative models were conceived to bridge these gaps by combining the probabilistic interpretability of VAEs, the explicit energy-based structure of EBMs, and the stable likelihood optimization of autoregressive formulations. Their central innovation lies in learning the *reverse process* of a gradually applied noise diffusion, allowing for both explicit likelihood computation and flexible sampling. By framing generation as a stochastic denoising process, diffusion models implicitly approximate the score function \( \nabla_x \log p(x) \) — a key quantity in statistical physics and energy-based learning — without requiring explicit evaluation of partition functions. This connection enables tractable training and controllable sampling dynamics using well-understood Gaussian noise models.  
+
+\vspace{1em}
+
+The resulting framework exhibits several advantages particularly relevant to medical imaging. First, the multi-step denoising trajectory allows precise control over spatial detail and global structure, accommodating the fine-grained textures and smooth gradients characteristic of radiological data. Second, the likelihood-based formulation permits direct uncertainty quantification, enabling confidence-aware image synthesis for safety-critical diagnostic tasks. Third, diffusion models naturally support conditioning and compositionality—key properties for generating medically plausible variations such as “disease + anatomical variation” or “treatment progression + noise robustness.” Collectively, these features make diffusion models not merely successors but conceptual unifiers of earlier generative paradigms, laying the foundation for compositional generative reasoning explored in this research.  
+
+\vspace{2em}
+
+\subsection{Comparative Analysis: Discrete vs. Continuous Diffusion}
+
+Diffusion models can be broadly categorized into \textit{discrete-time} and \textit{continuous-time} formulations, which differ primarily in how they model the forward and reverse stochastic processes. Discrete Denoising Diffusion Probabilistic Models (DDPMs) \cite{ho2020denoising} employ a finite sequence of Gaussian transitions that iteratively add and remove noise over a predefined number of steps. Each step can be interpreted as an approximation of a Markov transition in the latent data manifold, with the learned reverse process \( p_\theta(x_{t-1}|x_t) \) serving as a parameterized denoiser. While conceptually simple and stable to train, discrete diffusion relies on a fixed noise schedule and requires hundreds to thousands of sampling iterations, which may hinder inference efficiency.  
+
+\vspace{1em}
+
+In contrast, continuous-time formulations generalize the diffusion process through Stochastic Differential Equations (SDEs) that describe the infinitesimal evolution of probability density over time \cite{song2020score}. The forward process is modeled as:
+\begin{equation}
+    dx = f(x, t)\,dt + g(t)\,d\mathbf{w},
+\end{equation}
+where \( f(x, t) \) is the drift coefficient, \( g(t) \) is the diffusion rate, and \( d\mathbf{w} \) denotes a Wiener process. The reverse-time dynamics correspond to an SDE with a learned score function \( s_\theta(x, t) \approx \nabla_x \log p_t(x) \), effectively replacing iterative denoising with continuous score-based sampling. A deterministic equivalent—known as the probability flow ODE—further allows generation without stochastic noise, facilitating higher sampling efficiency and interpretability.  
+
+\vspace{1em}
+
+From a practical standpoint, discrete DDPMs excel in empirical stability and visual fidelity, whereas continuous Score-SDE and Probability Flow ODE models offer elegant theoretical unification and controllable sampling speed. For medical imaging, this distinction is not merely computational but conceptual: discrete diffusion aligns with the iterative refinement of pixel-space reconstruction (e.g., chest X-ray denoising), while continuous diffusion aligns with modelling the smooth evolution of pathological changes over time. Studies such as \cite{wolleb2022sddpm} and \cite{dorj2023ddpm_ct} have shown that continuous-time diffusion allows finer control over the diagnostic realism and progression of generated samples, crucial for clinical interpretability. In this thesis, the continuous-time perspective serves as the mathematical foundation for compositional generative diffusion models, enabling the controlled combination of disease-specific distributions through their vector field representations in latent space.  
+

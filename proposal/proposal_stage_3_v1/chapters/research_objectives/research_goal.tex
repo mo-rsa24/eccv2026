@@ -1,0 +1,28 @@
+% !TEX root = ../../proposal.tex
+
+\section{Research Goals}
+\label{sec:research_objectives_research_goal}
+
+The primary research objectives of this proposal builds sequentially: characterise the problem, diagnose its cause, then validate the solution.
+
+\begin{enumerate}
+
+    \item \textbf{Characterise the Composability Gap.}
+    Measure when and how severely logical composition diverges from semantic composition. 
+    Then determine whether this gap varies systematically across concept pairs grouped by co-occurrence support, feature-space disentanglement, or semantic conflict. 
+    This will show whether the gap is a predictable property of certain concept pairs rather than a set of isolated failure cases.
+
+    \item \textbf{Determine the Cause of the Gap.}
+    Having established whether the composability gap is systematic and pair-dependent, the next objective is to identify its source.
+    Specifically, we seek to determine whether the gap stems from how concepts are represented in the latent space or from the rule used to combine them during inference.
+    Identifying the cause of the gap provides insight into where the main bottleneck to compositional generation lies and what must be improved for composition to succeed more reliably in realistic domains.
+
+
+    \item \textbf{Demonstrate Practical Utility in Medical Imaging.}
+    This objective examines whether compositional generative models can be used for out-of-distribution generation in a clinically meaningful setting.
+    The focus is on generating plausible rare co-morbid presentations from pre-trained diffusion models at inference time, even when no joint examples of those condition pairings are available during training.
+    A positive result would show that the earlier insights are not only explanatory, but practically useful in low-resource settings where such cases are scarce.
+
+
+
+\end{enumerate}

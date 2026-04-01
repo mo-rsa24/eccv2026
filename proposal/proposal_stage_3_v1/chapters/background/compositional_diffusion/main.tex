@@ -1,0 +1,96 @@
+% !TEX root = ../../../proposal.tex
+
+\section{Compositional Diffusion Models}
+\label{sec:compositional_diffusion}
+
+\subsection{Product-of-Experts Composition}
+
+Given two conditions $c_1$ and $c_2$, the na\"{i}ve approach is to condition a single
+model on a joint prompt $c = (c_1, c_2)$. An alternative is to define the composed
+distribution as a \emph{product of experts}~\citep{product_of_experts}:
+\begin{equation}
+    \hat p(x \mid c_1, c_2) \propto \frac{p(x \mid c_1)\,p(x \mid c_2)}{p(x)},
+    \label{eq:poe_dist}
+\end{equation}
+which treats each conditional as an independent ``expert'' and combines them
+multiplicatively. This factorisation is exact under the assumption that $c_1$ and $c_2$ are
+conditionally independent given $x$. Taking log-gradients of Equation~\ref{eq:poe_dist}
+gives the corresponding composed score:
+\begin{equation}
+    \nabla_x \log \hat p(x \mid c_1, c_2)
+    = \nabla_x \log p(x \mid c_1)
+    + \nabla_x \log p(x \mid c_2)
+    - \nabla_x \log p(x).
+    \label{eq:poe_score}
+\end{equation}
+Substituting the noise-predictor representation of the score
+(Equation~\ref{eq:score_noise}) and incorporating per-concept CFG weights $w_1, w_2$,
+Liu et al.~\citep{liu2022compositional} obtained the practical AND composition operator:
+\begin{equation}
+    \tilde\varepsilon_{\mathrm{AND}}
+    = \varepsilon_\theta(x_t, t, \varnothing)
+    + w_1\bigl[\varepsilon_\theta(x_t, t, c_1) - \varepsilon_\theta(x_t, t, \varnothing)\bigr]
+    + w_2\bigl[\varepsilon_\theta(x_t, t, c_2) - \varepsilon_\theta(x_t, t, \varnothing)\bigr].
+    \label{eq:and_operator}
+\end{equation}
+This requires no model retraining: three forward passes through a single pretrained
+model are combined at each denoising step. Liu et al.\ also define a NOT operator by
+negating the guidance term of the concept to be excluded, enabling structured logical
+composition of multiple concepts. Phase~1 and Phase~3 both use Equation~\ref{eq:and_operator}
+as the composition rule, with Phase~1 examining under what conditions it succeeds or fails
+and Phase~3 applying it to co-morbid disease synthesis.
+
+\subsection{When Composition Fails: Projective Mechanisms}
+\label{subsec:bg_projective}
+
+Despite its empirical success in many settings, PoE composition has a fundamental limitation.
+Bradley~\citep{mechanisms2025projective} showed that Equation~\ref{eq:poe_score} is only
+well-defined --- in the sense that its samples remain on the data manifold --- when the
+conditional score fields act on approximately orthogonal directions in the data representation.
+Formally, let $A$ be a linear transformation of the data. The \emph{Factorised Conditionals}
+condition requires that in the transformed space, the score contributions from $c_1$ and $c_2$
+act on separable, approximately non-overlapping subspaces:
+\begin{equation}
+    \nabla_x \log p(x \mid c_i) - \nabla_x \log p(x)
+    \;\perp_A\;
+    \nabla_x \log p(x \mid c_j) - \nabla_x \log p(x).
+    \label{eq:factorised_conditionals}
+\end{equation}
+When this condition holds, the composed score is a valid score function and denoising under
+it converges to a coherent joint sample. When it fails --- either because the concepts
+compete for the same feature dimensions or because the joint configuration $p(x \mid c_1,
+c_2)$ is absent from the training distribution --- the composed score can be incoherent or
+degenerate.
+
+A critical consequence is that PoE does \emph{not} generalise out of distribution. When no
+training images jointly exhibit both $c_1$ and $c_2$, Equation~\ref{eq:poe_dist} does not
+define a new distribution; it inherits the support of the component models, and the composed
+samples are constrained to lie near the modes of whichever single-concept prior dominates.
+This is the theoretical basis for the composability gap studied in Phase~1: composition
+succeeds when the joint configuration is represented in the training data (co-occurring
+concepts, Group~1) or when the concepts act on orthogonal feature dimensions (disentangled
+concepts, Group~2), and fails when neither condition holds (Groups~3 and~4).
+
+\subsection{From Score Composition to Representation}
+\label{subsec:bg_representation}
+
+Du et al.~\citep{du2024compositional} showed that a \emph{single} pretrained model can be
+composed at inference time by running multiple conditional passes and combining the resulting
+score fields, without requiring a separately trained expert for each concept. Their analysis
+establishes that inference-time choices --- guidance weighting, sampling schedule, and
+step-size --- affect the stability and quality of composition, and they propose dynamic
+guidance schedules to mitigate mode collapse under strong guidance. Crucially, however,
+these inference-time interventions do not alter the underlying conditional independence
+assumption (Equation~\ref{eq:poe_dist}): they improve how well the operator is applied
+given the existing score fields, but cannot compensate for score fields that do not
+satisfy the Factorised Conditionals condition.
+
+This observation motivates a representational account of compositional failure. If the
+learned features that the score function acts on are entangled --- if the representation of
+one concept overlaps geometrically with the representation of another --- then no choice of
+composition operator or guidance schedule can cleanly separate them at the score level. The
+gap is not a \emph{rule problem} (which operator to use) but a \emph{representation problem}
+(whether the score function has learned a factorised encoding of the concepts). Phase~2 tests
+this directly by holding the composition rule fixed and varying only the learned
+representation, asking whether progressively more factorised latent codes reduce the same
+compositional failures observed in Phase~1.

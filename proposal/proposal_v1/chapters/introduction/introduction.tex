@@ -1,0 +1,119 @@
+\chapter{Introduction}
+\label{chap:introduction}
+
+The South African mining industry continues to experience a disproportionate burden of occupational lung disease, driven by chronic exposure to silica dust \citep{silicosis_elimination_sa_2020}, diesel particulates \citep{badenhorst2025diesel, diesel_pm_health_effects_2020}, and microbial bio-aerosols in poorly ventilated mine environments.  
+Miners remain at particularly high risk for silicosis and tuberculosis (TB) \citep{silicosis_elimination_sa_2020}, as well as their co-occurrence, known as silico–TB.  
+Radiographic screening is the primary triage tool for these diseases, yet many clinics operate with ageing X-ray systems that produce heterogeneous image quality and inconsistent contrasts \citep{toua2022chest, ehrlich2024silicotuberculosis}.  
+Consequently, the available datasets \citep{chambon2024chexpert,nguyen2022vindr, cattamanchi2024coda} are fragmented across machines, hospitals, and annotation protocols—leaving deep learning models under-trained precisely on the complex edge cases that matter most: comorbid and atypical presentations.  
+Developing data-efficient methods that can faithfully expand such underrepresented classes is thus essential for building robust and equitable diagnostic models.
+
+\citet{predictors2020silicosis} demonstrate that despite long-standing awareness of occupational silica exposure risks, silicosis remains a persistent and widespread disease among South African gold miners. 
+Their epidemiological findings reveal that cumulative exposure over time remains the dominant risk factor, and that many ex-miners continue to develop silicosis years after leaving the mining environment. 
+Importantly, the study highlights the strong and recurrent co-morbidity between silicosis and tuberculosis (TB), particularly in aging mining populations, emphasizing the need for continued surveillance and improved medical data integration to understand disease progression and co-occurrence.
+
+\citet{silicosis_elimination_sa_2020} similarly report that the goal of silicosis elimination in South Africa remains distant, hindered by inadequate dust control, unreliable quartz measurement, and limited long-term health monitoring. 
+They caution that even exposure levels within current regulatory limits are insufficient to prevent disease onset and that silicosis substantially increases susceptibility to TB infection. 
+The authors argue that effective disease mitigation will require sustained epidemiological follow-up and new data-driven approaches capable of characterizing how silica-related lung damage interacts with infectious pathology.
+
+Together, these studies underscore the entrenched relationship between occupational silica exposure, silicosis, and TB co-morbidity.
+While policy and public health interventions have primarily targeted exposure reduction, there remains a critical gap in quantitative and computational modeling of co-occurrence patterns and imaging phenotypes. 
+Given that chest radiography remains the primary diagnostic tool in low-resource mining regions, yet annotated datasets are small and heterogeneous, developing generative models capable of synthesizing plausible Silico-TB images could support both data augmentation and scientific exploration of disease interactions.
+
+% Addressing the diagnostic and data challenges posed by Silico-TB requires methods that can reason about and reconstruct the latent structure of medical images rather than rely solely on existing, incomplete datasets. 
+% In recent years, deep learning has demonstrated strong potential for advancing medical imaging through pattern recognition, segmentation, and automated diagnosis. 
+% However, the majority of AI applications remain fundamentally discriminative: they learn to classify or segment from fixed, labelled datasets without understanding the broader distributional structure of disease patterns. 
+% Such approaches struggle in domains—like occupational lung disease—where data are sparse, heterogeneous, and under-represented for rare comorbidities. 
+% To move beyond these limitations, there is growing interest in \emph{generative} methods that model the full data distribution itself, enabling the synthesis and reconstruction of images that remain statistically and anatomically coherent.
+
+% Generative modeling has become a central paradigm in contemporary machine learning, offering a probabilistic framework for learning complex data distributions and synthesizing realistic samples from them.  
+At its core, a generative model seeks to approximate the data distribution \(p_{\text{data}}(x)\) by learning a parameterized distribution \(p_\theta(x)\) from which new samples can be drawn that resemble those in the training data.  
+Unlike discriminative approaches that predict conditional mappings \(p(y \mid x)\), generative models aim to reconstruct the underlying structure of data itself, enabling simulation, reconstruction, and inference under uncertainty \citep{bond2021deep,tomczak2024deep}.  
+Recent advances \citep{rombach2022high, pmlr-v139-nichol21a, 2022arXiv220406125R} —most notably diffusion-based models—have shown remarkable success across domains ranging from natural image generation \citep{rombach2022high} to protein folding \citep{wu2024protein, skreta2024superposition}, establishing themselves as state-of-the-art methods for modeling high-dimensional distributions.
+
+Diffusion models, first introduced by \citet{pmlr-v37-sohl-dickstein15} and
+popularised in their denoising formulation by \citet{NEURIPS2020_4c5bcfec},
+define a generative process by gradually corrupting data with Gaussian noise and
+learning a reverse denoising process that reconstructs structure from noise,
+either via discrete Markov chains (DDPMs) or continuous-time SDEs. Their
+likelihood-based training, stability, and controllable sampling dynamics have
+made them highly effective for scientific and medical imaging applications
+\citep{accelerated_mri_motion_correction_2023,score_based_diffusion_mri_2022}.
+Traditional conditional generative models require retraining when new attributes
+or conditions arise, whereas \emph{composable diffusion models} enable
+inference-time combination of pretrained components by viewing diffusion as an
+energy-based system whose score approximates $\nabla_x \log p(x)$. This makes it
+possible to perform logical operations such as conjunction and disjunction
+\citep{NEURIPS2020_49856ed4,liu2022compositional} without retraining. Recent
+methods such as \textsc{SuperDiff} \citep{skreta2024superposition} extend this
+capability using an Itô-based density estimator that allows algebraic
+combination of pretrained diffusion processes in a mathematically consistent
+manner. Applying these compositional operators to disease-specific diffusion
+models—such as those trained separately on silicosis and tuberculosis—enables
+the synthesis of plausible co-morbid pathologies without dataset merging, making
+composition an attractive framework for flexible, data-efficient medical image
+generation.
+
+
+Beyond data augmentation, controllable generative models open new avenues for scientific reasoning.  
+Clinicians and researchers can perturb learned pathology factors—such as varying silica exposure severity while fixing TB lesion distribution—to test hypotheses about disease manifestation and progression.  
+Such “in silico” experimentation provides an interpretable and reproducible medium for exploring diagnostic cues, aiding radiologists in understanding how visual features correlate with disease dynamics.  
+These capabilities align with South Africa’s public health objectives by supporting remote triage, improving tele-radiology workflows in mining towns, and facilitating targeted screening strategies under data scarcity \citep{SAJR2647}.
+
+
+This work aims to establish a principled framework for compositional diffusion
+modelling, with an emphasis on understanding and generating clinically plausible
+co-morbid chest pathologies. The central objective is to determine \emph{when}
+and \emph{why} compositions of pretrained diffusion models produce meaningful
+hybrid representations rather than incoherent or anatomically implausible
+samples. The specific goals are:
+
+\begin{itemize}
+    \item \textbf{To characterise the structural requirements for successful
+    compositionality.}  
+    We investigate how latent alignment, local disentanglement of semantic
+    factors, conditional factorisation, and log-density geometry govern the
+    behaviour of score-based, energy-based, and density-based operators, and
+    when these operators can be expected to preserve semantic intent.
+
+    \item \textbf{To develop and evaluate guidance mechanisms that stabilise
+    compositional sampling.}  
+    We examine whether continuous properties—such as severity, localisation,
+    or morphological attributes—can be used to regularise and control hybrid
+    generations, improving robustness and reducing hallucination under
+    distribution shift.
+
+    \item \textbf{To analyse geometric compatibility between disease-specific
+    generative models.}  
+    Using tools from Riemannian diffusion and latent manifold analysis, we
+    assess whether the generative manifolds of conditions such as TB and
+    silicosis support coherent composition, and whether geometric mismatch
+    explains characteristic failure modes observed in practice.
+\end{itemize}
+
+% By addressing the underrepresentation of co-morbid chest pathologies within
+% South Africa’s mining sector through a mathematically grounded and
+% data-efficient generative framework, this research aims to bridge theoretical
+% advances in diffusion modelling with the practical needs of occupational health
+% imaging in resource-constrained environments. Co-morbid conditions such as
+% Silico-TB constitute a scientifically meaningful testbed, as their non-linear
+% and interdependent pathology patterns expose precisely the structural
+% difficulties that current compositional methods are not equipped to handle.
+
+In support of this investigation, the proposal is structured as follows.  
+Chapter~\ref{chap:background} presents the core background, covering diffusion
+models, their mathematical formulations, and the main families of compositional
+operators, together with recent advances in context-guided and Riemannian
+diffusion.  
+Chapter~\ref{chap:related_works} surveys generative modelling in medical
+imaging, including synthetic radiography and prior approaches to
+compositionality.  
+Chapter~\ref{chap:research_objectives} introduces the motivation, research
+goals, and hypotheses that structure the investigation.  
+Chapter~\ref{chap:research_method} then outlines the methodological
+framework, detailing the three experimental phases spanning controlled medical
+testbeds, property-guided composition, and geometric analysis using Riemannian
+diffusion.  
+Finally, Chapter~\ref{chap:conclusion} summarises the anticipated contributions
+and the broader scientific and clinical significance of the work.
+
+

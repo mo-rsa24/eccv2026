@@ -1,0 +1,169 @@
+\section{Compositional Generative Modeling}
+\label{sec:compositional_generative_modeling}
+
+Modern generative models, particularly diffusion models, excel at capturing complex image 
+distributions yet struggle when asked to produce \emph{novel semantic combinations} that were not explicitly 
+observed during training \citep{liu2022compositional}.  
+Even state-of-the-art diffusion models typically learn entangled representations in which global 
+and local semantic factors---shape, texture, attributes, pathology type, spatial arrangement---interact nonlinearly.  
+As a result, they cannot reliably synthesize images reflecting \emph{new concepts} assembled from previously 
+learned factors, such as ``smiling woman with black hair’’ \citep{isometric_diffusion_icml_2024}
+or clinically meaningful ``Silico--TB’’ combinations.  
+This limitation reflects a broader challenge in generative modeling:  
+\emph{current models lack explicit mechanisms for semantic factorization and composition}.
+
+Compositional generative modeling seeks to overcome this limitation by enabling 
+models to produce images that correspond to new combinations of latent factors in a structured way.  
+The central goal is to construct generative mechanisms that respect 
+the combinatorial structure of visual concepts.  
+Earlier work in visually grounded imagination  
+\citep{vedantam2017generative} formalizes this challenge through the “3C’s’’ criterion:  
+\emph{correctness}, \emph{coverage}, and \emph{compositionality}.  
+Similarly, hierarchical concept models such as SCAN  
+\citep{Higgins2017SCANLH} demonstrate the need for structured latent spaces in which abstract 
+and concrete visual concepts can be combined through controlled factor manipulations.
+
+Despite impressive empirical demonstrations, the field still lacks a principled
+theoretical account of when such combinations are semantically valid, why
+certain operators fail, and which structural conditions enable meaningful hybrid
+concepts.  Recent work \citep{mechanisms2025projective, du2024compositional} emphasise that compositional success is fundamentally governed by
+latent alignment, disentanglement of semantic factors, and compatibility of
+geometric structure across component models .
+
+A coherent taxonomy emerging across the literature identifies \textbf{three
+families of compositional operators}:  
+(1) \textbf{Product-of-Experts (PoE) Composition},  
+(2) \textbf{Mixture-Based Composition}, and     
+(3) \textbf{Density-Based Composition (SuperDiff)}.  
+These families differ in mathematical mechanism, assumptions, and the kinds of
+semantic operations they can reliably express.  Diffusion models can be viewed
+as a special case of energy-based models (EBMs) under the score-based
+interpretation \citep{NEURIPS2020_49856ed4}, allowing PoE and mixture operators
+to be applied directly to pretrained diffusion models.  Structural analyses
+from \citet{mechanisms2025projective} provide a unifying theoretical
+lens that clarifies when these operators succeed or break down.
+\vspace{1em}
+\subsubsection*{1. Product-of-Experts (PoE) Composition}
+
+PoE is the classical approach to compositional generative modeling in both EBMs
+and diffusion models. It constructs the intersection of multiple generative
+components by multiplying their densities:
+\[
+p_{\mathrm{PoE}}(x) \propto \prod_{i=1}^k p_i(x),
+\qquad
+\log p_{\mathrm{PoE}}(x) = \sum_{i=1}^k \log p_i(x).
+\]
+Each expert imposes a constraint that the composite distribution must satisfy,
+so PoE behaves as a logical AND operator. Using the score-based interpretation
+of diffusion models \citep{NEURIPS2020_49856ed4}, this conjunction corresponds to
+summing log-density gradients,
+\[
+\nabla_x \log p_{\mathrm{PoE}}(x)
+    = \sum_{i=1}^k \nabla_x \log p_i(x),
+\]
+enabling PoE to be implemented directly within diffusion samplers without
+retraining.
+
+The practical difficulty lies not in the PoE operator but in the sampling
+procedure. \citet{reduce_reuse_recycle_icml2023} show that naïve samplers fail even when the PoE
+objective is correct, and they introduce MCMC-corrected Langevin samplers that
+substantially improve stability and compositional quality. For PoE to succeed,
+the experts must modulate distinct or conditionally independent generative
+factors, share non-conflicting support, and exhibit compatible energy geometry.
+The theoretical analysis of \citet{mechanisms2025projective} shows
+that semantic correctness requires projective composition: latent projections of
+each expert must interact linearly and preserve local independence within shared
+tangent spaces. When these structural requirements are violated, PoE becomes
+over-constrained, may collapse modes, produces veto effects where any
+zero-density region forbids hybrid generation, and exhibits inconsistent
+gradient directions leading to unstable visual artifacts. Despite its elegance,
+PoE is therefore semantically brittle unless the underlying models possess
+aligned and disentangled representations.
+
+\vspace{1em}
+% ==========================================================
+\subsubsection*{2. Mixture-Based Composition}
+
+Mixture-based composition forms the union of distributions rather than their
+intersection. The composite density is given by
+\[
+p_{\mathrm{mix}}(x) = \frac{1}{Z} \sum_{i=1}^k \alpha_i p_i(x),
+\]
+corresponding to a logical OR operator. Unlike PoE, mixture operators expand the
+set of plausible samples by accumulating density wherever \emph{any} expert
+assigns high probability. As highlighted in \textit{Compositional Generative
+Modeling: A Single Model is Not All You Need}, mixtures represent a distinct
+semantic operation that cannot be implemented through score addition, because a
+mixture of densities is not equal to a mixture of their score fields. Practical
+sampling therefore requires explicit densities or weighted resampling schemes.
+
+Mixtures are useful for modeling category variability, multimodal concepts, or
+collections of plausible configurations. However, effective mixture-based
+composition requires overlapping support regions, compatible noise schedules, and
+density functions that do not produce contradictory high-probability regions.
+Mixtures cannot represent conjunction and cannot enforce constraints between
+attributes. They also blur incompatible modes, are sensitive to non-overlapping
+supports, and require access to explicit densities—not natively provided by
+score-based diffusion models. Thus, mixtures complement PoE operators by
+providing a principled union mechanism, but they do not provide a mechanism for
+composing fine-grained semantic factors into hybrid structures.
+
+\vspace{1em}
+% ==========================================================
+\subsubsection*{3. Density-Based Composition (SuperDiff)}
+
+Density-based composition, introduced by the SuperDiff framework
+\citep{skreta2024superposition}, departs fundamentally from PoE and mixtures by
+operating directly on the \emph{time-evolving densities} of pretrained diffusion
+models. Given a shared forward SDE,
+\[
+\mathrm{d}x_t = f_t(x_t)\,\mathrm{d}t + g_t\,\mathrm{d}w_t,
+\]
+SuperDiff estimates the transient log-density $\log q_t(x_t)$ along the forward
+noising trajectory. The key theoretical foundation is Theorem~1, which states:
+\[
+\frac{\mathrm{d}}{\mathrm{d}t}\log q_t(x_t)
+  = -\mathrm{div}\, f_t(x_t)
+    -\tfrac{1}{2} g_t^2 \|\nabla_x \log q_t(x_t)\|^2.
+\]
+SuperDiff provides an unbiased It\^o estimator for this expression that avoids
+explicit computation of $\mathrm{div}\,f_t$, making density tracking feasible for
+high-dimensional diffusion models.
+
+By estimating intermediate densities, SuperDiff enables rigorous AND/OR
+operators:
+\[
+\log q_{\mathrm{AND}} = \sum_i \lambda_i \log q_i, \qquad
+\log q_{\mathrm{OR}} = \mathrm{softmax}(\{\log q_i\}).
+\]
+Compositions occur in density space rather than in score or energy space, giving
+SuperDiff a stronger mathematical foundation. However, semantic correctness
+still depends heavily on structural compatibility. Successful composition
+requires a shared forward diffusion process, aligned latent geometry, local
+independence of semantic factors, and compatible curvature (Hessian structure) of
+the log-densities. These conditions match the projective composition framework of
+\citet{mechanisms2025projective}. When violated, equal-density or
+density-blending constraints can still produce semantically invalid hybrids
+because density matching alone does not ensure semantic decomposability.
+Nonlinear interactions between factors, curvature mismatch, and latent
+misalignment all lead to artifacts or incoherent pathologies. SuperDiff is thus
+a mathematically principled operator at the density level, but its semantic
+reliability is similarly governed by structural alignment between the underlying
+models.
+
+\vspace{1em}
+% ==========================================================
+\subsection*{Summary}
+
+Across PoE, mixtures, and density-level composition, a consistent principle
+emerges: \emph{semantic composition is possible only when the component models
+share aligned, disentangled, and geometrically compatible representations}. PoE
+implements intersection-like conjunction, mixtures implement unions, and
+SuperDiff implements mathematically rigorous density arithmetic. Each operator
+has distinct strengths and limitations, but all exhibit predictable failure modes
+when structural preconditions—in the sense established by
+\citet{mechanisms2025projective}—are violated. These insights
+directly motivate the research hypotheses of this thesis concerning latent
+alignment, disentanglement, conditional factorisation, and curvature
+compatibility as necessary conditions for clinically meaningful compositional
+synthesis in medical diffusion models.

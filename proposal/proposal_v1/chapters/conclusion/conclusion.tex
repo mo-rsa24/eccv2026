@@ -1,0 +1,48 @@
+\chapter{Conclusion}
+\label{chap:conclusion}
+This proposal has outlined a research programme that bridges the fields of generative modeling, stochastic differential equations, and medical image analysis to investigate the problem of \emph{compositional synthesis} in diffusion models.  
+At its core, the project seeks to determine whether independently trained latent diffusion models—each representing distinct pathological manifolds—can be coherently combined through \emph{Itô-driven score composition} to generate plausible hybrid representations of diseases such as tuberculosis and silicosis.  
+The outcome of this inquiry bears significance not only for medical imaging in low-resource settings, but also for the theoretical understanding of composability in probabilistic generative systems.
+
+The motivation for this work stems from the urgent clinical and public health challenges faced by the South African mining sector, where occupational lung diseases such as silicosis and tuberculosis remain prevalent.  
+The scarcity of co-morbid imaging data, compounded by privacy constraints and annotation bottlenecks, limits the capacity of existing diagnostic systems to generalise to rare but clinically crucial disease combinations.  
+Diffusion-based generative models, with their ability to model complex data distributions via noise-conditioned score functions, offer a mathematically principled framework for synthesising realistic chest radiographs without requiring large annotated datasets.  
+By leveraging the flexibility of \emph{composable diffusion models}, this research aims to produce not merely synthetic data, but controllable and interpretable samples that enable both data augmentation and scientific insight into disease interaction patterns.
+
+Building upon this foundation, the proposed methodology integrates several recent theoretical advances in diffusion modeling.  
+Through the \emph{SuperDiff} algorithm and its underlying \emph{Itô density estimator}, the research will explore how the superposition of score functions can approximate logical conjunctions between latent disease manifolds.  
+This approach interprets composition as a probabilistic operation over the energy landscape of the diffusion process, thereby linking diffusion models to energy-based formulations of compositionality.  
+The project will further test whether this composition—performed in latent space—corresponds to meaningful semantic composition in the medical image domain, and whether geometric refinements through Riemannian diffusion can improve alignment when Euclidean superposition fails.
+
+The research questions formulated in this proposal provide a structured roadmap for investigating compositionality in diffusion models.  
+\emph{RQ1} examines whether superposition in latent space—realized through Itô-based dynamics within the SuperDiff framework—corresponds to meaningful and interpretable composition in the medical image space, thereby testing the alignment between latent generative structure and semantic pathology representation.  
+\emph{RQ2} extends this inquiry to questions of clinical and ecological validity, assessing whether the synthesized co-morbid images are diagnostically coherent, anatomically plausible, and generalizable for use in downstream radiological or computational tasks.  
+Finally, \emph{RQ3} investigates whether a curvature-aware, Riemannian formulation of diffusion can provide a mathematically grounded explanation for, or resolution to, compositional misalignment observed under Euclidean assumptions.  
+Together, these questions trace a coherent progression from empirical observation to theoretical abstraction, ensuring that both positive and negative findings contribute meaningful insights into the geometry, validity, and generalizability of compositional diffusion modeling.
+
+
+% \paragraph{}
+% While the primary case study focuses on chest radiography and occupational lung disease, the implications of this work extend far beyond medical imaging.  
+% At a fundamental level, this research interrogates how diffusion models represent compositional semantics—how independent score fields can be combined, and under what geometric conditions such combinations remain stable.  
+% The answers to these questions will inform the design of composable generative systems across domains, from text-to-image models and robotic perception to multimodal reasoning frameworks.  
+% Even in the event of negative results, failure of compositional alignment would yield critical insights into the limits of current diffusion architectures, informing future research into disentangled representations, energy-based reasoning, and structured generative inference.
+
+% \paragraph{}
+% The methodological readiness of this project is grounded in prior progress.  
+% A shared variational autoencoder has been successfully trained to provide a unified latent space for chest X-rays, while independent latent diffusion models for tuberculosis and pneumonia have been implemented and validated for sampling stability.  
+% Preliminary experiments using SuperDiff demonstrate that compositional inference is computationally feasible and yields interpretable intermediate results, even if visual outcomes remain inconclusive.  
+% These foundational components ensure that the proposed investigation is both technically viable and scientifically motivated.
+
+% \paragraph{}
+% Nonetheless, the research faces several risks and assumptions that warrant acknowledgement.  
+% First, the assumption that latent-space composition directly corresponds to disease co-occurrence may not hold universally; the learned manifolds might entangle non-pathological variations such as imaging device characteristics or demographic biases.  
+% Second, reliance on pretrained classifiers for semantic validation introduces potential circularity, as these networks may encode dataset-specific priors.  
+% Third, computational limits on training high-resolution diffusion models constrain the extent to which geometric analyses can be performed.  
+% Mitigation strategies include extensive cross-validation, radiologist-based evaluation, and scaling studies on lower-dimensional representations to preserve interpretability.  
+% These constraints are viewed not as weaknesses, but as integral to defining the boundary conditions of compositional generative modeling.
+
+% \paragraph{}
+% In conclusion, this proposal positions composable diffusion modeling as both a methodological innovation and a scientific inquiry into the geometry of generative processes.  
+% It connects stochastic calculus, energy-based reasoning, and medical imaging to address a problem of real-world importance while advancing the theoretical frontier of diffusion-based compositionality.  
+% By investigating how separate score functions can be combined to yield new, interpretable image distributions, the project aspires to contribute new understanding of latent manifold dynamics and the structure of generative priors.  
+% Whether the results confirm or contradict the central hypothesis, the research will yield insights of lasting relevance to machine learning, applied imaging science, and the broader quest for interpretable and controllable generative models.

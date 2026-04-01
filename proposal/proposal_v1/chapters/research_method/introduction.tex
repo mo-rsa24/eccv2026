@@ -1,0 +1,24 @@
+\section{Introduction}
+\label{sec:research_method_introduction}
+
+This chapter outlines the methodological framework used to investigate the
+research goals and hypotheses introduced earlier. Prior work on compositional
+generative modelling—whether score-based, energy-based, or density-based—offers
+mechanisms for combining pretrained diffusion models but lacks a principled
+understanding of when such operations yield semantically meaningful
+compositions. Score arithmetic often fails under entangled or misaligned
+factors, Product-of-Experts methods rely on factorisation assumptions that seldom
+hold, and density-based approaches such as SuperDiff provide mathematically
+correct density combinations without guaranteeing semantic correctness.
+
+Our methodology addresses these gaps through a three-phase structure. Phase~1
+evaluates how existing compositional operators behave in a controlled medical
+testbed, identifying when they succeed or fail to produce plausible hybrid
+pathologies. Phase~2 extends composition to property-guided settings, testing
+whether continuous attributes such as severity or localisation can be reliably
+controlled. Phase~3 employs Riemannian diffusion analysis to examine the latent
+and geometric conditions that underlie compositional correctness and explain the
+failure modes observed earlier.
+
+Together, these phases provide a unified empirical and structural framework for
+understanding and improving semantic compositionality in generative modelling.

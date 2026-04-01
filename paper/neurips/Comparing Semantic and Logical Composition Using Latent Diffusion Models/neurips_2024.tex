@@ -1,0 +1,145 @@
+\documentclass{article}
+
+\usepackage[final]{neurips_2024}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{nicefrac}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{graphicx}
+
+\title{Comparing Semantic and Logical Composition Using Latent Diffusion Models}
+
+\author{Anonymous Authors}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This draft adapts Phase~1 of a broader research programme into a compact NeurIPS-style paper. The paper studies the mismatch between semantic composition from a single text prompt and logical composition from score-level product-of-experts guidance in latent diffusion models. Sections~3--6 focus on the Phase~1 problem formulation, the planned experimental structure, the expected trajectory-level and reachability trends, and the interpretation of those expected outcomes.
+\end{abstract}
+
+\section{Introduction}
+
+This document is a focused Phase~1 draft for a NeurIPS submission trajectory. The main body is intentionally concentrated in Sections~3--6, where the composability gap is defined and the planned analyses are described in paper form.
+
+\section{Related Work}
+
+The full related-work discussion is deferred to a later draft. For the present version, we only retain the citations needed to situate score-space composition, latent diffusion, and SD-IPC-based reachability analysis within the Phase~1 problem setting.
+
+\section{Problem Statement}
+
+Recent work on compositional generation has shown that pretrained generative models can be combined at inference time by composing conditional score functions rather than relying on a single joint prompt \citep{NEURIPS2020_49856ed4,du2024compositional,liu2022compositional}. In latent diffusion models, the simplest form of this idea is a Bayes-style composition rule:
+\begin{equation}
+\nabla_x \log p(x \mid c_1, c_2)
+\;\approx\;
+\nabla_x \log p(x \mid c_1)
++
+\nabla_x \log p(x \mid c_2)
+-
+\nabla_x \log p(x),
+\end{equation}
+which implicitly defines a product-of-experts (PoE) distribution
+\begin{equation}
+\hat p(x) \propto \frac{p(x \mid c_1)p(x \mid c_2)}{p(x)}.
+\end{equation}
+This construction treats composition as logical conjunction implemented directly in score space.
+
+The central difficulty is that logical composition and semantic composition need not be equivalent. A monolithic prompt such as ``$c_1$ and $c_2$'' asks the model to generate an image that is semantically plausible under the language-conditioned training distribution. PoE composition instead enforces simultaneous agreement with single-concept conditionals, regardless of whether the resulting joint configuration is well supported by the data manifold. As argued by \citet{mechanisms2025projective}, Bayes-style composition is well behaved when a compatible joint distribution is already represented or when the relevant factors are sufficiently separable, but it can become ill-defined or degenerate when neither condition holds.
+
+Phase~1 studies this mismatch as a \emph{composability gap}: the discrepancy between the latent trajectory and endpoint reached by semantic composition and those reached by logical score composition. The working claim is that the size of this gap depends on the structural relationship between the concepts being composed, rather than being a uniform property of the operator alone \citep{du2023reduce,du2024compositional,mechanisms2025projective}.
+
+To organize the problem, Phase~1 partitions concept pairs into four regimes. First, \emph{co-occurring concepts} serve as a positive-control regime in which the training distribution is expected to already support the joint configuration. Second, \emph{feature-space disentanglement} captures pairs whose factors are expected to act on distinct components, so composition can succeed through approximate factorization rather than direct co-occurrence. Third, \emph{feature overlap} covers pairs with weaker support and weaker factor separation, producing a harder intermediate regime. Fourth, \emph{adversarial collision} captures pairs that compete for the same semantic role or object slot, making clean factorization implausible. This taxonomy provides the organizing lens for the experiments: the objective is not merely to show that semantic and logical composition can differ, but to test whether the gap follows a consistent ordering across these structurally distinct regimes.
+
+\section{Experiments}
+
+\subsection{Dataset and Concept Pair Taxonomy}
+
+The evaluation set is constructed as a controlled collection of concept pairs rather than a conventional labeled dataset. Phase~1 selects four taxonomy groups, with six concept pairs per group and twenty-four shared-noise seeds per pair, yielding $6 \times 24 = 144$ pair-seed records per group and $576$ total pair-seed records across the study.
+
+Group~1 contains co-occurring concepts such as camels in deserts or butterflies over flower meadows. These pairs are expected to have meaningful support in the training distribution and therefore provide a regime in which semantic and logical composition should remain relatively close. Group~2 contains feature-space-disentangled pairs, typically object-style combinations, where success is expected to arise from approximate factorization across different feature dimensions rather than explicit co-occurrence.
+
+Group~3 captures feature-overlap pairs that neither co-occur reliably nor appear cleanly disentangled in a proxy feature space. Following the Phase~1 setup, this group is operationalized with CLIP-proxy alignment heuristics: concept embeddings are centered against a background embedding, and pairs with low-to-moderate positive alignment are treated as structurally difficult but not maximally adversarial. Group~4 contains adversarial-collision pairs such as cat--dog or cat--bear, where the concepts compete for the same semantic slot and are therefore expected to produce the largest mismatch between monolithic prompting and PoE composition.
+
+The taxonomy is the key unit of experimental interpretation. Phase~1 is designed to determine whether the composability gap is minimal in Groups~1--2, larger and more variable in Group~3, and strongest in Group~4.
+
+\subsection{Hyperparameters and Shared-Noise Protocol}
+
+All Phase~1 runs use Stable Diffusion~1.4 as the primary latent diffusion model \citep{rombach2022high}. For every concept pair and seed, all generation conditions begin from the same initial latent state $x_T$, so any difference between conditions is attributable to the composition rule rather than stochastic initialization. The core comparison is between semantic composition from a monolithic joint prompt and logical composition from PoE guidance.
+
+The denoising schedule uses $50$ steps throughout Phase~1. The same shared-noise protocol is applied to solo $c_1$, solo $c_2$, the monolithic prompt, and PoE, but group-level inference is performed only after aggregating repeated seeds within each concept pair. Concretely, the concept pair is the formal unit of inference, while the twenty-four seeds act as repeated measurements for estimating pair-level summaries.
+
+Phase~1 also includes a reachability test using SD-IPC \citep{clip_inverter}. For each pair-seed record, the decoded PoE image is projected back into the Stable Diffusion conditioning space to obtain a continuous pseudo-prompt $p^\star$. Stable Diffusion~1.4 is then rerun from the same initial noise using $p^\star$, allowing the regenerated trajectory to be compared directly against the original PoE trajectory on the same shared-noise axis.
+
+\subsection{Expected Results: Latent Trajectory Dynamics}
+
+The primary trajectory metric is the per-step latent gap between semantic and logical composition:
+\begin{equation}
+d_t^{(p,s)}=\frac{1}{N}\left\|z_t^{\mathrm{mono},(p,s)}-z_t^{\mathrm{poe},(p,s)}\right\|_2^2,
+\end{equation}
+where $p$ indexes the concept pair, $s$ indexes the shared-noise seed, and $N$ is the number of latent elements. Its terminal value
+\begin{equation}
+d_T^{(p,s)}=d_t^{(p,s)}\big|_{t=T}
+\end{equation}
+measures the final latent mismatch between the two composition mechanisms. Pair-level summaries are then formed by averaging over the $24$ seeds for each concept pair before any group-wise comparison is made.
+
+The expected result is an ordered taxonomy effect. Groups~1 and~2 should exhibit the smallest pair-level terminal gaps because these regimes correspond either to supported co-occurrence or to approximate feature factorization. Group~3 should show a broader and more variable range of pair-level gaps, reflecting partial structural incompatibility. Group~4 is expected to show the largest and most systematic separation, consistent with hybridization, dominance, or collapse when both concepts compete for the same semantic role.
+
+The same ordering is expected to appear in the temporal profiles $\bar d_t^{(p)}$. The semantic-logical discrepancy may be detectable before decoding, with trajectories separating during denoising rather than only at the final image. Phase~1 specifically anticipates that divergence will become more pronounced in later low-noise steps, where the model must resolve fine-grained object identity and attribute details under conflicting compositional pressures.
+
+Figure~\ref{fig:trajectory_manifold} is included as an illustrative trajectory manifold view. It is not treated as a formal result in this draft, but it visualizes the expected fan-out pattern in which shared-noise trajectories that begin at the same latent origin separate into different endpoint regions under monolithic prompting and PoE composition.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.9\linewidth]{../../../experiments/eccv2026/grid_figure/trajectory_2x2.png}
+    \caption{Illustrative metric-MDS projections of shared-noise denoising trajectories for representative concept pairs. The figure is included as a qualitative guide to the expected fan-out geometry rather than as a completed empirical result.}
+    \label{fig:trajectory_manifold}
+\end{figure}
+
+\subsection{Expected Results: Reachability Analysis}
+
+The reachability analysis asks whether the endpoint produced by logical composition can be recovered by returning to the model through language-conditioned generation. For each pair-seed record, the SD-IPC pseudo-prompt rerun produces a regenerated trajectory $\{z_t^{\star,(p,s)}\}$, which is compared against the original PoE trajectory $\{z_t^{\mathrm{poe},(p,s)}\}$ using
+\begin{equation}
+d_t^{\star,(p,s)}=\frac{1}{N}\left\|z_t^{\star,(p,s)}-z_t^{\mathrm{poe},(p,s)}\right\|_2^2,
+\qquad
+d_T^{\star,(p,s)}=d_t^{\star,(p,s)}\big|_{t=T}.
+\end{equation}
+
+Under the $50$-step schedule, each residual curve is also summarized over three denoising phases:
+\begin{align}
+\Delta_{\mathrm{early}}^{\star,(p,s)} &= d_{17}^{\star,(p,s)} - d_{0}^{\star,(p,s)}, \\
+\Delta_{\mathrm{mid}}^{\star,(p,s)} &= d_{34}^{\star,(p,s)} - d_{17}^{\star,(p,s)}, \\
+\Delta_{\mathrm{late}}^{\star,(p,s)} &= d_{50}^{\star,(p,s)} - d_{34}^{\star,(p,s)}.
+\end{align}
+Image-level CLIP cosine similarity between the regenerated image and the original PoE image is reported as a secondary output-space measure.
+
+The expected result is again taxonomy dependent. In Groups~1 and~2, where the original composability gap is predicted to be small, the $p^\star$ rerun should remain relatively close to the PoE basin and produce small terminal residuals. In Groups~3 and~4, the rerun is expected to drift away from the PoE trajectory, indicating that the logical target is not fully recoverable through SD-IPC-conditioned generation alone. Early residual growth would suggest failure to enter the PoE basin from the outset, whereas late residual growth would indicate only partial alignment followed by terminal breakdown.
+
+At the group level, successful gap closure would appear as a left shift of the $d_T^\star$ distribution toward zero and weaker phase-wise residual accumulation than the original monolithic-to-PoE baseline. The Phase~1 expectation, however, is that closure will be limited in the harder regimes, especially for adversarial-collision pairs. In that case, reachability analysis would support the claim that PoE composition can steer sampling toward targets that a single recovered conditioning signal does not reproduce faithfully.
+
+\section{Discussion}
+
+If the expected ordering across taxonomy groups is observed, Phase~1 would support a structural interpretation of the composability gap. The key point would not be merely that monolithic prompting and PoE differ, but that the magnitude and timing of their divergence depend on the compatibility structure of the concepts themselves. Minimal gaps in Groups~1--2 would indicate that logical composition behaves comparably to semantic composition when the joint configuration is already supported or when the factors remain sufficiently separable. Larger gaps in Groups~3--4 would indicate that logical composition departs from semantic composition most strongly when those structural conditions fail.
+
+The reachability analysis sharpens that interpretation. If SD-IPC reruns remain close to PoE in the easier regimes but fail to recover PoE trajectories in the harder regimes, then the mismatch cannot be attributed only to poor prompt wording. Instead, the expected result would be that some logically composed targets sit outside the region that standard text-conditioned generation reproduces reliably, even when the recovered conditioning signal is derived directly from the PoE image.
+
+This Phase~1 discussion remains deliberately bounded. It does not attempt to resolve whether the underlying cause is representational, algorithmic, or both, nor does it introduce corrections from later phases of the research programme. Its narrower contribution is to frame the composability gap as a structured empirical phenomenon whose severity can be predicted from the relationship between the constituent concepts.
+
+\section{Conclusion}
+
+Phase~1 formulates semantic composition and logical composition as distinct mechanisms in latent diffusion models and proposes a controlled way to compare them. The central expectation is that the composability gap is structured: it should remain small for co-occurring or approximately factorized concept pairs, widen for partially overlapping pairs, and become largest for adversarial collisions.
+
+The anticipated contribution of the trajectory analysis is to show that this gap is visible in latent dynamics rather than only in decoded outputs. The anticipated contribution of the reachability analysis is to show that SD-IPC-based conditioning does not fully recover the PoE endpoint in the hardest regimes. Taken together, these expected findings motivate Phase~1 as the empirical foundation for later work on why the gap arises and how it might eventually be reduced.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

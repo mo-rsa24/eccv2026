@@ -1,0 +1,135 @@
+\subsection{Diffusion Models as Stochastic Differential Equations}
+
+The discrete-time formulation of denoising diffusion probabilistic models (DDPMs), proposed by
+\citet{NEURIPS2020_4c5bcfec} and building on \citet{pmlr-v37-sohl-dickstein15}, defines a Markov
+chain that gradually transforms data into noise through a forward noising process, and learns the
+reverse transitions through variational inference. In this view, the model learns to invert a fixed
+forward kernel $q(\mathbf{x}_t \mid \mathbf{x}_{t-1})$ by approximating the reverse transitions
+$p_\theta(\mathbf{x}_{t-1} \mid \mathbf{x}_t)$ using the evidence lower bound (ELBO).
+
+Around the same time, \citet{song2021scorebased} introduced \emph{score-based generative models}
+(SGMs), derived from earlier work on denoising score matching \citep{vincent_score_matching_2011}.
+Although SGMs and DDPMs were initially presented within different mathematical formalisms—one
+discrete-time and variational, the other continuous-time and energy-based—they are now understood to
+be two views of the same underlying generative mechanism. The key distinction is simply the choice
+of parameterization: DDPMs work with discrete-time noise levels $\{\beta_t\}$, while SGMs treat time
+as a continuous variable and parameterize corruption and denoising via a stochastic differential
+equation (SDE).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.65\textwidth]{chapters/background/diffusion_models/media/score.jpg}
+    \caption{
+        \textbf{Forward and Reverse SDEs.}
+        In continuous time, the forward process that corrupts data into noise is modeled as an Itô
+        SDE with drift $f(\mathbf{x},t)$ and diffusion strength $g(t)$. The reverse process, which
+        recovers data from noise, has the same diffusion term but a drift modified by the
+        \emph{score function} $\nabla_{\mathbf{x}} \log p_t(\mathbf{x})$, the gradient of the data
+        log-density. This continuous formulation provides a unifying view of DDPMs and
+        score-based models: the discrete DDPM reverse transitions approximate the numerical
+        integration of this reverse SDE \citep{song2021scorebased}.
+    }
+    \label{fig:sde_score_diagram}
+\end{figure}
+
+\paragraph{From the Markov Chain to the Continuous Limit.}
+The forward process in DDPMs is defined as a discrete Markov chain that adds Gaussian noise at each
+step \eqref{eq:reparameterization_of_xt}:
+\begin{equation}
+\mathbf{x}_i = \sqrt{1 - \beta_i}\,\mathbf{x}_{i-1}
+    + \sqrt{\beta_i}\,\boldsymbol{\epsilon}_{i-1},
+\qquad
+\boldsymbol{\epsilon}_{i-1} \sim \mathcal{N}(0,\mathbf{I}),
+\end{equation}
+
+To obtain a continuous formulation using a \emph{Taylor Series} expansion, we interpret the step index $i$ as discretized time
+$t = i / N$ and rewrite the forward update as an infinitesimal change composed of a deterministic
+component and a stochastic Brownian component \citep{song2021scorebased}. Taking the limit as $N \to \infty$ yields an Itô SDE:
+\begin{equation}
+\mathrm{d}\mathbf{x}
+=
+-\tfrac{1}{2}\beta(t)\,\mathbf{x}\,\mathrm{d}t
++
+\sqrt{\beta(t)}\,\mathrm{d}\mathbf{W}(t),
+\end{equation}
+where $\mathbf{W}(t)$ is a Wiener process. This provides a mathematically precise continuous-time
+analog of DDPM forward diffusion.
+
+More generally, an SDE is written as
+\begin{equation}
+\mathrm{d}\mathbf{x}
+=
+f(\mathbf{x},t)\,\mathrm{d}t
++
+g(t)\,\mathrm{d}\mathbf{w},
+\end{equation}
+with drift $f(\mathbf{x},t)$ and diffusion strength $g(t)$. The drift term describes predictable
+motion (a deterministic force), while the diffusion term injects stochasticity through the Brownian
+motion $\mathrm{d}\mathbf{w}$.
+
+\paragraph{Reverse SDE and the Role of the Score.}
+\citet{song2021scorebased} showed that the reverse-time dynamics of this SDE have the form
+\begin{equation}
+\mathrm{d}\mathbf{x}
+=
+\left[
+    f(\mathbf{x},t)
+    -
+    g(t)^2 \nabla_{\mathbf{x}} \log p_t(\mathbf{x})
+\right]
+\mathrm{d}t
++
+g(t)\,\mathrm{d}\bar{\mathbf{w}}.
+\end{equation}
+The term
+\(
+\nabla_{\mathbf{x}} \log p_t(\mathbf{x})
+\)
+is the \emph{score function}—the gradient of the log-density at noise level $t$. Intuitively, the
+score points in the direction that makes the sample $\mathbf{x}$ more likely under $p_t$. In the
+continuous formulation, this score acts as the guiding denoising vector field that pulls corrupted
+samples back toward the data manifold.
+
+This reverse SDE is the continuous-time version of the DDPM reverse Markov chain: the DDPM
+mean-prediction network approximates the same underlying vector field, but expressed indirectly
+through noise-prediction. Thus, introducing the SDE perspective clarifies the connection between
+DDPMs and score matching, which becomes essential when extending diffusion models to tasks such as
+model composition, where one must manipulate or combine score fields.
+
+% \paragraph{Score Matching as a Theoretical Foundation.}
+% Score-based generative models learn to estimate this score function directly. Classical score
+% matching \citep{hyvarinen05a} aims to match the model score $s_m(\mathbf{x};\theta)$ to the data
+% score $s_d(\mathbf{x}) = \nabla_{\mathbf{x}}\log p_d(\mathbf{x})$ by minimizing
+% \begin{equation}
+% L(\theta)
+% =
+% \tfrac{1}{2}
+% \mathbb{E}_{p_d(\mathbf{x})}
+% \!\left[
+% \| s_m(\mathbf{x};\theta) - s_d(\mathbf{x}) \|^2
+% \right].
+% \end{equation}
+% Because $s_d(\mathbf{x})$ is unknown, \citet{hyvarinen05a} derived an equivalent objective through
+% integration by parts:
+% \begin{equation}
+% J(\theta)
+% =
+% \mathbb{E}_{p_d(\mathbf{x})}
+% \!\left[
+% \operatorname{tr}(\nabla_{\mathbf{x}} s_m(\mathbf{x};\theta))
+% +
+% \tfrac{1}{2}\|s_m(\mathbf{x};\theta)\|^2
+% \right],
+% \end{equation}
+% where $\operatorname{tr}(\cdot)$ denotes the trace of the Hessian of the model score.
+
+% Within diffusion models, this classical objective generalizes to a time-indexed version:
+% the model learns the family of score functions $\nabla_{\mathbf{x}_t}\log p_t(\mathbf{x}_t)$ across
+% multiple noise levels. This is precisely what the noise-prediction network in DDPM learns implicitly.
+
+% \paragraph{Summary.}
+% The SDE view provides a conceptual bridge between DDPMs and SGMs. DDPMs correspond to a specific
+% discretization of the continuous forward and reverse SDEs; SGMs correspond to their continuous
+% parameterization via score matching. Introducing the SDE and score viewpoint here clarifies this
+% connection, which becomes important when later discussing \emph{compositional diffusion}, where the
+% score plays a central role in combining or manipulating multiple generative models.

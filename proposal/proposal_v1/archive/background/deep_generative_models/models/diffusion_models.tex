@@ -1,0 +1,13 @@
+\paragraph{Denoising Diffusion Probabilistic Models.}
+Most recently, Diffusion Models \citep{pmlr-v37-sohl-dickstein15, NEURIPS2020_4c5bcfec} and Score-Based Generative Models \citep{sgm_yang_song_2023} have achieved state-of-the-art results. Diffusion models define a forward noising process
+\begin{equation}
+q(x_t \mid x_{t-1}) = \mathcal{N}(x_t; \sqrt{1-\beta_t}\, x_{t-1}, \beta_t I),
+\end{equation}
+where $\beta_t$ controls the noise variance schedule. Score-based models instead estimate the score function
+\begin{equation}
+s_\theta(x) = \nabla_x \log p_{\text{data}}(x),
+\end{equation}
+and use Langevin dynamics
+\begin{equation}
+x_{k+1} = x_k + \frac{\epsilon}{2} s_\theta(x_k) + \sqrt{\epsilon}\, \eta_k, \quad \eta_k \sim \mathcal{N}(0, I).
+\end{equation}

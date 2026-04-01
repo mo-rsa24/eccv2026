@@ -1,0 +1,30 @@
+Explicit models provide a computable likelihood function \(P_\theta(x)\), enabling direct optimisation via maximum likelihood estimation (MLE):
+\begin{equation}
+    \theta^* = \arg\max_\theta \sum_{i=1}^{N} \log P_\theta(x_i),
+\end{equation}
+so that \(P_\theta(x)\) approximates \(P_{\text{data}}(x)\) by assigning high probability to observed samples.  
+Two main subclasses exist:  
+\emph{Tractable models}, such as autoregressive networks \citep{radford2019language} and normaliszing flows \citep{papamakarios2021normalizing}, compute exact log-likelihoods through sequential or invertible transformations.  
+\emph{Approximate models}, such as Variational Autoencoders (VAEs), estimate intractable likelihoods through variational inference by optimising a lower bound (ELBO) on \(\log P_\theta(x)\) \citep{kingma2019introduction}.  
+Explicit models offer clear probabilistic interpretability and uncertainty quantification but may struggle with complex, high-dimensional data.
+
+Implicit models instead define a stochastic process capable of sampling from \(P_\theta(x)\) without an explicit density.  
+A generator \(G_\theta\) maps noise \(z \sim P_z\) to data space, \(x = G_\theta(z)\), inducing a distribution from which samples can be drawn though \(P_\theta(x)\) is intractable.  
+These models are trained via alternative objectives that align generated and real samples, such as adversarial losses in GANs or score matching in score-based and diffusion models.
+Although implicit models lack explicit likelihoods, they excel at generating high-fidelity and diverse samples.
+
+As discussed by \citet{NEURIPS2021_5db60c98}, both classes of generative models possess distinct advantages and limitations.  
+Explicit models provide mathematical tractability and likelihood interpretability but suffer from normalisation constraints and scalability issues, whereas implicit models prioritise expressive sampling at the cost of training stability and mode diversity.  
+% This contrast highlights a fundamental complementarity between the two paradigms, motivating the search for unified frameworks that can exploit their respective strengths.
+
+Modern generative methods, particularly diffusion models, bridge explicit and implicit formulations by combining the tractable probabilistic foundation of likelihood-based learning with the expressive power of stochastic simulation.  
+Diffusion models can be interpreted as energy-based systems whose learned score functions define an energy landscape guiding samples toward regions of high probability.  
+Their continuous-time formulation, grounded in Itô and Fokker–Planck dynamics, provides a unified view of how probability mass evolves under noise perturbations.  
+This framework offers stable training and controllable sampling—properties especially valuable for medical imaging, where diagnostic features lie on low-dimensional manifolds within complex, high-dimensional data spaces.
+
+% \input{chapters/background/deep_generative_models/models/autoregressive_models}
+% \input{chapters/background/deep_generative_models/models/vae}
+% \input{chapters/background/deep_generative_models/models/flow_based_models}
+% \input{chapters/background/deep_generative_models/models/gans}
+% \input{chapters/background/deep_generative_models/models/energy_based_models}
+% \input{chapters/background/deep_generative_models/models/diffusion_models}

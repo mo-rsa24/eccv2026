@@ -1,0 +1,12 @@
+\begin{abstract}
+The South African mining sector continues to bear a disproportionate burden of occupational lung disease, with silicosis and tuberculosis (TB) remaining among the most prevalent and co-morbid conditions. 
+Chest radiography remains the primary diagnostic tool in resource-limited settings; however, real-world datasets are often fragmented, unbalanced, and constrained by privacy concerns, limiting the development of robust computer-aided diagnostic systems. 
+In particular, co-occurring presentations of silicosis and TB (\emph{Silico-TB}) are rarely captured in sufficient quantity to train reliable models or study disease interaction patterns. 
+To address this gap, the proposed research investigates whether composable generative diffusion models can be used to synthesize clinically plausible chest X-rays representing rare or unseen combinations of pathologies. 
+Specifically, the study employs separately trained latent diffusion models—each representing an individual disease distribution—and combines their score functions through Itô-based composition using the SuperDiff framework. 
+Each diffusion model learns an implicit energy landscape that represents the probability structure of its data distribution.
+By treating these models as learned priors, composition becomes an operation over their energy functions:
+combining their gradients defines a new generative process whose samples emerge from the intersection of independent low-energy regions—effectively synthesizing new data distributions that integrate both learned concepts.
+By testing whether such latent-space compositions correspond to meaningful and interpretable combinations in medical image space, the work aims to advance a deeper understanding of compositionality in probabilistic generative models while providing a scientifically grounded framework for data augmentation and for exploring compositional generative behavior in clinically relevant imaging domains.
+Beyond its clinical context, the research contributes to the theoretical study of compositional diffusion, probing the mathematical and geometric conditions under which independently trained diffusion models can be coherently combined to yield semantically structured outputs.
+\end{abstract}

@@ -1,0 +1,114 @@
+\section{Context-Guided Diffusion Models}
+\label{sec:context_guided_diffusion}
+Context-guided diffusion models extend the classical diffusion framework by
+conditioning the generative process on structured, domain-specific context.
+Whereas standard conditional diffusion injects labels or text embeddings as
+static side information, context-guided methods modify the \emph{trajectory} of
+the reverse SDE or ODE itself. Formally, this is achieved by augmenting the
+reverse dynamics
+\[
+\mathrm{d}x_t = 
+\Big(f_t(x_t) - g_t^2 \nabla_x \log p_t(x_t)\Big)\mathrm{d}t + g_t\,\mathrm{d}\bar{w}_t
+\]
+with an additional context-dependent potential that steers the sampler:
+\[
+\mathrm{d}x_t
+=
+\Big(
+f_t(x_t)
+- g_t^2 \nabla_x \log p_t(x_t)
+- \lambda \nabla_x U_{\mathrm{ctx}}(x_t \mid c)
+\Big)\mathrm{d}t
++ g_t\, \mathrm{d}\bar{w}_t,
+\]
+where $c$ denotes contextual information and $U_{\mathrm{ctx}}$ is a potential
+encoding domain-specific structure. This modification implicitly defines a new
+target distribution
+\[
+p_{\mathrm{ctx}}(x) \propto p(x)\,e^{-U_{\mathrm{ctx}}(x\mid c)},
+\]
+illustrating how context restricts the generative manifold and suppresses
+out-of-distribution (OOD) drift. Such mechanisms are essential in domains where
+generation depends on relational, structural, or temporal constraints that
+cannot be captured by prompt-based conditioning alone, including molecular
+design, protein engineering, structured image generation, and video synthesis.
+
+Across recent formulations, context-guided diffusion introduces three key
+principles. First, context acts as an auxiliary latent that modifies the score
+network itself. If $s_\theta(x_t,t)$ denotes the base score estimator, context
+often produces an effective score of the form
+\[
+s_\theta(x_t,t,c)
+=
+s_\theta(x_t,t)
++
+A_\theta(x_t,c),
+\]
+where $A_\theta$ is a cross-attention term encoding structural or semantic
+information from the context. Second, context can be \emph{dynamic}: updated at
+each sampling step through a rule $c_{t+\Delta t} = \Phi(c_t, x_t)$, allowing the
+trajectory to adapt to evolving constraints. Third, context acts as a stabiliser
+that improves robustness and prevents hallucinations by anchoring the sampler to
+regions consistent with domain knowledge.
+
+\paragraph{Context-Guided Diffusion for OOD Molecular and Protein Design.}
+The uploaded work on molecular and protein generation is a representative example
+of context as a domain-specific potential. Biochemical context---including
+binding-site geometry, interaction graphs, sequence scaffolds, or structural
+motifs---is encoded into a potential $U_{\mathrm{ctx}}$ that penalises steps
+leading away from chemically valid configurations. By injecting the gradient
+$-\nabla_x U_{\mathrm{ctx}}$ into the reverse SDE, the sampler is encouraged to
+remain on the feasible biochemical manifold. This improves OOD robustness by  
+(i) incorporating physically meaningful constraints at each step,
+(ii) preventing drift into implausible structural regimes, and  
+(iii) ensuring that generated molecules and proteins satisfy geometric and
+functional requirements. These ideas translate naturally to medical imaging,
+where structured radiological signals (severity scores, lesion distributions,
+opacity maps) can serve as analogous forms of context.
+
+\paragraph{In-Context Aware Image Generation (Context Diffusion).}
+Context Diffusion generalises in-context learning to diffusion models by
+allowing a model to ingest a ``context set''---a small number of reference
+examples---and generate new samples consistent with that set. This is achieved
+by embedding the context set into a latent representation and injecting it into
+the score network via a cross-attention mechanism $A_\theta(x_t,c)$. The
+resulting context-modulated score adapts the generative trajectory to match the
+geometry and style of the context examples without additional training. This is
+highly relevant for compositional diffusion, where hybrid configurations
+(e.g., mixed pathologies) may lie outside all training distributions: in-context
+modulation can stabilise sampling by aligning the trajectory with examples
+exhibiting similar spatial patterns or semantic structure.
+
+\paragraph{Contextualized Diffusion for Text-Guided Image and Video Generation.}
+In contextualized diffusion models for text-guided image or video generation,
+context is encoded hierarchically or temporally and integrated into each
+denoising step through contextual cross-attention. Rather than serving as a
+static conditioning token, the context modulates the drift throughout the
+trajectory, enforcing global coherence across spatial layouts or temporal
+sequences. Two principles emerge from this framework: (i) context must be
+injected continuously along the diffusion path to maintain alignment with
+high-level semantics, and (ii) its influence must be carefully calibrated so as
+not to overpower the underlying generative model. These principles map directly
+onto our Phase~2 experiments, where severity or lesion-location guidance must
+influence the trajectory strongly enough to prevent hallucination, but not so
+strongly that anatomical structure becomes distorted.
+
+\paragraph{Relevance to Compositional Diffusion.}
+Context-guided diffusion provides a crucial complement to compositional
+operators. Whereas compositional methods combine distributions or score fields,
+they do not inherently constrain the sampler to remain semantically consistent.
+Context guidance mitigates this limitation by  
+(i) stabilising the generative trajectory in regions where component models
+disagree,  
+(ii) imposing structured semantic constraints, and  
+(iii) attenuating OOD drift through context-conditioned potentials or
+cross-attention terms.  
+These properties are essential for medical compositions such as TB $\land$
+silicosis, where continuous radiological attributes (severity, localisation,
+opacity patterns) provide natural context signals that can refine, correct, or
+disambiguate the outputs of base compositional operators.
+
+Together, these works establish context-guided diffusion as a mathematically
+grounded and practically effective mechanism for integrating structured signals
+into the generative trajectory. This makes it a natural foundation for our
+Phase~2 investigation of property-guided compositional diffusion.

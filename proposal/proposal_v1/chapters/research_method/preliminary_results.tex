@@ -1,0 +1,37 @@
+\section{Preliminary Results}
+\label{sec:research_method_preliminary_results}
+
+Foundational progress has been achieved toward establishing the computational framework required for this investigation.  
+A shared variational autoencoder (VAE) has been successfully trained on a combined dataset of normal and tuberculosis (TB) chest radiographs, providing a unified latent representation suitable for training latent diffusion models (LDMs).  
+Using this shared encoder–decoder backbone, two unconditional LDMs were independently trained—one on normal chest X-rays and the other on TB X-rays—to serve as disease-specific generative priors.  
+Initial compositional experiments conducted using the SuperDiff framework demonstrate that score-space superposition between these models can be meaningfully controlled: setting the weight of one model to zero reproduces the distribution of the other, effectively yielding a logical OR operation in generative space.  
+These preliminary findings indicate that the models can generate plausible samples representative of their respective training domains, validating the soundness of the pipeline for subsequent compositional investigations.  
+Figure~\ref{fig:progress_readiness_ldm} illustrates representative samples from the trained diffusion models, which serve as a readiness milestone for future experiments examining latent-space composition under both Euclidean and Riemannian diffusion formulations.
+
+\begin{figure}[H]
+    \centering
+    % --- First image: Normal X-rays ---
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{chapters/research_method/media/normal_ldm_samples.png}
+        \caption{Samples from the unconditional diffusion SDE trained on Normal chest X-rays.}
+        \label{fig:normal_ldm_samples}
+    \end{subfigure}
+    \hfill
+    % --- Second image: TB X-rays ---
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{chapters/research_method/media/tb_ldm_samples.png}
+        \caption{Samples from the unconditional diffusion SDE trained on Tuberculosis (TB) chest X-rays.}
+        \label{fig:tb_ldm_samples}
+    \end{subfigure}
+
+    % --- Unified caption ---
+    \caption{
+        Visual demonstration of the experimental readiness phase.
+        Each panel shows images synthesized by separately trained unconditional diffusion SDEs, one on Normal and one on Tuberculosis (TB) chest X-ray datasets. 
+        These models serve as proxies for studying compositionality in diffusion processes—specifically, whether latent manifolds of distinct disease distributions are geometrically and statistically composable under the SuperDiff framework.
+        The ongoing investigation tests whether such manifolds admit coherent superposition through score-space operations, providing an empirical basis for evaluating the mathematical foundations of composable diffusion models.
+    }
+    \label{fig:progress_readiness_ldm}
+\end{figure}

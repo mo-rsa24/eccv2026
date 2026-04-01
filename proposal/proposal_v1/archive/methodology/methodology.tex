@@ -1,0 +1,352 @@
+\chapter{Proposed Methodology}
+\label{chap:methodology}
+
+\noindent
+This chapter presents the methodological framework underpinning the investigation of compositional diffusion models for chest radiography synthesis.  
+It builds upon the foundations established in Chapter~\ref{chap:introduction}, which outlined the clinical and societal motivations surrounding occupational lung disease in South African miners and introduced the potential of generative modeling as a scientific tool for simulating rare co-morbid pathologies such as Silico-TB.  
+Chapter~\ref{chap:background} provided the theoretical grounding of deep generative models, tracing their probabilistic formulations from explicit and implicit density models to modern diffusion frameworks expressed through stochastic differential equations.  
+Further, Chapter~\ref{chap:related_works} surveyed current literature on diffusion-based generative modeling in medical imaging and the emerging field of compositionality, highlighting key methodological and conceptual gaps that motivate this research.  
+
+Building on these foundations, this chapter outlines the overall research design, introducing the conceptual framework for compositional diffusion models in Section~\ref{sec:composition_foundations}, and detailing the experimental plan and validation strategy adopted to address the central hypotheses formulated in Section~\ref{sec:research_hypothesis}.  
+Section~\ref{sec:research_plan} then presents the research plan and timeline, followed by discussions of the key assumptions, potential risks, and methodological limitations, and concludes with a summary of the current progress and technical readiness for experimentation.  
+
+The methodological design rests on four principles: (i) a rigorous mathematical formulation of \emph{composition} in latent and semantic manifolds; (ii) the use of \emph{Itô stochastic differential equations (SDEs)} as the theoretical foundation for compositional diffusion; (iii) hypothesis-driven experimental evaluation linking latent geometry to clinical interpretability; and (iv) transparent assessment of ecological validity through quantitative metrics and radiologist engagement.  
+
+Before defining the hypotheses and research questions, we first formalize the conceptual and mathematical underpinnings of composition in the context of diffusion modeling.
+
+
+
+\section{Conceptual and Mathematical Foundations of Composition}
+\label{sec:composition_foundations}
+
+\paragraph{Composition in Latent and Disease Spaces.}
+Two complementary notions of composition underpin this research:
+
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{Latent-space composition.} In the diffusion framework, each disease-specific model learns a score function $s_i(x,t) = \nabla_x \log p_i(x_t)$ that approximates the gradient of its log-likelihood. Composing multiple pretrained models corresponds to the superposition of their respective scores:
+    \[
+        s_{\text{comp}}(x,t;\lambda) = \lambda\, s_{\mathrm{TB}}(x,t) + (1-\lambda)\, s_{\mathrm{Si}}(x,t),
+    \]
+    where $\lambda \in [0,1]$ modulates the contribution of tuberculosis (TB) and silicosis (Si) components. Sampling from this composed field defines a new diffusion process whose stationary distribution $p_{\text{comp}}(x)$ encodes a hybrid pathology.
+
+    \item \textbf{Semantic or disease-space composition.} Clinically, “composing diseases’’ refers to the fusion of co-occurring pathophysiological processes—such as silicotic fibrosis and tuberculous cavitation—within a single anatomical structure. The central question is whether the algebraic operation in latent space induces a semantically meaningful operation in the diagnostic image space:
+    \[
+        \mathcal{C}_{\text{latent}} \;\Rightarrow\; \mathcal{C}_{\text{semantic}}.
+    \]
+\end{enumerate}
+
+A successful alignment between these notions would indicate that latent superposition encodes medically interpretable co-morbidities; failure would reveal fundamental geometric misalignment between latent and semantic manifolds.
+
+% \paragraph{Itô Dynamics and the SuperDiff Framework.}
+% The diffusion process is formalised as an Itô SDE:
+% \[
+% dx_t = f(x_t,t)\,dt + g(t)\,dW_t,
+% \]
+% where $f$ and $g$ denote drift and diffusion coefficients, and $W_t$ is standard Brownian motion.  
+% In the reverse process, sampling evolves according to:
+% \[
+% dx_t = [\,f(x_t,t) - g^2(t)\,\nabla_x \log p_t(x_t)\,]\,dt + g(t)\,d\bar{W}_t,
+% \]
+% where $\nabla_x \log p_t(x_t)$ is approximated by a neural network trained under the denoising score-matching objective.  
+
+% The \textbf{SuperDiff} framework extends this principle by providing a mathematically consistent way to superpose multiple score fields, enabling logical operations such as conjunction (AND) or interpolation between pretrained diffusion models. Itô calculus ensures that the resultant stochastic flow remains valid under the composed score, allowing inference-time composition without retraining.
+
+
+
+\section{Research Hypothesis and Questions}
+\label{sec:research_hypothesis}
+\begin{itemize}
+    \item Refine the thesis title to make the underlying philosophy and contribution more explicit.
+    \item Clearly articulate why diffusion models are the model of choice and why pursuing them is justified.
+    \item Merge RQ2 into RQ1, retaining the strongest elements of both while ensuring conceptual clarity.
+    \item Finalise RQ3 as an investigation of the limitations of RQ1 and their indirect impact on controllable compositionality in RQ2.
+    \item Assess whether to incorporate language-guided, localised, or spatial forms of composition within the scope of the study.
+\end{itemize}
+
+
+\paragraph{Central Hypothesis.}
+% We hypothesise that inference-time composition of latent diffusion models via score superposition (e.g \emph{SuperDiff}) produces semantically and clinically coherent chest radiographs that faithfully represent co-morbid pathologies such as Silico–TB.
+We hypothesise that inference-time composition of latent diffusion models via score superposition (e.g., \emph{SuperDiff}) yields semantically and clinically coherent chest radiographs that represent plausible Silicosis–TB co-morbidity.  
+As a methodological contribution, we posit that such compositional mechanisms can produce ecologically valid disease combinations that offer practical utility in low-resource settings—enabling the generation of plausible, data-efficient augmentation and supporting downstream tasks where clinically annotated multimorbidity data are scarce.
+To examine this claim systematically, we introduce hypotheses H1 and H2, which respectively evaluate the semantic validity of latent compositions and the extent to which such compositions can be parameterised and controlled within the diffusion manifold.
+
+
+\begin{quote}
+\textbf{H1:} Compositionality in latent generative spaces yields image distributions \(p_{\mathrm{comp}}(x)\) whose structural, textural, and anatomical characteristics reflect coherent integration of constituent pathologies within a clinically interpretable manifold.  
+This hypothesis examines whether latent-space composition—irrespective of the specific algorithmic mechanism (e.g., Itô-Based score superposition via \emph{SuperDiff})—preserves meaningful cross-domain correspondences that manifest as diagnostically valid co-morbid representations.
+
+\emph{Negative outcomes}—where compositions produce non-additive, implausible, or anatomically inconsistent samples—will indicate limitations in the disentanglement or curvature of the latent manifold and inform the boundaries of compositional validity.
+
+\vspace{1em}
+\textbf{H2:} Controllable compositionality enables continuous modulation of pathological severity and interaction strength within the composed manifold, allowing interpolation between disease states while maintaining clinical and ecological plausibility.  
+This hypothesis extends H1 by testing whether composition can be parameterized to regulate the veracity of pathological expression, thereby supporting a gradient of disease representation suitable for simulation or data augmentation.
+
+\emph{Negative outcomes}—where compositional control leads to unstable trajectories, mode collapse, or loss of semantic coherence—will reveal constraints on the latent manifold’s continuity and on the robustness of its causal disentanglement.
+
+\vspace{1em}
+\textit{Together, H1 and H2 establish the conceptual basis for evaluating both the validity and controllability of compositional generative mechanisms in medical imaging models.}
+\end{quote}
+
+\paragraph{Broader Scientific Scope.}
+While this research investigates compositional diffusion models within the specific context of medical image synthesis, its underlying inquiry is fundamentally methodological.  
+At its core, the study examines whether inference-time composition via Itô-driven score superposition constitutes a valid mechanism for combining independently trained diffusion models in \emph{any} data domain.  
+The results—whether successful or not—will extend understanding of compositionality in generative modeling by revealing the mathematical and geometric conditions under which score fields interact coherently or destructively.  
+Thus, beyond its clinical motivation, the project contributes to the broader theory of compositional diffusion: how latent probability flows, learned separately, can be fused to produce new, semantically structured distributions without additional training.  
+Insights from this investigation are expected to inform future research in text-to-image synthesis, multimodal alignment, and composable simulation models across domains where disentangled generation is desired.
+
+\paragraph{Research Question 1: Latent–Semantic Alignment.}
+\emph{Does Itô-based composition in latent space yield samples that exhibit the clinically interpretable co-occurrence of tuberculosis and silicosis features in the semantic (medical image) space?}
+
+\paragraph{Defining the Semantic Space.}
+In this context, the \emph{semantic or medical image space} refers to the high-level manifold of radiographic structures and pathological cues that radiologists use for clinical interpretation.  
+Each disease occupies a characteristic subregion of this manifold: tuberculosis is associated with cavitary nodules and apical infiltrates \citep{urbanowski2020cavitary}, whereas silicosis manifests as diffuse reticulonodular opacities and progressive massive fibrosis \citep{radswiki2025silicosis, weerakkody2025pmf}.  
+Meaningful composition, therefore, is defined as the joint presence and anatomical co-localisation of both sets of features—within a single chest radiograph—while maintaining global anatomical coherence (e.g., rib spacing, lung symmetry, and density gradients).  
+A composition is successful when the synthesized image simultaneously expresses both pathological feature sets in a radiologically plausible manner; failure occurs when the generated samples either (i) collapse toward one dominant disease, or (ii) exhibit incoherent or non-anatomical blending.
+
+\paragraph{Validation Strategy.}
+To evaluate this alignment, we propose a two-tier validation framework integrating \emph{fidelity-based}, \emph{semantic}, and \emph{diagnostic} analyses:
+
+\textbf{1. Structural Fidelity and Distributional Proximity.}  
+FID and SSIM will be employed only as auxiliary diagnostics to quantify whether the composed distribution $p_{\mathrm{comp}}(x)$ lies within the general manifold of plausible chest radiographs.  
+Here, FID will measure the statistical proximity between composed samples and the marginal distributions of real TB and Silicosis datasets, rather than any hypothetical ground truth for Silico–TB.  
+A moderate FID value coupled with stable variance across $\lambda$-sweeps would indicate that composition preserves the underlying chest structure and radiographic realism, even under zero-shot combinations.
+
+\textbf{2. Semantic Feature Co-occurrence.}  
+Since no real co-morbid ground truth exists, semantic verification will rely on pretrained disease-specific classifiers and lesion detectors fine-tuned on TB and Silicosis datasets.  
+Each composed image will be passed through these diagnostic models to estimate the posterior probabilities $P_{\mathrm{TB}}$ and $P_{\mathrm{Si}}$.  
+A composition will be deemed semantically aligned when both probabilities exceed empirically determined thresholds ($P_{\mathrm{TB}} > \tau_{\mathrm{TB}}$, $P_{\mathrm{Si}} > \tau_{\mathrm{Si}}$) while the image remains anatomically plausible.  
+Spatial activation maps (Grad-CAM or attention heatmaps) will further confirm whether the model localizes both lesion types to clinically expected lung regions.  
+This approach allows quantitative measurement of co-occurrence without requiring paired real Silico–TB data.
+
+\textbf{3. Expert and Radiomic Interpretation.}  
+Blinded thoracic radiologists will assess the synthetic images using structured rating scales for: (i) lesion plausibility, (ii) spatial coherence, and (iii) diagnostic interpretability.  
+Complementarily, radiomic texture features—such as gray-level co-occurrence, entropy, and local binary patterns—will be compared across real TB, Silicosis, and composed samples to determine whether composition interpolates radiomic signatures of both diseases.
+
+\paragraph{Outcome and Interpretation.}
+A positive result—where classifier outputs, radiomic indicators, and expert ratings jointly support dual-pathology presence—would demonstrate that latent score superposition captures semantically valid disease co-occurrence.  
+Conversely, if composed samples fail to exhibit consistent dual features or degenerate toward one pathology, this will indicate non-linear disentanglement or curvature misalignment in the latent manifold, thereby informing the geometric exploration posed in RQ3.
+
+\textbf{todo} - come up with a neat way to combine RQ1 and RQ2 where I capture best of both worlds
+\paragraph{Research Question 1.2: Clinical and Ecological Validity.}
+\emph{Do composed image distributions generated via Itô dynamics exhibit clinical plausibility, anatomical coherence, and diagnostic interpretability within real-world diagnostic settings?}
+
+\paragraph{Defining Clinical and Ecological Validity.}
+In this context, \emph{clinical validity} refers to the extent to which composed chest radiographs express pathological and anatomical features that can be interpreted consistently by qualified radiologists, while \emph{ecological validity} concerns how well the generated data integrate into real-world diagnostic workflows—whether the images could realistically appear in a hospital archive or screening system.  
+A synthetically composed image achieves ecological validity if it (i) retains global structural realism (consistent bone alignment, cardiac silhouette, and density gradients), (ii) exhibits diagnostically coherent lesion patterns, and (iii) is sufficiently indistinguishable from real radiographs for the purpose of clinical model training or evaluation.  
+The aim is therefore not only to reproduce visual fidelity, but to verify that generated samples maintain diagnostic interpretability and are useful in downstream medical contexts.
+
+\paragraph{Validation Strategy.}
+To evaluate clinical and ecological validity, a multi-modal validation protocol will be followed that integrates expert review, automated analysis, and downstream task performance:
+
+\textbf{1. Expert Radiologist Evaluation.}  
+Three to five thoracic radiologists will perform a blinded assessment of composed samples, scoring each along three dimensions: (i) \emph{anatomical realism}, (ii) \emph{pathology consistency} with TB and Silicosis presentations, and (iii) \emph{diagnostic interpretability}.  
+Images will be mixed with authentic test cases to measure agreement (Cohen’s $\kappa$) and distinguishability (AUC for real vs. synthetic discrimination).  
+This process will provide a direct measure of ecological plausibility grounded in clinical judgment.
+
+\textbf{2. Radiomic and Feature-Space Analysis.}  
+Radiomic descriptors—such as texture entropy, gray-level co-occurrence features, and local binary patterns—will be extracted from real and composed datasets.  
+Principal component analysis (PCA) and t-SNE/UMAP embeddings of these descriptors will reveal whether composed samples occupy intermediate regions between TB and Silicosis manifolds in radiomic space.  
+Consistency across metrics will indicate that diffusion-based composition preserves diagnostically salient radiodensity distributions.
+
+\textbf{3. Downstream Diagnostic Utility.}  
+To assess practical validity, convolutional or transformer-based classifiers will be trained on (a) real data, and (b) real + synthetic data, to evaluate effects on classification accuracy, calibration, and robustness.  
+Improved or stable performance under synthetic augmentation would demonstrate that composed samples enhance generalization, validating their ecological fitness.  
+Conversely, performance degradation would indicate that the synthetic distribution introduces non-diagnostic artifacts or biases.
+
+\paragraph{Outcome and Interpretation.}
+A positive outcome—where radiologists, radiomic measures, and classifier metrics all support compositional realism—would confirm that Itô-based composition generates medically coherent samples that can augment diagnostic pipelines.  
+A negative outcome, showing implausible lesion formation or poor classifier calibration, would highlight limits of uncontrolled latent-space mixing and motivate further structure-aware or condition-guided refinement in subsequent experiments.
+
+\paragraph{Research Question 2: Controllable Latent Compositionality.}
+\emph{Can we learn and evaluate a continuous control variable *\(\alpha \in [0,1]\)* that modulates the relative contribution of Silicosis and Tuberculosis within the composed latent representation, such that the generated Silico--TB images form a clinically plausible continuum between the constituent disease states?}
+
+\textbf{Validation Strategy.}
+We construct a parameterised composition operator \(C_{\alpha}(z_{\mathrm{sil}}, z_{\mathrm{tb}})\) over the latent encodings of Silicosis and TB images, and generate samples \(x_{\alpha}\) via the diffusion decoder. 
+Validation proceeds along three axes:
+
+\textbf{1. Latent continuity}: assess whether \(x_{\alpha}\) varies smoothly as a function of \(\alpha\) in terms of structural, textural, and radiographic features;
+
+\textbf{2. Pathology mixing}: quantify whether increases in \(\alpha\) correspond to monotonic or clinically interpretable changes in disease-related biomarkers (opacity, nodularity, cavitation);
+
+\textbf{3. Semantic controllability}: evaluate whether the clinician-annotated or classifier-derived disease severity scores follow the expected interpolation trajectory.
+
+\textbf{Expected Outcomes and Interpretation.}
+A positive outcome is observed if variations in \(\alpha\) yield a semantically ordered sequence of Silico--TB images reflecting a consistent and clinically plausible progression between Silicosis-dominant and TB-dominant presentations. 
+Such behaviour would indicate that the underlying diffusion manifold supports controllable modulation of compositional semantics, and would provide empirical evidence for H2.
+
+Negative outcomes include non-monotonic transitions, abrupt feature changes, anatomical implausibility, or collapse to a single disease mode. 
+These failures would suggest limitations in manifold continuity, compositional disentanglement, or the stability of the parameterised mixing operator.
+
+\textbf{Evaluation Metrics.}
+
+\textbf{1. Radiologist-verified semantic progression:}
+Blinded scoring of disease severity (Silicosis-grade, TB-grade, and Silico--TB co-morbidity plausibility) across \(\alpha\) trajectories.
+
+\textbf{2. Statistical consistency:}
+Similarity metrics (FID, SSIM) computed along the interpolation path to ensure no regressive or inconsistent sampling behaviour.
+
+\textbf{3. Anatomical fidelity:}
+SSIM/LPIPS stability across invariant anatomical regions to ensure that pathology modulation does not distort core thoracic anatomy.
+
+
+\textbf{Clean this up a bit}
+\paragraph{Research Question 3: Geometric Foundations and Riemannian Diffusion.}
+\emph{If Euclidean Itô-based composition fails to align latent and semantic manifolds, can a curvature-aware (Riemannian) diffusion process restore compositional and clinical validity?}
+
+\paragraph{Rationale and Theoretical Motivation.}
+Latent spaces learned by autoencoders or diffusion autoencoders need not be Euclidean; curvature, anisotropic scaling and non-linear coordinate distortions can make straight-line (Euclidean) operations misrepresent semantic proximity. In such settings, composing scores in Euclidean coordinates may drive trajectories off the intrinsic data manifold, yielding incoherent hybrids.  
+Riemannian diffusion models \citep{NEURIPS2022_123d3e81} formulate the stochastic dynamics on a manifold \((\mathcal M,g)\) with metric tensor \(g\), defining the SDE in \textbf{Stratonovich} form with tangent vector fields:
+\[
+dX_t \;=\; V_0(X_t)\,dt \;+\; \sum_{k=1}^{w} V_k(X_t)\circ dB_t^{k}, 
+\qquad X_t\in\mathcal M,
+\]
+where \(V_0,V_1,\dots,V_w\) are smooth vector fields on \(\mathcal M\) and \(\circ\) denotes Stratonovich integration (ensuring coordinate invariance). Densities are taken with respect to the \textbf{Riemannian volume} \(\mu_g(dx)=|G(x)|^{1/2}dx\) (with \(G\) the metric matrix), and continuity is governed by the manifold Fokker–Planck operator built from the \textbf{Riemannian divergence} 
+\[
+\nabla_g\!\cdot U \;=\; |G|^{-1/2}\sum_{j=1}^d \frac{\partial}{\partial x_j}\!\Big(|G|^{1/2}U^j\Big).
+\]
+When \(\mathcal M\) is realized as a submanifold of \(\mathbb R^m\), one may equivalently write a projected SDE
+\[
+dX_t \;=\; P_{X_t}\!\Big(b(X_t)\,dt + \Sigma(X_t)\circ dB_t\Big),
+\]
+with \(P_{X_t}\) the orthogonal projector onto the tangent space \(T_{X_t}\mathcal M\).  
+In the score-based setting, the score becomes the \textbf{Riemannian gradient} \(\nabla_g \log p_t(x)\) (gradient with respect to \(g\)) and all continuity operators use \(\nabla_g\) and \(\nabla_g\!\cdot\). This geometry-aware formulation keeps dynamics on-manifold and respects geodesic structure, which we hypothesize will preserve semantic locality during composition and thereby improve the plausibility of hybrid samples.
+
+\paragraph{Testable hypothesis.}
+We hypothesize that curvature-aware diffusion on \((\mathcal M,g)\) yields composed samples with higher on-manifold consistency—quantified by manifold geodesic proximity of pathology features, reduced off-manifold drift (measured via projection residuals \(\|(I-P_{X})v\|\)), and improved expert plausibility—relative to Euclidean score superposition.
+
+% Note: See \citet{NEURIPS2022_123d3e81} for the variational likelihood estimator, the change-of-variables formula for densities w.r.t. \(\mu_g\), and derivations of the manifold Fokker–Planck operator.
+
+
+% \paragraph{Validation Strategy.}
+% Testing this hypothesis involves both theoretical analysis and empirical simulation:
+
+% \textbf{1. Curvature and Geometric Diagnostics.}  
+% The latent manifold’s local curvature will be estimated using Hessian eigenvalue spectra, sectional curvature approximations, and score-field divergence.  
+% Regions of high curvature or negative Ricci values will be examined to correlate geometric irregularities with observed composition failures.  
+% Geodesic interpolation experiments will visualize whether manifold-aware sampling preserves smooth transitions between disease manifolds.
+
+% \textbf{2. Riemannian Diffusion Implementation.}  
+% A modified sampler will be implemented using manifold-aware numerical solvers (e.g., exponential-map-based integration).  
+% We will compare composed samples under Euclidean and Riemannian metrics, measuring improvements in anatomical coherence, classifier consistency, and radiomic interpolation smoothness.
+
+% \textbf{3. Comparative Evaluation.}  
+% Quantitative metrics—including geodesic Fréchet distance and local curvature-weighted SSIM—will measure whether Riemannian composition better aligns latent trajectories with clinically meaningful manifolds.  
+% Qualitative review by radiologists will determine whether geometric correction yields visually smoother or more anatomically consistent co-morbidity synthesis.
+
+\paragraph{Outcome and Interpretation.}
+A positive outcome, where curvature-aware diffusion yields semantically stable and anatomically plausible compositions, would support the proposition that geometric misalignment underlies composition failure in Euclidean latent spaces.  
+Conversely, if Riemannian reformulation fails to improve plausibility or interpretability, it would suggest that the misalignment arises from higher-order semantic entanglement rather than geometric curvature, motivating future exploration of factorized or symbolic composition frameworks.
+
+
+\section{Research Plan}
+\label{sec:research_plan}
+
+This section outlines the overall research plan, presenting the structured progression of activities aligned with the three core research questions (RQ1–RQ3) and the corresponding theoretical and experimental phases of this PhD project. 
+The timeline of activities, shown in Table~\ref{table:project_timeline}, illustrates how the investigation evolves from foundational experimentation on compositional diffusion (\textbf{RQ1}) to the assessment of clinical and ecological validity (\textbf{RQ2}), and finally to the exploration of geometric and Riemannian diffusion formulations (\textbf{RQ3}).  
+Each phase builds upon the previous, ensuring a cohesive and cumulative investigation into composable diffusion models for medical imaging.
+
+
+\begin{table}[htpb]
+% \centering
+\begin{ganttchart}[
+  expand chart=\textwidth,
+  y unit title=0.85cm,
+  y unit chart=0.9cm,
+  bar height=0.6,
+  vgrid, hgrid,
+  x unit=0.52cm,
+  bar/.append style={fill=blue!22, draw=blue!45},
+  group right shift=0, group top shift=0,
+  title/.append style={draw=black, fill=gray!10},
+  bar label font=\small,       % larger task labels (like the screenshot)
+  title label font=\bfseries\footnotesize
+]{1}{21}  % 2025-03 .. 2027-12  => 34 month slots
+
+  % ===== Title rows =====
+  \gantttitle{2025}{3}
+  \gantttitle{2026}{12}
+  \gantttitle{2027}{6}\\
+  % Month numbers: 03..12 | 01..12 | 01..12
+  \gantttitlelist{10,11,12}{1}
+  \gantttitlelist{01,02,03,04,05,06,07,08,09,10,11,12}{1}
+  \gantttitlelist{01,02,03,04,05,06}{1}\\
+
+
+  % ===== Tasks (bars) — positions chosen to visually match the screenshot =====
+  \ganttbar{Composition(RQ1) }{1}{3}\\                           % Mar'25–Dec'25
+  \ganttbar{Clinical Validity(RQ2)}{4}{9}\\                                % Mar'25–Mar'26
+  \ganttbar{Riemannian Diffusion(RQ3)}{10}{15}\\                            % Aug'25–Jul'26
+  \ganttbar{Experiments}{1}{15}\\                                  % Mar'25–Oct'27
+  \ganttbar{Write Thesis}{16}{21}                                  % Oct'26–Dec'27
+\end{ganttchart}
+\caption{
+Project timeline showing major research phases aligned with the core research questions. 
+\textbf{RQ1} focuses on latent-space composition of disease-specific diffusion models; 
+\textbf{RQ2} evaluates the clinical and ecological validity of composed samples; and 
+\textbf{RQ3} explores curvature-aware Riemannian diffusion for geometric alignment. 
+The \textbf{Experiments} phase spans model training and validation, while the final stage involves thesis writing and integration of results.
+}
+\label{table:project_timeline}
+\end{table}
+\paragraph{Key Assumptions.}
+This research is grounded on several key assumptions that underlie the feasibility and validity of the proposed approach.  
+First, it is assumed that large-scale public chest X-ray datasets such as CheXpert \citep{Chexpert}, NIH ChestX-ray8 \citep{wang2017chestxray8}, and MIMIC-CXR \citep{johnson2016mimiciii_dataset} capture sufficient radiographic diversity to enable the training of transferable latent priors that generalize to South African mining populations.  
+A second assumption concerns latent alignment: the shared autoencoder is expected to learn a unified latent manifold within which disease-specific submanifolds (e.g., tuberculosis and silicosis) remain locally composable, enabling meaningful superposition during inference.  
+Furthermore, the research assumes that expert radiologists can provide consistent interpretability assessments to evaluate the ecological and diagnostic plausibility of the generated co-morbidities, serving as a qualitative validation of clinical realism.  
+Finally, the study assumes ethical compliance by ensuring that all generated synthetic data remain privacy-preserving and non-identifiable. This will be verified through membership inference and memorisation audits to confirm that no patient-specific information is reproduced or recoverable from the model outputs.
+
+\paragraph{Risk Factors.}
+The research also recognises several potential risks that could impact methodological robustness or experimental validity.  
+Foremost among these is data imbalance: the scarcity of real co-morbid Silico-TB cases may bias the generative priors, leading to poor generalisation or overrepresentation of dominant classes.  
+Another risk arises from latent drift, where independently trained latent diffusion models may yield disjoint or misaligned score fields, causing instability or semantic incoherence during composition.  
+There is also the possibility of clinical misinterpretation, where synthetic radiographic anomalies might be perceived as artefacts or diagnostically implausible patterns by experts.  
+Finally, there exists a fundamental uncertainty regarding whether compositional operations in latent space can meaningfully capture the joint statistical structure of multiple diseases.  
+If the learned priors represent mutually incompatible manifolds, their superposition may fail to produce clinically realistic co-morbid images, revealing intrinsic limits of composability in diffusion models.
+
+\paragraph{Limitations.}
+The scope of this study is defined by certain methodological and practical limitations.  
+First, the investigation is restricted to two-dimensional chest radiographs; the extension of compositional diffusion models to volumetric modalities such as CT or MRI lies beyond the current scope.  
+Second, the interpretability assessment of generated images depends heavily on expert availability and consensus, introducing an element of subjectivity that may affect evaluation consistency.  
+Lastly, the compositional operations explored in this work are primarily linear in score space.  
+While this formulation enables tractable experimentation, it may not fully capture non-linear or higher-order interactions between complex disease processes, suggesting the need for future research into non-linear compositional frameworks.
+
+
+\paragraph{Progress and Readiness.}
+Foundational progress has been achieved toward establishing the computational framework required for this investigation.  
+A shared variational autoencoder (VAE) has been successfully trained on a combined dataset of normal and tuberculosis (TB) chest radiographs, providing a unified latent representation suitable for training latent diffusion models (LDMs).  
+Using this shared encoder–decoder backbone, two unconditional LDMs were independently trained—one on normal chest X-rays and the other on TB X-rays—to serve as disease-specific generative priors.  
+Initial compositional experiments conducted using the SuperDiff framework demonstrate that score-space superposition between these models can be meaningfully controlled: setting the weight of one model to zero reproduces the distribution of the other, effectively yielding a logical OR operation in generative space.  
+These preliminary findings indicate that the models can generate plausible samples representative of their respective training domains, validating the soundness of the pipeline for subsequent compositional investigations.  
+Figure~\ref{fig:progress_readiness_ldm} illustrates representative samples from the trained diffusion models, which serve as a readiness milestone for future experiments examining latent-space composition under both Euclidean and Riemannian diffusion formulations.
+
+\begin{figure}[H]
+    \centering
+    % --- First image: Normal X-rays ---
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{chapters/methodology/media/normal_ldm_samples.png}
+        \caption{Samples from the unconditional diffusion SDE trained on Normal chest X-rays.}
+        \label{fig:normal_ldm_samples}
+    \end{subfigure}
+    \hfill
+    % --- Second image: TB X-rays ---
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{chapters/methodology/media/tb_ldm_samples.png}
+        \caption{Samples from the unconditional diffusion SDE trained on Tuberculosis (TB) chest X-rays.}
+        \label{fig:tb_ldm_samples}
+    \end{subfigure}
+
+    % --- Unified caption ---
+    \caption{
+        Visual demonstration of the experimental readiness phase.
+        Each panel shows images synthesized by separately trained unconditional diffusion SDEs, one on Normal and one on Tuberculosis (TB) chest X-ray datasets. 
+        These models serve as proxies for studying compositionality in diffusion processes—specifically, whether latent manifolds of distinct disease distributions are geometrically and statistically composable under the SuperDiff framework.
+        The ongoing investigation tests whether such manifolds admit coherent superposition through score-space operations, providing an empirical basis for evaluating the mathematical foundations of composable diffusion models.
+    }
+    \label{fig:progress_readiness_ldm}
+\end{figure}
+% To establish an empirical basis for evaluating compositionality, we trained two unconditional diffusion SDEs—one on Normal and one on Tuberculosis (TB) chest radiographs—using the shared latent representation learned by our autoencoder.
+% These models act as proxies for our target problem, allowing us to explore whether disease-specific manifolds are compositionally compatible in latent space.
+% Figure~\ref{fig:progress_readiness_ldm} illustrates generated samples from both models, demonstrating stable training and visual fidelity necessary for subsequent SuperDiff-based composition experiments.
+

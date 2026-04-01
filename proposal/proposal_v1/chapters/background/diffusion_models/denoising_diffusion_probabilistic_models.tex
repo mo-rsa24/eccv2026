@@ -1,0 +1,387 @@
+Diffusion models \citep{pmlr-v37-sohl-dickstein15} are latent-variable generative models of the form
+\(
+p_\theta(\mathbf{x}_0)
+=
+\int p_\theta(\mathbf{x}_{0:T})\, d\mathbf{x}_{1:T},
+\)
+where \(\mathbf{x}_{1:T}\) are latents of the same dimensionality as the observed data
+\(\mathbf{x}_0\). Following \citet{NEURIPS2020_4c5bcfec}, the model consists of a fixed
+\emph{forward diffusion process} that gradually adds noise to data, and a learned
+\emph{reverse process} that aims to invert this corruption.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{chapters/background/diffusion_models/media/DDPM.png}
+    \caption{Directed graphical model structure of DDPMs \citep{NEURIPS2020_4c5bcfec}.}
+    \label{fig:ddpm_graphical_model}
+\end{figure}
+
+The joint distribution of all variables is written as a Markov chain:
+\begin{equation}
+p_\theta(\mathbf{x}_{0:T})
+=
+p(\mathbf{x}_T)
+\prod_{t=1}^{T} p_\theta(\mathbf{x}_{t-1}\mid \mathbf{x}_t),
+\qquad
+p(\mathbf{x}_T)=\mathcal{N}(\mathbf{0},\mathbf{I}),
+\label{eq:ddpm_joint}
+\end{equation}
+where \(p_\theta(\mathbf{x}_{t-1}\mid\mathbf{x}_t)\) is the reverse process. The forward diffusion
+process is defined as a separate Markov chain:
+\begin{equation}
+q(\mathbf{x}_{1:T}\mid\mathbf{x}_0)
+=
+\prod_{t=1}^T
+q(\mathbf{x}_t\mid\mathbf{x}_{t-1}),
+\qquad
+q(\mathbf{x}_t\mid\mathbf{x}_{t-1})
+=
+\mathcal{N}\!\left(
+\sqrt{1-\beta_t}\,\mathbf{x}_{t-1},\;
+\beta_t \mathbf{I}
+\right),
+\label{eq:ddpm_forward}
+\end{equation}
+where \(\{\beta_t\}_{t=1}^T\) is the variance schedule that \emph{can} be learned by reparameterization,
+or fixed to predetermined constants (e.g., a linear schedule from $10^{-4}$ to $10^{-2}$) such that \(\beta_t\) typically increases slowly with \(t\). 
+This ensures that the forward chain remains
+analytically tractable and preserves the same functional form across timesteps while gradually
+driving $\mathbf{x}_T$ toward an isotropic Gaussian.
+
+The authors \citep{NEURIPS2020_4c5bcfec} choose \(T\) large (e.g.\ \(T=1000\)) and let \(\beta_t\) increase linearly or according
+to a smooth curve from a very small value to a modest value. This ensures that each step only
+slightly degrades the signal, so the forward chain remains close to a diffusion process with
+well-behaved Gaussian conditionals, and by the final step \(\mathbf{x}_T\) is nearly standard
+Gaussian.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subparagraph{Forward Diffusion Process.}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Because each transition in \eqref{eq:ddpm_forward} is linear Gaussian, the forward chain admits a
+closed-form marginal at any timestep and repeatedly composing the Gaussian transitions yields:
+\begin{equation}
+q(\mathbf{x}_t\mid\mathbf{x}_0)
+=
+\mathcal{N}\!\left(
+\sqrt{\bar\alpha_t}\,\mathbf{x}_0,\;
+(1-\bar\alpha_t)\mathbf{I}
+\right) 
+\text{ where} \quad
+\alpha_t := 1-\beta_t,
+\qquad
+\bar\alpha_t := \prod_{s=1}^{t}\alpha_s.
+\label{eq:ddpm_forward_marginal}
+\end{equation}
+We can define $x_t$ through an explicit reparameterization
+\begin{align}
+\mathbf{x}_t &= \sqrt{\alpha_t} \, \mathbf{x}_{t-1}
++
+\sqrt{1-\alpha_t}\,\boldsymbol{\epsilon}_{t-2} \\
+&= \sqrt{\alpha\,\alpha_{t-1}}\, \mathbf{x}_{t-2} 
++
+\sqrt{1-\alpha_t\,1-\alpha_{t-1}}\,\boldsymbol{\epsilon}_{t-1} \\
+&= \dots \\
+&=
+\sqrt{\bar\alpha_t}\,\mathbf{x}_0
++
+\sqrt{1-\bar\alpha_t}\,\boldsymbol{\epsilon},
+\qquad
+\boldsymbol{\epsilon}\sim\mathcal{N}(\mathbf{0},\mathbf{I}).
+\label{eq:reparameterization_of_xt}
+\end{align}
+where the state at timestep \(t\) is a combination of the original data and Gaussian noise,
+with the signal coefficient \(\sqrt{\bar\alpha_t}\) gradually shrinking as \(t\) increases.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subparagraph{Reverse Denoising Process.}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The reverse process attempts to invert the forward diffusion by learning Gaussian transitions of the
+form
+\begin{equation}
+p_\theta(\mathbf{x}_{t-1}\mid\mathbf{x}_t)
+=
+\mathcal{N}\!\left(
+\boldsymbol{\mu}_\theta(\mathbf{x}_t,t),\;
+\boldsymbol{\Sigma}_\theta(\mathbf{x}_t,t)
+\right).
+\label{eq:ddpm_reverse}
+\end{equation}
+Here, \(\theta\) denotes a single shared neural-network parameterization; the dependence on \(t\) is
+provided through a timestep embedding. Because the forward process $q(\mathbf{x}_{1:T}\mid\mathbf{x}_0)$ is fixed and Gaussian, the
+associated conditional distributions $q(\mathbf{x}_{t-1}\mid\mathbf{x}_t,\mathbf{x}_0)$ admit
+closed-form expressions. These conditionals arise directly from standard Gaussian identities:
+they describe how the forward noising process relates adjacent latent variables when conditioned
+on the original clean sample $\mathbf{x}_0$. The DDPM model parameterizes
+$p_\theta(\mathbf{x}_{t-1}\mid\mathbf{x}_t)$ to approximate these analytically derived
+Gaussian conditionals.
+It has the Gaussian form
+\begin{equation}
+q(\mathbf{x}_{t-1}\mid\mathbf{x}_t,\mathbf{x}_0)
+=
+\mathcal{N}\!\left(
+\tilde{\boldsymbol{\mu}}_t(\mathbf{x}_t,\mathbf{x}_0),\;
+\tilde{\beta}_t \mathbf{I}
+\right),
+\label{eq:true_reverse_posterior}
+\end{equation}
+where
+\begin{align}
+\tilde{\boldsymbol{\mu}}_t(\mathbf{x}_t,\mathbf{x}_0)
+&=
+\frac{\sqrt{\bar\alpha_{t-1}}\beta_t}{1-\bar\alpha_t}\,\mathbf{x}_0
++
+\frac{\sqrt{\alpha_t}(1-\bar\alpha_{t-1})}{1-\bar\alpha_t}\,\mathbf{x}_t,
+\\[4pt]
+\tilde{\beta}_t
+&=
+\frac{1-\bar\alpha_{t-1}}{1-\bar\alpha_t}\,\beta_t.
+\end{align}
+The model therefore learns $p_\theta(\mathbf{x}_{t-1}\mid\mathbf{x}_t)$ so that its mean matches
+the analytically derived forward-process posterior. For stability, DDPM fixes the reverse-process
+variance to one of two experimentally evaluated choices:
+\[
+\sigma_t^2 = \beta_t
+\qquad\text{or}\qquad
+\sigma_t^2 = \tilde{\beta}_t = \frac{1-\bar{\alpha}_{t-1}}{1-\bar{\alpha}_t}\,\beta_t,
+\]
+as reported by \citet{NEURIPS2020_4c5bcfec}. Both forms preserve the Gaussian functional structure
+needed for closed-form KL divergences in the ELBO, while yielding similar empirical performance.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subparagraph{Training Objective.}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Training minimizes the negative log-likelihood \(-\log p_\theta(\mathbf{x}_0)\). Since
+\(\mathbf{x}_{1:T}\) is intractable to marginalize exactly, one optimizes a standard variational
+lower bound:
+\begin{equation}
+\mathbb{E}_q[-\log p_\theta(\mathbf{x}_0)]
+\;\le\;
+\mathcal{L}(\theta)
+=
+\mathbb{E}_q\!\left[
+-\log\frac{p_\theta(\mathbf{x}_{0:T})}{q(\mathbf{x}_{1:T}\mid\mathbf{x}_0)}
+\right]
+=
+\mathbb{E}_q\!\left[
+-\log p(\mathbf{x}_T)
+-
+\sum_{t=1}^T
+\log\frac{p_\theta(\mathbf{x}_{t-1}\mid\mathbf{x}_t)}
+{q(\mathbf{x}_t\mid\mathbf{x}_{t-1},\mathbf{x}_0)}
+\right]
+=:
+L(\theta).
+\label{eq:elbo_ddpm_raw}
+\end{equation}
+This expression can be rewritten as a sum of KL terms \citep{weng2021diffusion}:
+\begin{equation}
+\mathcal{L}(\theta)
+=
+\mathbb{E}_q\Big[
+\underbrace{
+D_{\mathrm{KL}}\bigl(q(\mathbf{x}_T\mid\mathbf{x}_0)\,\|\,p(\mathbf{x}_T)\bigr)
+}_{L_T}
++
+\sum_{t=2}^T
+\underbrace{
+D_{\mathrm{KL}}\bigl(
+q(\mathbf{x}_{t-1}\mid\mathbf{x}_t,\mathbf{x}_0)
+\;\|\;
+p_\theta(\mathbf{x}_{t-1}\mid\mathbf{x}_t)
+\bigr)
+}_{L_{t-1}}
+-
+\underbrace{\log p_\theta(\mathbf{x}_0\mid\mathbf{x}_1)}_{L_0}
+\Big].
+\label{eq:elbo_ddpm_kl}
+\end{equation}
+The term \(L_T\) encourages the forward terminal distribution to match the prior. Each \(L_{t-1}\)
+penalizes discrepancies between the true reverse posterior and the learned reverse conditional at
+that timestep. The final term \(L_0\) plays the role of a reconstruction likelihood for
+\(\mathbf{x}_0\). Because all of these terms compare Gaussian distributions with known parameters,
+they admit closed-form expressions, allowing efficient estimation with low-variance gradients.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subparagraph{Simplified Noise-Prediction Objective.}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The variational bound in \eqref{eq:elbo_ddpm_kl} has the generic form
+\(
+L_{\mathrm{VLB}} = L_T + \sum_{t=2}^T L_{t-1} + L_0,
+\)
+where $L_T$ and $L_0$ do not depend on the parametrization of the reverse mean.
+The terms $L_{t-1}$ are KL divergences between Gaussians and therefore can be written in closed
+form. Assuming an isotropic reverse covariance
+$\boldsymbol{\Sigma}_\theta(\mathbf{x}_t,t)=\sigma_t^2\mathbf{I}$, each such term reduces to
+a mean-squared error between the true posterior mean $\tilde{\boldsymbol{\mu}}_t$ and the model
+mean $\boldsymbol{\mu}_\theta$:
+\begin{equation}
+L_{t-1}
+=
+\mathbb{E}_q\!\left[
+\frac{1}{2\sigma_t^2}
+\bigl\|
+\tilde{\boldsymbol{\mu}}_t(\mathbf{x}_t,\mathbf{x}_0)
+-
+\boldsymbol{\mu}_\theta(\mathbf{x}_t,t)
+\bigr\|^2
+\right]
++ C_t,
+\label{eq:L_t_mse_form}
+\end{equation}
+where $C_t$ does not depend on $\theta$.
+
+Using the closed-form forward posterior
+\(
+q(\mathbf{x}_{t-1}\mid\mathbf{x}_t,\mathbf{x}_0)
+=
+\mathcal{N}(\tilde{\boldsymbol{\mu}}_t,\tilde{\beta}_t\mathbf{I})
+\)
+and the forward reparameterization
+\(
+\mathbf{x}_t = \sqrt{\bar{\alpha}_t}\,\mathbf{x}_0 +
+\sqrt{1-\bar{\alpha}_t}\,\boldsymbol{\epsilon},\;
+\boldsymbol{\epsilon}\sim\mathcal{N}(0,I),
+\)
+the posterior mean can be expressed as
+\begin{equation}
+\tilde{\boldsymbol{\mu}}_t(\mathbf{x}_t,\mathbf{x}_0)
+=
+\frac{1}{\sqrt{\alpha_t}}
+\left(
+\mathbf{x}_t
+-
+\frac{1-\alpha_t}{\sqrt{1-\bar{\alpha}_t}}\,
+\boldsymbol{\epsilon}
+\right),
+\end{equation}
+Since $\mathbf{x}_t$ is available as model
+input, it is convenient to parametrize the reverse mean so that the network predicts the noise
+directly:
+\begin{equation}
+\boldsymbol{\mu}_\theta(\mathbf{x}_t,t)
+=
+\frac{1}{\sqrt{\alpha_t}}
+\left(
+\mathbf{x}_t
+-
+\frac{1-\alpha_t}{\sqrt{1-\bar{\alpha}_t}}\,
+\boldsymbol{\epsilon}_\theta(\mathbf{x}_t,t)
+\right).
+\label{eq:reverse_mean_eps_param}
+\end{equation}
+Substituting $\tilde{\boldsymbol{\mu}}_t$ and $\boldsymbol{\mu}_\theta$ into
+\eqref{eq:L_t_mse_form} and simplifying gives
+\begin{equation}
+L_{t-1}
+=
+\mathbb{E}_{\mathbf{x}_0,\boldsymbol{\epsilon}}
+\left[
+\frac{(1-\alpha_t)^2}{2\sigma_t^2\,\alpha_t(1-\bar{\alpha}_t)}
+\,
+\bigl\|
+\boldsymbol{\epsilon}
+-
+\boldsymbol{\epsilon}_\theta(\mathbf{x}_t,t)
+\bigr\|^2
+\right]
++ C_t,
+\end{equation}
+so each KL term is a weighted mean-squared error between the true noise
+$\boldsymbol{\epsilon}$ and the predicted noise $\boldsymbol{\epsilon}_\theta(\mathbf{x}_t,t)$.
+
+Dropping the timestep-dependent weight yields the commonly used simplified objective
+\begin{equation}
+L_{\mathrm{simple}}(\theta)
+=
+\mathbb{E}_{t,\mathbf{x}_0,\boldsymbol{\epsilon}}
+\bigl[
+\|
+\boldsymbol{\epsilon}
+-
+\boldsymbol{\epsilon}_\theta(\mathbf{x}_t,t)
+\|^2
+\bigr],
+\qquad
+\mathbf{x}_t
+=
+\sqrt{\bar{\alpha}_t}\,\mathbf{x}_0
++
+\sqrt{1-\bar{\alpha}_t}\,\boldsymbol{\epsilon},
+\label{eq:ddpm_simple_loss}
+\end{equation}
+which is equivalent to a reweighted form of the ELBO but is simpler to implement and has been
+observed to yield improved training stability and sample quality in practice.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subparagraph{Training and Sampling Algorithms.}
+
+The training and sampling procedures are summarized in Figure~\ref{fig:algorithms}. Training draws
+a data sample \(\mathbf{x}_0\), chooses a timestep \(t\) uniformly from \(\{1,\dots,T\}\), samples
+\(\boldsymbol{\epsilon}\sim\mathcal{N}(0,I)\), constructs \(\mathbf{x}_t\) using the forward
+marginal \eqref{eq:ddpm_forward_marginal}, and takes a gradient step on the objective
+\eqref{eq:ddpm_simple_loss}. Sampling inverts this process: starting from
+\(\mathbf{x}_T\sim\mathcal{N}(\mathbf{0},\mathbf{I})\), the model repeatedly applies the reverse
+transition implied by \eqref{eq:reverse_mean_eps_param},
+\[
+\mathbf{x}_{t-1}
+=
+\frac{1}{\sqrt{\alpha_t}}
+\left(
+\mathbf{x}_t
+-
+\frac{\beta_t}{\sqrt{1-\bar\alpha_t}}\,
+\boldsymbol{\epsilon}_\theta(\mathbf{x}_t,t)
+\right)
++
+\sigma_t \mathbf{z},
+\qquad
+\mathbf{z}\sim\mathcal{N}(\mathbf{0},\mathbf{I}),
+\]
+for \(t = T,T-1,\dots,1\), where \(\sigma_t^2\) is chosen consistently with the forward variance
+schedule. This iterative denoising procedure gradually transforms white noise into a structured
+sample \(\mathbf{x}_0\).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{chapters/background/diffusion_models/media/Algorithms.png}
+    \caption{
+        \textbf{DDPM Training and Sampling Algorithms.}
+        Algorithm~1 implements stochastic noise-prediction training based on the closed-form forward
+        marginal: at each iteration, a random timestep and noise level are chosen, and the network
+        learns to predict the noise that produced the corresponding corrupted sample. Algorithm~2
+        applies the learned reverse transitions from a Gaussian prior $\mathbf{x}_T$ down to
+        $\mathbf{x}_0$, yielding new samples by successive denoising \citep{NEURIPS2020_4c5bcfec}.
+    }
+    \label{fig:algorithms}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subparagraph{Architecture.}
+
+The reverse-process mean or noise predictor is implemented using a U-Net architecture with residual
+blocks, skip connections, and multi-scale feature hierarchies \citep{NEURIPS2020_4c5bcfec}. The
+timestep \(t\) is encoded by a sinusoidal positional embedding and injected into intermediate layers,
+allowing the network to adapt its predictions to the current noise level. Coarse scales capture
+global semantic structure, while finer scales refine local details. The network outputs
+\(\boldsymbol{\epsilon}_\theta(\mathbf{x}_t,t)\), which is converted to the reverse mean via
+\eqref{eq:reverse_mean_eps_param}, and the variance is typically fixed as
+\(\boldsymbol{\Sigma}_\theta(\mathbf{x}_t,t)=\sigma_t^2\mathbf{I}\) to keep training stable.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % \subparagraph{Summary.}
+
+% % Denoising Diffusion Probabilistic Models treat generative modeling as the inversion of a fixed
+% % Gaussian diffusion process. A carefully chosen small variance schedule ensures that the forward
+% % chain corrupts the data gradually while leading to a nearly Gaussian terminal distribution. The
+% % reverse chain is learned via a variational objective whose dominant contribution can be expressed as
+% % a simple noise-prediction loss. The resulting sampling procedure recovers data by iterative
+% denoising, forming the foundation for many modern diffusion-based generative models.

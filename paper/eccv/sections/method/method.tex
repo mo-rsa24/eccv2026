@@ -1,0 +1,51 @@
+% !TEX root = ../../eccv2016submission.tex
+
+\section{Method}
+
+We study two mechanisms for combining concepts in Stable Diffusion~\cite{scaling_rectified_flow_transformers_for_high_resolution_image_synthesis}: \emph{semantic composition}, which uses a single natural-language prompt (e.g.\ ``a cat and a dog''), and \emph{logical composition}, which combines concept-specific scores during inference to guide sampling toward a joint high-density region. Our analysis proceeds in three stages. First, we examine shared-noise trajectories to determine when the two mechanisms begin to separate. Next, we analyse hybrid trajectories formed by interpolating their velocity fields. Finally, we search for $p^*$, the natural-language prompt that yields the closest Stable Diffusion reconstruction to SuperDiff AND~\cite{skreta2025the}. Starting from the same seed, we assess whether logical conjunction has an equivalent representation in language space or leaves an irreducible residual gap. Measuring this residual across concept pairs makes the gap directly testable, showing where language-based prompting can match logical conjunction and where the two composition mechanisms consistently diverge. 
+
+All runs use SD~3.5 Medium with the flow-matching ODE sampler, \(50\) denoising steps, and guidance scale \(4.5\). In the main setting, we evaluate \(24\) concept pairs over \(24\) seeds (\(N=576\) pair-seed records per pooled condition) under matched-noise comparisons. For each pair-seed, we run solo prompts, monolithic composition, PoE, SuperDiff-AND, and (when prompt inversion is enabled) prompt-based \(p^*\) reconstructions. We compute metrics per pair-seed record and then pool across all pairs and seeds to obtain condition-level distributions. The reported metrics are trajectory geometry (shared-seed manifold projections), terminal latent gap \(d_T\), temporal accumulation \(\Delta d_t\), and distributional divergences (KL/Jeffrey's), which together capture both magnitude and structure of the composability gap.
+
+\subsection{Semantic, Logical, and Guided Trajectory Dynamics}
+\label{sec:trajectory_dynamics}
+
+We compare five conditions of compositional generation, all initiated from a shared Gaussian noise sample $x_T \sim \mathcal{N}(0,I)$. The shared origin is essential: it eliminates stochastic variation as a confound and ensures that any observed difference in trajectories or terminal latents reflects the operator, not the random seed. The five conditions are: (i)~\emph{solo $c_1$} — Stable Diffusion conditioned on the first concept alone; (ii)~\emph{solo $c_2$} — Stable Diffusion conditioned on the second concept alone; (iii)~\emph{semantic composition} — Stable Diffusion conditioned on the single joint natural-language prompt ``$c_1$ and $c_2$''; and \emph{logical composition} in Liu et al.'s composable diffusion framework~\cite{liu2022compositional}, instantiated as (iv)~\emph{PoE} and (v)~\emph{SuperDiff AND}, where SuperDiff combines per-concept velocity fields at every denoising step.
+
+To characterise the geometric relationship between all conditions simultaneously, we record the full latent trajectory ${z_t^{(s)}}_{t=T}$ at every denoising step rather than only the terminal output. We then flatten each latent $z_t \in \mathbb{R}^{C\times H\times W}$ into a vector and fit a single metric MDS to the full matrix of pairwise $\ell_2$ distances across all conditions and timesteps. The joint places every trajectory in a shared coordinate frame, so cross-condition (i.e., between different generation conditions such as solo, semantic, PoE, and SuperDiff) separations are geometrically meaningful rather than artefacts of the projection basis. 
+
+MDS is preferred over PCA because it is distance-centric: PCA finds the 2D subspace of maximum total variance, which may be dominated by within-condition variation along a shared axis; MDS instead directly minimises a stress criterion on pairwise distances, so embedded positions faithfully reflect inter-condition separations in the original $\mathbb{R}^D$ space. Each condition traces a coloured path from the shared origin $x_T$, with colour encoding denoising progress from dark (high noise) to light (terminal). The solo conditions serve as concept attractors: they mark where single-concept flows terminate and provide reference anchors for reading where the compositional conditions land relative to each concept.
+
+\subsection{Hybrid Guidance for Compositional Sampling}
+\label{sec:hybrid}
+
+% The semantic and logical paradigms represent extremes of a spectrum: monolithic conditioning is anchored to language but limited by corpus statistics, while SuperDiff AND is logically well-defined but semantically ungrounded. To bridge them, we define a family of \emph{guided hybrid} trajectories by linearly interpolating the velocity fields at each denoising step:
+% \begin{equation}
+%     v_\alpha = (1-\alpha)\,v_{\mathrm{mono}} + \alpha\,v_{\mathrm{AND}}, \quad \alpha\in[0,1].
+%     \label{eq:hybrid}
+% \end{equation}
+% At $\alpha=0$ this recovers monolithic CFG; at $\alpha=1$ it recovers pure SuperDiff AND. This is not a probabilistic mixture but a geometric interpolation in the velocity space of the flow-matching ODE. Intermediate values trace trajectories that are semantically anchored by the monolithic velocity while being steered toward the joint-density region targeted by AND.
+
+% We additionally consider a time-varying schedule $\alpha(t)$ that decays linearly from $\alpha_{\max}$ to $\alpha_{\min}$. Since global layout and object identity are established in the high-noise regime, setting $\alpha_{\max}=1$ in the first steps drives strong subject separation via AND; decaying toward $\alpha_{\min}$ in later steps allows the monolithic velocity to re-anchor the trajectory semantically, correcting species drift and restoring scene coherence. We sweep $\alpha \in \{0.0, 0.1, 0.3, 0.5, 0.7, 1.0\}$ to characterise the full trade-off.
+
+\subsection{Prompt Design and Closed-Loop Data Generation}
+\label{sec:inversion}
+
+We introduce the term \emph{composability gap} to describe the apparent mismatch between semantic and logical composition: starting from the same noise, the monolithic semantic path and the logical AND path can terminate in different latent basins. As a first operational definition, we measure this gap at the terminal step as the distance between the monolithic endpoint and the SuperDiff-AND endpoint.
+\begin{equation}
+    \Delta_T^{\mathrm{mono}}
+    =
+    \mathrm{MSE}\!\left(z_T^{\mathrm{mono}}, z_T^{\mathrm{AND}}\right)
+    =
+    d_T^{\mathrm{mono}}.
+    \label{eq:gap}
+\end{equation}
+
+This scalar is intentionally a starting probe, not a final theory: it quantifies how far semantic composition is from the logical target before any prompt recovery. This sets up the role of $p^*$ directly: can we find a prompt whose conditioning steers SD3.5 into the same latent basin as SuperDiff AND, thereby reducing (or closing) the apparent gap? If not, the residual indicates a representational limit of language-conditioned generation rather than simple prompt mis-specification.
+
+For image-to-conditioning recovery, we use SD-IPC~\cite{ding2023sdipc}, a closed-form projection that maps a CLIP image embedding back into SD text-conditioning space via the pseudo-inverse of CLIP's text-projection matrix, followed by L2 normalisation and scaling. We treat the resulting conditioning sequence as a surrogate \(p^*\) and feed it directly into SD's cross-attention pathway to synthesize \(x_{\mathrm{SD}}(p^*)\). SD-IPC is training-free and requires no optimisation, making it the most conservative choice: if even this minimal inverter cannot close the regeneration cycle, any more expressive inverter (optimisation-based or learned) can only improve, so the observed cycle gap is a lower bound on structural inaccessibility.
+
+The answer depends on the nature of the composed concepts. When concepts are compatible — as in Liu et al.'s composable diffusion~\cite{liu2022compositional}, where AND generates novel but coherent scenes such as ``a red bear on a tree'' — AND's joint mode may remain on the manifold of natural scene descriptions. In our setting, however, the composed concepts compete at the object level: cat and dog are distinct semantic categories whose joint mode, rather than producing two coexisting animals, tends toward chimeric blending of their feature statistics. 
+
+\textit{A prompt $p^*$ that approximates this target cannot be a better scene description; it must exit the manifold of coherent compositions — something closer to cat-dog chimera'' than to ``a cat and a dog.'' The composability gap is precisely this distance, and we show that the best-approximating natural-language prompt is semantically unnatural, confirming that AND's target lies off the natural scene manifold.}
+
+We demonstrate this through two complementary diagnostics. First, we examine the \emph{semantic character} of each $p^*$ approximation: if AND's target is off the natural scene manifold, caption-based descriptions of its output should become semantically unstable or degenerate rather than clean scene descriptions. Second, we measure the \emph{residual gap} $d_T^{p^*} = \mathrm{MSE}(z_T^{p^*}, z_T^{\mathrm{AND}})$ that remains after reconstruction with training-free natural-language approximations. If this gap persists across complementary prompt-recovery methods, the target is representationally inaccessible to language-conditioned SD3.5 generation.

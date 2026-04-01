@@ -1,0 +1,45 @@
+% !TEX root = ../../proposal.tex
+
+\section{Compositionality in Diffusion Models}
+\label{sec:rw_compositional}
+
+The idea of composing diffusion models at inference time without retraining originated
+with Liu et al.~\citep{liu2022compositional}, who showed that adding per-concept
+classifier-free guidance terms gives an AND operator over concept conditions and a NOT
+operator for negation. Concurrent work by Nie et al.~\citep{nie2021controllable} and
+Du et al.~\citep{NEURIPS2020_49856ed4} approached the same problem from an
+energy-based perspective, treating the composed distribution as a product of energy
+functions. Du et al.~\citep{du2024compositional} later demonstrated that a
+\emph{single} pretrained model suffices for multi-concept composition, replacing the
+need for independently trained experts. Their analysis shows that dynamic guidance
+schedules and adaptive step sizes mitigate the mode collapse and instability that
+arise when concept scores are na\"{i}vely added, directly motivating the trajectory
+dynamics analysis in Phase~1. Reduce, Reuse, Recycle~\citep{reduce_reuse_recycle_icml2023}
+extended compositional diffusion to few-shot concept learning, showing that individual
+concept encodings can be recombined without joint training data. These works collectively
+establish score-level composition as a practical paradigm, but they do not theorise when
+it should fail or characterise the failure modes empirically across structured concept
+regimes. This gap is what Phase~1 addresses.
+
+The theoretical account of why composition fails was provided by
+Bradley~\citep{mechanisms2025projective}, who derived the Factorised Conditionals
+condition: composition is well-defined if and only if the conditional score fields of the
+composed concepts act on approximately orthogonal directions in feature space. When this
+condition is violated --- either because concepts occupy the same feature dimensions or
+because their joint configuration is absent from the training distribution --- the
+composed score is incoherent and sampling diverges from the data manifold. Bradley's
+framework predicts composition success from the geometry of concept representations,
+not from the choice of composition operator. Our work is most directly related to this
+theoretical programme: Phase~1 takes Bradley's conditions as a taxonomy scaffold,
+operationalises them into four empirically testable concept groups, and measures for the
+first time how the composability gap varies systematically across those groups. Bradley
+identifies the structural conditions but does not study how failure modes differ across
+regime types in practice, nor does the paper test whether better representations close
+the gap. Phases~2 and~3 address both of these open questions.
+
+Skreta et al.~\citep{skreta2024superposition} proposed Superposition Diffusion, which
+combines multiple diffusion processes through a shared latent superposition rather than
+score addition, targeting molecular and protein design. While this extends composition
+beyond image generation, it does not address the representational account of compositional
+failure that motivates our work. Our contribution focuses on \emph{when} and \emph{why}
+inference-time composition fails and whether learned latent factorisation can remedy it.

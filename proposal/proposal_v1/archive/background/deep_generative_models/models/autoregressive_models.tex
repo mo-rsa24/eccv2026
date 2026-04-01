@@ -1,0 +1,17 @@
+\paragraph{Autoregressive Models.}
+Autoregressive models \citep{dalal2019autoregressive} are \emph{conditional probabilistic models} that build upon the fundamental rules of probability theory—specifically the \emph{sum rule} and the \emph{product rule}—to represent complex data distributions in a tractable manner.
+
+Let $\mathbf{x} = (x_1, x_2, \ldots, x_D)$ denote a $D$-dimensional data vector, where each $x_d$ may correspond to a pixel intensity, an image patch, or any discrete or continuous feature. Applying the product rule recursively allows us to decompose the joint distribution as:
+\begin{equation}
+p(\mathbf{x}) = p(x_1) \prod_{d=2}^{D} p(x_d \mid x_{<d}),
+\end{equation}
+where $x_{<d} = (x_1, x_2, \ldots, x_{d-1})$ denotes all elements preceding $x_d$ in a chosen ordering. This factorization provides a systematic means of representing the full data distribution through a sequence of conditional dependencies, each learned in relation to its predecessors.
+
+To make the formulation tractable, a simplifying assumption is introduced: rather than learning $D$ distinct conditional models, we use a \emph{single shared model} parameterized by $\theta$ that learns a general mapping across all conditionals \citep{tomczak2024deep, xiong2024autoregressive}:
+\begin{equation}
+p_\theta(\mathbf{x}) = \prod_{d=1}^{D} p_\theta(x_d \mid x_{<d}).
+\end{equation}
+This assumption greatly improves computational efficiency by allowing parameter reuse while maintaining the ability to represent sequential dependencies among components of $\mathbf{x}$.
+
+These networks take as input the relevant conditioning variables $x_{<d}$ (or their learned representations) and output a probability distribution over the next element $x_d$, thereby realizing the autoregressive mechanism through neural computation. Architectures with recurrence \citep{oord2016pixel} or attention \citep{vaswani2017attention} are particularly well-suited to capturing long-range dependencies that extend beyond finite-memory assumptions, allowing the autoregressive formulation to scale effectively to complex, high-dimensional domains.
+

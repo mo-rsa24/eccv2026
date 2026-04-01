@@ -1,0 +1,11 @@
+\subsubsection{Stochastic Differential Equations (SDEs)}
+
+Stochastic Differential Equations (SDEs) generalize ODEs by introducing randomness into the evolution of a system through a stochastic noise term. The general form of an SDE is:
+\begin{equation}
+    dx = f(x, t)\,dt + g(x, t)\,d\mathbf{w},
+\end{equation}
+where \( f(x, t) \) represents the drift coefficient, \( g(x, t) \) the diffusion coefficient, and \( d\mathbf{w} \) a Wiener process (Brownian motion).  
+
+In the generative modelling framework, SDEs describe how probability density evolves under both deterministic and stochastic influences. The forward diffusion process in Denoising Diffusion Probabilistic Models (DDPMs) can be viewed as an SDE where \( g(x, t) \) controls the rate of noise injection, and the reverse-time process corresponds to a denoising SDE parameterized by a neural network score function \( s_\theta(x, t) \approx \nabla_x \log p_t(x) \).  
+
+This continuous formulation connects diffusion models directly to classical stochastic processes used in physics, such as Langevin dynamics. Importantly, it enables efficient sampling, theoretical interpretability, and a principled link to score matching—a key insight that bridges diffusion modelling with energy-based learning.

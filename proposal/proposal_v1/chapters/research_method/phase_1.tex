@@ -1,0 +1,62 @@
+\section{Phase 1: Foundations and Controlled Medical Testbed}
+
+Phase~1 establishes the foundation for evaluating whether compositional generative
+modelling can behave in a \textit{semantically meaningful} way in complex real-world
+settings. This phase directly advances \textbf{Research Goal~1} and provides the
+first empirical test of \textbf{Hypothesis~H1}, which states that composition is
+semantically meaningful only when the underlying models share a sufficiently aligned
+and compatible representation of the generative factors they encode.
+
+A key contribution of this phase is the introduction of a clinically realistic
+evaluation environment based on TB and Silicosis. These diseases provide an ideal
+testbed for probing semantic compositionality because they exhibit overlapping
+patterns, affect the same anatomical regions, and interact in ways that violate
+common simplifying assumptions used in many compositional methods. Instead of relying
+on toy datasets with artificially disentangled factors, we use a domain where the
+true generative structure is complex, entangled, and clinically meaningful. This
+setting enables us to reveal when different compositional operators genuinely reflect
+semantic combination and when they fail, despite being mathematically well-defined.
+
+\paragraph{Score-Based Composition.}
+We evaluate score-based operators by training TB and Silicosis diffusion models in a
+shared latent space and combining their scores linearly. This tests whether adding
+gradient fields can produce coherent mixed pathology. Success would indicate that
+latent alignment and mild factor compatibility are enough for meaningful hybrid
+images. Failure—manifesting as blended textures, misplaced lesions, or anatomically
+inconsistent shapes—indicates that score addition does not correspond to semantic
+composition when the underlying factors overlap or are entangled.
+
+\paragraph{Energy-Based PoE Composition.}
+We assess Product-of-Experts composition by summing the log-densities of the TB and
+Silicosis models. In principle, this corresponds to a logical “AND.” In practice,
+PoE is sensitive to conflicts between models. Because TB and Silicosis share
+anatomical regions and exhibit similar textural signatures, PoE may either suppress
+valid modes or amplify incompatible ones. Observing whether PoE yields coherent
+co-morbidity or collapses into unrealistic hybrids helps reveal when independence
+assumptions break down and how this affects semantic compositionality.
+
+\paragraph{Density-Based Composition (SuperDiff).}
+We apply SuperDiff to compute per-model log-densities along a shared trajectory and
+form composite images using equal-density or mixture rules. Density-based operators
+offer the most principled mathematical formulation; however, mathematical correctness
+does not guarantee semantic correctness. Because the log-density lives in pixel
+space—not in pathology factor space—equal-density constraints may or may not
+correspond to meaningful co-morbidity. Radiological interpretation determines whether
+the composed density reflects realistic combinations of TB and Silicosis or produces
+artifacts arising from misaligned latent structure.
+
+\paragraph{Cross-Operator Comparative Evaluation.}
+By applying all three classes of compositional methods to the same TB and Silicosis
+models, we obtain a unified view of their behaviour under identical structural
+conditions. This allows us to identify when composition succeeds in capturing real
+co-morbidity and when it fails due to factor entanglement, latent misalignment, or
+geometric incompatibility. Success cases highlight the structural conditions under
+which semantic composition is achievable. Failure cases provide insight into the
+limits of current methods and motivate the refinements explored in later phases.
+
+Phase~1 therefore provides a direct, clinically meaningful assessment of
+compositional generative modelling. By grounding our evaluation in a realistic and
+structurally challenging domain, we identify the conditions under which compositional
+operators produce plausible and interpretable results and the conditions under which
+they break down. These findings establish the necessary foundations for the
+subsequent phases of the research.

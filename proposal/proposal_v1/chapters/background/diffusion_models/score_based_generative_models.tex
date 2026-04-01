@@ -1,0 +1,17 @@
+\subsection{Score-Based Generative Models}
+Score-based generative models (SGMs) leverage the concept of score matching to learn data distributions by estimating the gradient of the data log-density, known as the score function. These models have gained popularity for their ability to generate high-quality samples and their connection to diffusion processes.
+
+The core idea behind SGMs is to train a neural network to predict the score function \( \nabla_{x} \log p(x) \) of the data distribution \( p(x) \). This is typically achieved by minimizing the following score matching loss:
+\begin{equation}
+    \mathcal{L}_{\text{score}} = \mathbb{E}_{x \sim p(x), \epsilon \sim \mathcal{N}(0, \mathbf{I})} \left[ \left\| \nabla_{x} \log p(x + \epsilon) - \nabla_{x} \log p(x) \right\|^2 \right].
+\end{equation}
+
+Once trained, the model can generate samples by performing Langevin dynamics, a process that iteratively refines random noise into coherent samples using the learned score function:
+\begin{equation}
+    x_{t+1} = x_t + \frac{\epsilon}{2} \nabla_{x} \log p(x_t) + \sqrt{\epsilon} z_t,
+\end{equation}
+where \( z_t \sim \mathcal{N}(0, \mathbf{I}) \) is Gaussian noise and \( \epsilon \) is a small step size.
+
+SGMs can be viewed as a continuous-time limit of discrete diffusion models, where the forward noising process is replaced by a stochastic differential equation (SDE) that describes the evolution of the data distribution over time. This connection allows for the incorporation of powerful continuous-time techniques into the training and sampling processes of SGMs.
+
+In summary, score-based generative models represent a promising direction in generative modeling, combining the strengths of score matching and diffusion processes to achieve state-of-the-art performance in various tasks, including image synthesis and inpainting.

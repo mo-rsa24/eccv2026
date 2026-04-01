@@ -1,0 +1,13 @@
+\subsubsection{Ordinary Differential Equations (ODEs)}
+
+Ordinary Differential Equations describe deterministic dynamics where the evolution of a variable \( x(t) \) over time depends only on its current state and a velocity field \( f(x, t) \):
+\begin{equation}
+    \frac{dx}{dt} = f(x, t).
+\end{equation}
+
+In the generative modelling context, ODEs provide a mechanism for smoothly transforming samples from a prior distribution to a data distribution by integrating a vector field over continuous time. The corresponding evolution of the probability density \( p(x, t) \) can be linked to the continuity equation:
+\begin{equation}
+    \frac{\partial p(x, t)}{\partial t} = -\nabla_x \cdot [p(x, t) f(x, t)].
+\end{equation}
+
+By solving this ODE in reverse time, one can deterministically map latent samples from a simple base distribution (e.g., Gaussian noise) to complex data samples. This formulation appears explicitly in the probability flow ODE of diffusion models, providing a deterministic alternative to stochastic sampling while preserving the same marginal distributions. Such ODE-based flows form the theoretical basis for models like Neural ODEs and continuous normalizing flows, where the data generation process is expressed as the integration of a learned differential operator.

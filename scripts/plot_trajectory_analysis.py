@@ -57,6 +57,10 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
+# Import shared save_fig from the gap-analysis plots package
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from plots.utils import save_fig  # noqa: E402
 import matplotlib.cm as cm
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
@@ -128,11 +132,6 @@ def _cond_cmap(name: str, idx: int) -> str:
 def hide_top_right(ax):
     ax.spines[["top", "right"]].set_visible(False)
 
-
-def save_fig(fig, path: Path):
-    fig.savefig(path, dpi=150, bbox_inches="tight")
-    plt.close(fig)
-    print(f"  → {path}")
 
 
 # ---------------------------------------------------------------------------

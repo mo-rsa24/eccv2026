@@ -58,3 +58,30 @@ wandb/
 lightning_logs/
 runs/
 tensorboard_logs/
+
+# -----------------------------------------------------------------------------
+# LaTeX build cache (Tectonic) & compiled artefacts
+# -----------------------------------------------------------------------------
+.cache/
+*.aux
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.toc
+*.out
+*.log
+*.bcf
+*.run.xml
+
+# -----------------------------------------------------------------------------
+# Claude Code local settings (machine-specific, not shared)
+# -----------------------------------------------------------------------------
+.claude/settings.local.json
+
+# -----------------------------------------------------------------------------
+# Research PDFs (large binaries — use a reference manager instead)
+# -----------------------------------------------------------------------------
+*.pdf
+*.eps

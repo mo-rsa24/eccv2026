@@ -1,0 +1,35 @@
+\section{Research Hypotheses}
+\label{sec:research_objectives_research_hypothesis}
+
+The main research hypotheses, corresponding to the research goals above, are:
+
+\begin{itemize}
+    \item \textbf{H1 (Unified Compositionality Hypothesis):}
+    For any set of pretrained generative models, successful semantic 
+    composition arises only when the composition operator 
+    (energy-based product of experts, mixtures  , or density-based) is applied within a 
+    representation that satisfies certain structural requirements.  
+    When these requirements hold, the resulting composite distribution 
+    corresponds to meaningful semantic combinations; when they fail, 
+    each method exhibits predictable and characterisable failure modes.
+
+    \item \textbf{H2 (Robust Guidance Hypothesis):}
+    Property-guided compositional generation produces reliable and 
+    semantically coherent samples only when the guidance model is 
+    trained with mechanisms that ensure smoothness, calibrated 
+    uncertainty, and robustness under distribution shift.  
+    In particular, context-guided or uncertainty-aware training methods 
+    are hypothesised to reduce hallucinated or implausible compositions 
+    when steering composite densities toward continuous target values.
+
+    \item \textbf{H3 (Intrinsic Geometric Compatibility Hypothesis).}
+    Compositional correctness depends on the intrinsic geometric compatibility
+    between the manifolds induced by pretrained diffusion models.We hypothesize that semantically valid
+    composition is possible only when these induced geometries are compatible,
+    meaning: (i) the manifolds are smoothly mappable or share a coherent joint
+    structure; (ii) their local curvature is not in conflict. When these geometric conditions hold,
+    compositional operators (energy-based product of experts, mixtures, density arithmetic) should yield 
+    semantically plausible hybrid samples. When violated, we expect systematic failure
+    modes associated with curvature mismatch, off-manifold sampling, or distorted
+    anatomical structure.
+\end{itemize}

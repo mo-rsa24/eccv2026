@@ -1,0 +1,28 @@
+\section{Introduction}
+\label{sec:research_objectives_introduction}
+
+The background chapter reviewed current approaches to compositional generative
+modelling and highlighted key challenges that remain unresolved in the
+literature. Score-based methods (e.g., Liu et al.) linearly combine diffusion
+scores but often fail when the underlying generative factors are entangled or
+misaligned, producing compositions that do not correspond to meaningful semantic
+transformations. Energy-based formulations (e.g., Du et al.) cast composition as
+a Product-of-Experts, but rely on strong independence or factorisation
+assumptions; when these assumptions do not hold, PoE models commonly collapse or
+amplify incompatible modes.
+
+More recently, density-based approaches such as SuperDiff provide a
+mathematically principled way to estimate and combine log densities along a
+shared diffusion trajectory. However, while these methods guarantee correct
+density computation under shared forward dynamics, they do \emph{not} guarantee
+that density-level operations correspond to meaningful semantic combinations.
+Their limitations are therefore conceptual rather than algorithmic: they offer a
+precise way to combine distributions, but lack an underlying theory explaining
+when such combinations reflect the true semantic factors of the domain.
+
+Motivated by these gaps, our research seeks to (i) clarify when and why
+pretrained generative models yield semantically meaningful composites,
+(ii) extend compositional methods to robust property-guided settings, and
+(iii) identify the structural and geometric preconditions for compositional
+correctness. These goals form the basis of the research objectives and
+hypotheses formalised in the remainder of this chapter.

@@ -1,0 +1,16 @@
+\subsubsection{Fokker--Planck Equation and Marginal Probability Densities}
+
+The Fokker--Planck equation (also known as the forward Kolmogorov equation) describes the temporal evolution of the probability density function associated with a stochastic process. For the SDE
+\begin{equation}
+    dx = f(x, t)\,dt + g(x, t)\,d\mathbf{w},
+\end{equation}
+the corresponding probability density \( p(x, t) \) satisfies:
+\begin{equation}
+    \frac{\partial p(x, t)}{\partial t}
+    = -\nabla_x \cdot [f(x, t)p(x, t)]
+    + \frac{1}{2} \nabla_x^2 : [g(x, t)g(x, t)^\top p(x, t)].
+\end{equation}
+
+The first term represents the deterministic transport of probability mass (drift), while the second captures diffusion induced by stochastic noise. Together, they describe how probability mass “flows” through the data space over time.  
+
+In diffusion models, the Fokker--Planck equation governs the forward noising process that gradually transforms the data distribution \( p_0(x) \) into a simple Gaussian \( p_T(x) \). The reverse process—learned via score estimation—effectively inverts this evolution. Understanding the Fokker--Planck dynamics thus provides a rigorous mathematical foundation for controlling the generative trajectory of diffusion-based models.

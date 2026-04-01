@@ -1,0 +1,139 @@
+\section{Riemannian Diffusion Models}
+\label{sec:riemannian_diffusion_models}
+Riemannian diffusion models (RDMs) generalise Euclidean diffusion by defining
+the generative process on a smooth Riemannian manifold $(\mathcal{M},g)$, where
+$g$ is a metric that determines local distances, angles, curvature, and
+geodesic structure. This setting is appropriate when the intrinsic structure of
+the data lies on a curved or constrained manifold—such as anatomical surfaces,
+pose manifolds, molecular conformations, or latent spaces with non-linear
+geometry—where Euclidean diffusion would distort semantic neighbourhoods or
+produce artefacts. RDMs replace Euclidean Brownian motion with manifold
+Brownian motion, governed by the \emph{Laplace–Beltrami operator}
+$\Delta_{\mathcal{M}}$, and adapt the reverse process accordingly. This yields
+a generative model whose trajectories respect the intrinsic geometry of the
+data.
+
+\paragraph{Mathematical Foundations.}
+
+Let $(\mathcal{M}, g)$ be a $d$-dimensional Riemannian manifold with metric
+tensor $g$, volume measure $\mathrm{d}\mathrm{vol}_g$, and geodesic distance
+$d_{\mathcal{M}}(\cdot,\cdot)$. Riemannian diffusion replaces the Euclidean SDE
+\[
+\mathrm{d}x_t
+    = f_t(x_t)\,\mathrm{d}t + g_t \,\mathrm{d}w_t
+\]
+with a manifold-valued SDE whose noise lives in the tangent space
+$T_x\mathcal{M}$:
+\[
+\mathrm{d}x_t
+    = V_t(x_t)\,\mathrm{d}t + \sqrt{2}\, \mathrm{d}W_t^{\mathcal{M}},
+\]
+where $W_t^{\mathcal{M}}$ is Brownian motion on $\mathcal{M}$ and whose
+generator is the Laplace--Beltrami operator
+\[
+\Delta_{\mathcal{M}} = \mathrm{div}_g \circ \nabla^{\mathcal{M}}.
+\]
+
+The probability density $p_t$ evolves according to the \emph{Riemannian heat
+equation}
+\[
+\partial_t p_t = \Delta_{\mathcal{M}} p_t.
+\]
+The score is defined via the Riemannian gradient
+\[
+\nabla^{\mathcal{M}} \log p_t
+    = g^{-1} \nabla_{\text{coord}} \log p_t,
+\]
+and the reverse-time SDE (Anderson, Song et al.\ adapted to $\mathcal{M}$) is
+\[
+\mathrm{d}x_t
+    = \left( V_t(x_t)
+        - 2\, \nabla^{\mathcal{M}} \log p_t(x_t)
+      \right) \mathrm{d}t
+      + \sqrt{2}\,\mathrm{d}\bar{W}_t^{\mathcal{M}}.
+\]
+Thus the score network in RDMs estimates a \emph{Riemannian} gradient instead of
+a Euclidean one, ensuring that sampling trajectories never leave the manifold.
+
+\paragraph{Riemannian ELBO and Heat Kernel Construction.}
+
+The Riemannian Diffusion Models framework introduces a continuous-time ELBO
+using a Riemannian Feynman–Kac representation:
+\[
+\log p(x_0)
+    \ge \mathbb{E}_{x_{0:T}}\!\left[
+        \log p_T(x_T)
+        + \int_0^T
+            \left\langle
+                \nabla^{\mathcal{M}} \log p_t(x_t),
+                \mathrm{d}W_t^{\mathcal{M}}
+            \right\rangle_g
+        \right],
+\]
+where $p_T$ is a Riemannian Gaussian defined via the heat kernel
+\[
+K_t(x,y)
+    \approx (4\pi t)^{-d/2}
+        \exp\!\left(
+            -\frac{d_{\mathcal{M}}(x,y)^2}{4t}
+        \right).
+\]
+This formulation provides exact training objectives for diffusion on curved
+spaces and clarifies how curvature influences the score and drift fields.
+
+\paragraph{Practical Realisation and Scalability.}
+
+The ``Scaling Riemannian Diffusion Models'' work addresses the computational
+difficulty of computing exact geometric operators. It introduces:
+\begin{itemize}
+    \item \emph{Neural metric learning}: learning $g(x)$ directly from data.
+    \item \emph{Local coordinate charts}: approximating $\mathcal{M}$ via small
+          Euclidean patches with transition consistency.
+    \item \emph{Approximate geodesic solvers}: computing
+          $d_{\mathcal{M}}(x,y)$ and exponential maps efficiently.
+    \item \emph{Efficient Riemannian score matching}: replacing costly
+          Laplace–Beltrami operations with tractable approximations.
+\end{itemize}
+These innovations make RDMs trainable with complexity comparable to standard
+diffusion, enabling application to high-dimensional data including medical
+images.
+
+\paragraph{Why Riemannian Geometry Matters for Compositionality.}
+
+Diffusion is inherently geometric: sampling follows trajectories governed by
+the score, whose structure reflects the curvature and topology of the underlying
+data manifold. For compositional generative modelling, the following insights
+are crucial:
+\begin{itemize}
+    \item \textbf{H1 (Latent Alignment):} Two models can only be composed
+          meaningfully when their manifolds have aligned tangent spaces and
+          compatible coordinate charts. Misalignment causes inconsistent geodesic
+          directions and broken semantic fusion.
+    \item \textbf{H2 (Local Disentanglement):} Semantic factors correspond to
+          directions in $T_x \mathcal{M}$. If these are entangled or curved
+          incompatibly across models, semantic composition fails even if density
+          composition succeeds.
+    \item \textbf{H4 (Curvature Compatibility):} If the manifolds underlying two
+          models have incompatible curvature (e.g., one flat, one highly curved),
+          the combined log-density geometry becomes inconsistent, producing
+          anatomically implausible hybrids.
+\end{itemize}
+
+\paragraph{Implications for This Research.}
+
+Medical images, including pathological variations, often lie on structured
+submanifolds shaped by anatomical and physiological constraints. TB, Silicosis,
+and Silico–TB differ not only in texture and intensity but also in geometric
+structure: cavity morphology, nodule distribution, and pleural interactions
+define distinct submanifolds or manifold branches. Riemannian diffusion provides
+precise mathematical tools—geodesic drift alignment, curvature estimation,
+metric learning, and Laplace–Beltrami analysis—to determine when two pretrained
+models inhabit compatible geometric spaces and when composition will succeed or
+fail.
+
+These tools directly support our Phase~3 experiments, where we analyse geometric
+compatibility and use Riemannian principles to explain and predict the behaviour
+of Euclidean compositional methods (score-based, PoE, SuperDiff). The
+Riemannian framework thus offers the theoretical depth required to interpret the
+structural prerequisites underlying semantically meaningful generative
+composition.

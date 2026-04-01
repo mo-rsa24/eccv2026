@@ -1,0 +1,19 @@
+\subsubsection{Classifier Guidance}
+
+Conditional generation in diffusion models allows the sampling process to be steered toward specific attributes, labels, or textual prompts. A fundamental mechanism for achieving this control is \textit{classifier guidance} \cite{dhariwal2021classifier}, where an external classifier \( p_\phi(y|x_t) \) predicts the probability of a desired condition \( y \) given a noisy sample \( x_t \). During sampling, the classifier’s gradient with respect to the sample is used to bias the reverse diffusion trajectory toward regions of the data manifold consistent with the condition:
+\begin{equation}
+    \nabla_{x_t} \log p(x_t | y)
+    = \nabla_{x_t} \log p(x_t)
+    + s \, \nabla_{x_t} \log p_\phi(y | x_t),
+\end{equation}
+where \( s \) controls the guidance strength. The second term amplifies the probability of samples aligning with the target condition, effectively blending the diffusion model’s generative prior with a discriminative classifier.
+
+Although classifier guidance enables strong conditional control, it introduces dependency on an external classifier trained on noisy data, which may propagate bias or miscalibration. To address this, \textit{classifier-free guidance} (CFG) \cite{ho2022classifierfree} removes the need for an auxiliary model by jointly training a single diffusion network capable of both conditional and unconditional denoising. During training, the conditioning input (e.g., label or text embedding) is randomly dropped with a fixed probability, enabling the network to learn both \( \epsilon_\theta(x_t | y) \) and \( \epsilon_\theta(x_t) \) within the same parameterization. The guided score is then computed as:
+\begin{equation}
+    \hat{\epsilon}_\theta(x_t, y)
+    = (1 + w)\,\epsilon_\theta(x_t | y)
+    - w\,\epsilon_\theta(x_t),
+\end{equation}
+where \( w \) denotes the guidance scale controlling the trade-off between fidelity and diversity.
+
+Classifier-free guidance provides a unified and stable conditioning mechanism, allowing diffusion models to synthesize data across diverse modalities and conditions without external supervision. In medical imaging, CFG-based diffusion models have enabled conditional synthesis driven by pathology labels, anatomical regions, or modality embeddings. For example, \cite{kaur2023ddpm_xray} applied classifier-free guidance for generating chest X-rays conditioned on tuberculosis severity, while \cite{wolleb2022sddpm} used label-aware diffusion for lesion-focused MRI synthesis. These developments form the technical foundation for the compositional conditioning approach explored in this research, where multiple learned score fields are combined to achieve logical and interpretable generative composition.
