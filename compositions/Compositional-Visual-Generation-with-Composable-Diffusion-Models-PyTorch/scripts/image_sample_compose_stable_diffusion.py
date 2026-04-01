@@ -18,6 +18,16 @@ parser.add_argument("--model_path", type=str, default="CompVis/stable-diffusion-
 parser.add_argument("--num_images", type=int, default=1)
 parser.add_argument("--scheduler", type=str, choices=["lms", "ddim", "ddpm", "pndm"], default="ddim",
                     help="ddpm may generate pure noises when using fewer steps.")
+parser.add_argument("--r3_sampler", type=str, choices=["none", "ula"], default="none",
+                    help="Enable Reduce-Reuse-Recycle style MCMC refinement.")
+parser.add_argument("--r3_ula_steps", type=int, default=0,
+                    help="Number of ULA updates per denoising step when --r3_sampler ula.")
+parser.add_argument("--r3_ula_step_scale", type=float, default=2.0,
+                    help="Multiplier on beta_t for ULA step size (R3-style).")
+parser.add_argument("--r3_ula_t_min", type=int, default=500,
+                    help="Apply ULA only when diffusion timestep t > this threshold.")
+parser.add_argument("--r3_ula_noise_scale", type=float, default=1.0,
+                    help="Noise multiplier for ULA updates.")
 args = parser.parse_args()
 
 has_cuda = th.cuda.is_available()
@@ -45,10 +55,17 @@ elif args.scheduler == "pndm":
 pipe.safety_checker = None
 
 images = []
-generator = th.Generator("cuda").manual_seed(args.seed)
+generator_device = "cuda" if device.type == "cuda" else "cpu"
+generator = th.Generator(generator_device).manual_seed(args.seed)
 for i in range(args.num_images):
     image = pipe(prompts, guidance_scale=scale, num_inference_steps=steps,
-                 weights=args.weights, generator=generator).images[0]
+                 weights=args.weights, generator=generator,
+                 r3_sampler=args.r3_sampler,
+                 r3_ula_steps=args.r3_ula_steps,
+                 r3_ula_step_scale=args.r3_ula_step_scale,
+                 r3_ula_t_min=args.r3_ula_t_min,
+                 r3_ula_noise_scale=args.r3_ula_noise_scale).images[0]
     images.append(th.from_numpy(np.array(image)).permute(2, 0, 1) / 255.)
 grid = tvu.make_grid(th.stack(images, dim=0), nrow=4, padding=0)
-tvu.save_image(grid, f'{args.prompts}_{args.weights}' + '.png')
+slug = "_AND_".join(p.strip().replace(" ", "_") for p in args.prompts.split("|"))
+tvu.save_image(grid, f'{slug}_seed{args.seed}.png')

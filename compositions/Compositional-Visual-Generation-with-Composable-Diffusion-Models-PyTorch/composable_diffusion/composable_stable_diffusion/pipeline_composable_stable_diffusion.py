@@ -377,6 +377,86 @@ class ComposableStableDiffusionPipeline(DiffusionPipeline):
         latents = latents * self.scheduler.init_noise_sigma
         return latents
 
+    def _predict_composed_noise(
+        self,
+        latents: torch.FloatTensor,
+        t: torch.Tensor,
+        text_embeddings: torch.FloatTensor,
+        do_classifier_free_guidance: bool,
+        weights,
+    ) -> torch.FloatTensor:
+        latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
+        latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
+
+        noise_pred = []
+        for j in range(text_embeddings.shape[0]):
+            noise_pred.append(
+                self.unet(latent_model_input[:1], t, encoder_hidden_states=text_embeddings[j : j + 1]).sample
+            )
+        noise_pred = torch.cat(noise_pred, dim=0)
+
+        if do_classifier_free_guidance:
+            noise_pred_uncond, noise_pred_text = noise_pred[:1], noise_pred[1:]
+            noise_pred = noise_pred_uncond + (
+                weights * (noise_pred_text - noise_pred_uncond)
+            ).sum(dim=0, keepdims=True)
+
+        return noise_pred
+
+    def _r3_ula_refine(
+        self,
+        latents: torch.FloatTensor,
+        t: torch.Tensor,
+        text_embeddings: torch.FloatTensor,
+        do_classifier_free_guidance: bool,
+        weights,
+        num_steps: int,
+        step_scale: float,
+        noise_scale: float,
+        generator: Optional[torch.Generator],
+    ) -> torch.FloatTensor:
+        # R3-style ULA update in latent space:
+        #   x <- x + step_size * grad + sqrt(2 * step_size) * N(0, I)
+        # with grad approximated from epsilon prediction.
+        if hasattr(self.scheduler, "alphas_cumprod"):
+            alpha_bar = self.scheduler.alphas_cumprod.to(device=latents.device, dtype=latents.dtype)[t.long()]
+            alpha_bar = alpha_bar.view(-1, *([1] * (latents.ndim - 1)))
+            grad_scale = torch.rsqrt((1.0 - alpha_bar).clamp(min=1e-6))
+        else:
+            grad_scale = torch.ones((latents.shape[0],) + (1,) * (latents.ndim - 1), device=latents.device, dtype=latents.dtype)
+
+        if hasattr(self.scheduler, "betas"):
+            beta_t = self.scheduler.betas.to(device=latents.device, dtype=latents.dtype)[t.long()]
+            beta_t = beta_t.view(-1, *([1] * (latents.ndim - 1)))
+            step_size = (beta_t * step_scale).clamp(min=1e-8)
+        else:
+            # Fallback for schedulers without explicit betas.
+            step_size = torch.full(
+                (latents.shape[0],) + (1,) * (latents.ndim - 1),
+                fill_value=max(step_scale * 1e-3, 1e-8),
+                device=latents.device,
+                dtype=latents.dtype,
+            )
+
+        for _ in range(num_steps):
+            noise_pred = self._predict_composed_noise(
+                latents=latents,
+                t=t,
+                text_embeddings=text_embeddings,
+                do_classifier_free_guidance=do_classifier_free_guidance,
+                weights=weights,
+            )
+            grad = -grad_scale * noise_pred
+            noise = torch.randn(
+                latents.shape,
+                generator=generator,
+                device=latents.device,
+                dtype=latents.dtype,
+            )
+            latents = latents + step_size * grad + noise_scale * torch.sqrt(2.0 * step_size) * noise
+
+        return latents
+
     @torch.no_grad()
     def __call__(
         self,
@@ -395,6 +475,11 @@ class ComposableStableDiffusionPipeline(DiffusionPipeline):
         callback: Optional[Callable[[int, int, torch.FloatTensor], None]] = None,
         callback_steps: Optional[int] = 1,
         weights: Optional[str] = "",
+        r3_sampler: Optional[str] = "none",
+        r3_ula_steps: int = 0,
+        r3_ula_step_scale: float = 2.0,
+        r3_ula_t_min: int = 500,
+        r3_ula_noise_scale: float = 1.0,
     ):
         r"""
         Function invoked when calling the pipeline for generation.
@@ -456,6 +541,14 @@ class ComposableStableDiffusionPipeline(DiffusionPipeline):
 
         # 1. Check inputs. Raise error if not correct
         self.check_inputs(prompt, height, width, callback_steps)
+        if r3_sampler not in {"none", "ula"}:
+            raise ValueError(f"Unsupported r3_sampler='{r3_sampler}'. Choose from ['none', 'ula'].")
+        if r3_ula_steps < 0:
+            raise ValueError(f"`r3_ula_steps` must be >= 0, got {r3_ula_steps}.")
+        if r3_ula_step_scale <= 0:
+            raise ValueError(f"`r3_ula_step_scale` must be > 0, got {r3_ula_step_scale}.")
+        if r3_ula_noise_scale < 0:
+            raise ValueError(f"`r3_ula_noise_scale` must be >= 0, got {r3_ula_noise_scale}.")
 
         # 2. Define call parameters
         batch_size = 1 if isinstance(prompt, str) else len(prompt)
@@ -521,25 +614,28 @@ class ComposableStableDiffusionPipeline(DiffusionPipeline):
         num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
-                # expand the latents if we are doing classifier free guidance
-                latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
-                latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
-
-                # predict the noise residual
-                noise_pred = []
-                for j in range(text_embeddings.shape[0]):
-                    noise_pred.append(
-                        self.unet(latent_model_input[:1], t, encoder_hidden_states=text_embeddings[j:j+1]).sample
-                    )
-                noise_pred = torch.cat(noise_pred, dim=0)
-
-                # perform guidance
-                if do_classifier_free_guidance:
-                    noise_pred_uncond, noise_pred_text = noise_pred[:1], noise_pred[1:]
-                    noise_pred = noise_pred_uncond + (weights * (noise_pred_text - noise_pred_uncond)).sum(dim=0, keepdims=True)
+                noise_pred = self._predict_composed_noise(
+                    latents=latents,
+                    t=t,
+                    text_embeddings=text_embeddings,
+                    do_classifier_free_guidance=do_classifier_free_guidance,
+                    weights=weights,
+                )
 
                 # compute the previous noisy sample x_t -> x_t-1
                 latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs).prev_sample
+                if r3_sampler == "ula" and r3_ula_steps > 0 and int(t.item()) > r3_ula_t_min:
+                    latents = self._r3_ula_refine(
+                        latents=latents,
+                        t=t,
+                        text_embeddings=text_embeddings,
+                        do_classifier_free_guidance=do_classifier_free_guidance,
+                        weights=weights,
+                        num_steps=r3_ula_steps,
+                        step_scale=r3_ula_step_scale,
+                        noise_scale=r3_ula_noise_scale,
+                        generator=generator,
+                    )
 
                 # call the callback, if provided
                 if i == len(timesteps) - 1 or ((i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0):

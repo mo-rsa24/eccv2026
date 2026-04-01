@@ -7,11 +7,10 @@
 # -----------------------------------------------------------------------------
 experiments/
 outputs/
-**/*output*.png
-**/*output*.jpg
+# Loose generated images inside composition subfolders (not tracked)
+compositions/**/*.png
+compositions/**/*.jpg
 superdiff_and.png
-*.png
-*.jpg
 
 # -----------------------------------------------------------------------------
 # Model weights (live in ~/.cache/huggingface/ — never in project tree)

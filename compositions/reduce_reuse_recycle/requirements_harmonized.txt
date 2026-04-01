@@ -1,0 +1,36 @@
+# ============================================================
+# Harmonized requirements for reduce_reuse_recycle
+# "Reduce, Reuse, Recycle: Compositional Generation with
+#  Energy-Based Diffusion Models and MCMC" — Du et al.
+# Python 3.10
+#
+# NOTE: Original requirements.txt is a conda lock file (platform:linux-64,
+#       CUDA 11.7, torch 2.0.0) — do not use it directly with pip.
+#       This file replaces it with a clean pip-installable set.
+#
+# Install order:
+#   1. conda activate compose_ebm
+#   2. pip install -r requirements_harmonized.txt
+#
+# No diffusers / transformers / HuggingFace hub needed.
+# This repo uses its own composable_diffusion/ GLIDE-based package.
+#
+# RTX 5090 / sm_120:
+#   cu128 wheels (CUDA 12.8) are the first with compiled sm_120 kernels.
+# ============================================================
+
+# --- PyTorch — CUDA 12.8 GPU wheels (sm_120 Blackwell support) ---
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch==2.7.0
+torchvision==0.22.0
+
+# --- Scientific stack ---
+numpy==1.26.4
+matplotlib>=3.7.0
+Pillow>=9.5.0
+tqdm>=4.65.0
+PyYAML>=6.0
+
+# --- Experiment tracking (required by ebm_finetune/finetune.py) ---
+# NOTE: finetune.py uses 'from wandb import wandb' (unusual but valid)
+wandb>=0.15.0

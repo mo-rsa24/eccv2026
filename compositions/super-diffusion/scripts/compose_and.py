@@ -68,7 +68,7 @@ dtype  = torch.float32
 print(f"Loading {args.model_id} ...")
 vae          = AutoencoderKL.from_pretrained(args.model_id, subfolder="vae",          use_safetensors=True).to(device)
 tokenizer    = CLIPTokenizer.from_pretrained(args.model_id, subfolder="tokenizer")
-text_encoder = CLIPTextModel.from_pretrained(args.model_id, subfolder="text_encoder", use_safetensors=True).to(device)
+text_encoder = CLIPTextModel.from_pretrained(args.model_id, subfolder="text_encoder").to(device)
 unet         = UNet2DConditionModel.from_pretrained(args.model_id, subfolder="unet",  use_safetensors=True).to(device)
 scheduler    = EulerDiscreteScheduler.from_pretrained(args.model_id, subfolder="scheduler")
 
@@ -119,9 +119,12 @@ def decode_latents(latents, nrow, ncol):
     images = vae.decode(latents / vae.config.scaling_factor, return_dict=False)[0]
     images = (images / 2 + 0.5).clamp(0, 1)
     images = (images.permute(0, 2, 3, 1) * 255).to(torch.uint8).cpu().numpy()
+    h, w, c = images[0].shape
+    blank = np.zeros((h, w, c), dtype=np.uint8)
+    frames = list(images) + [blank] * (nrow * ncol - len(images))
     rows = []
     for r in range(nrow):
-        cols = [images[r * ncol + c] for c in range(ncol)]
+        cols = [frames[r * ncol + c_] for c_ in range(ncol)]
         rows.append(np.hstack(cols))
     return Image.fromarray(np.vstack(rows))
 

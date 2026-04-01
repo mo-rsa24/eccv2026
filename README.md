@@ -140,21 +140,41 @@ This is not a probabilistic mixture — it is a geometric interpolation in veloc
 eccv2026/
 │
 ├── scripts/                       # Experiment and analysis scripts
-│   ├── trajectory_dynamics_experiment.py    # Phase 0: geometric evidence
-│   ├── generate_inversion_training_data.py  # Phase 1: training data
-│   ├── train_inverter.py                    # Phase 2: train f_θ
-│   ├── measure_composability_gap.py         # Phase 3: gap measurement
-│   ├── characterize_gap.py                  # Phase 4: gap taxonomy
-│   ├── ablation_semantic_vs_logical.py      # Ablation study
-│   ├── manifold_cooccurrence_vs_hybrid.py   # Manifold geometry
-│   ├── generate_sd35.py                     # Utility: SD3.5 generation
-│   ├── generate_compositional_model_grid.py # Utility: model comparison
-│   ├── make_comparison_figure.py            # Utility: publication figures
-│   ├── plot_gap_analysis.py                 # Vis: gap suite (plots 00–13)
-│   ├── plot_trajectory_analysis.py          # Vis: trajectory suite (plots 00–13)
-│   ├── plot_composability_histogram.py      # Vis: violin + strip plots
-│   ├── plot_gap_clean.py                    # Vis: clean strip chart
-│   └── plot_trajectory_histogram.py         # Vis: time-resolved histograms
+│   │
+│   │  ── Core pipeline (run in order) ──────────────────────────────────────
+│   ├── trajectory_dynamics_experiment.py    # [P0] Geometric evidence
+│   ├── generate_inversion_training_data.py  # [P1] Inverter training data
+│   ├── train_inverter.py                    # [P2] Train f_θ
+│   ├── measure_composability_gap.py         # [P3] Gap measurement + p* sources
+│   ├── characterize_gap.py                  # [P4] Gap taxonomy
+│   │
+│   │  ── Analysis ──────────────────────────────────────────────────────────
+│   ├── ablation_semantic_vs_logical.py      # [ABL] CLIP AND vs SuperDiff AND
+│   ├── manifold_cooccurrence_vs_hybrid.py   # [ABL] CLIP manifold geometry
+│   │
+│   │  ── Visualisation ──────────────────────────────────────────────────────
+│   ├── plot_gap_analysis.py        # [VIS-primary] Gap suite — plots 00–22 (CLI entry point)
+│   ├── plot_trajectory_analysis.py # [VIS] Trajectory suite — plots 00–13
+│   ├── make_comparison_figure.py   # [VIS] Publication comparison grids (COCO)
+│   │
+│   │  ── Gap plot modules (imported by plot_gap_analysis.py) ────────────────
+│   ├── plots/
+│   │   ├── utils.py          # Shared constants, helpers, data loaders, save_fig
+│   │   ├── baseline.py       # Plots 00–10  (terminal distributions + temporal)
+│   │   ├── pstar.py          # Plots 11–19  (gap validity + p* sequence + synthesis)
+│   │   └── distributional.py # Plots 20–22  (ECDF, Jeffrey's heatmap, expressiveness ladder)
+│   │
+│   │  ── Utilities ───────────────────────────────────────────────────────────
+│   ├── generate_sd35.py                     # [UTIL] Standalone SD3.5 generation
+│   ├── generate_compositional_model_grid.py # [UTIL] Model comparison grid
+│   │
+│   │  ── Superseded (kept for reference) ────────────────────────────────────
+│   ├── superseded/
+│   │   ├── plot_composability_histogram.py  # superseded by plot_gap_analysis.py
+│   │   ├── plot_gap_clean.py                # superseded by plot_gap_analysis.py
+│   │   └── plot_trajectory_histogram.py     # superseded by plot_gap_analysis.py 06–10
+│   │
+│   └── SCRIPTS.md                   # Per-script catalog with phase labels
 │
 ├── notebooks/                     # Core library modules (imported by scripts)
 │   ├── utils.py                   # Model loading, text encoding
@@ -174,10 +194,38 @@ eccv2026/
 │   └── coco_common_pairs.json     # Curated concept pair definitions
 │
 ├── experiments/                   # All experiment outputs (moved here)
-│   ├── trajectory_dynamics/       # Phase 0 runs (timestamped)
+│   ├── trajectory_dynamics/       # Phase 0 runs — one timestamped dir per run
+│   │   └── <YYYYMMDD_HHMMSS>/
+│   │       ├── trajectory_manifold.png
+│   │       ├── trajectory_subplots.png
+│   │       ├── pairwise_distances.png
+│   │       ├── decoded_images.png
+│   │       ├── summary.json
+│   │       └── trajectory_data.json
 │   ├── inversion/
 │   │   ├── training_data/         # Phase 1 output
-│   │   └── gap_analysis/          # Phase 3 output
+│   │   └── gap_analysis/          # Phase 3 output — one timestamped dir per run
+│   │       └── <regime>_<YYYYMMDD_HHMMSS>/    # e.g. small_20260302_143000
+│   │           ├── metrics/               # Aggregated JSON files
+│   │           │   ├── per_seed_distances.json
+│   │           │   ├── trajectory_distances.json
+│   │           │   ├── within_and_distances.json
+│   │           │   └── all_pairs_gap.json
+│   │           ├── pairs/                 # Per-concept-pair outputs
+│   │           │   └── a_cat_a_dog/
+│   │           │       ├── gap_metrics.json
+│   │           │       ├── images/        # Generated image grids
+│   │           │       │   ├── superdiff_and.png
+│   │           │       │   ├── sd35_monolithic.png
+│   │           │       │   ├── sd35_c1_only.png
+│   │           │       │   ├── sd35_c2_only.png
+│   │           │       │   ├── sd35_pstar.png          (inverter)
+│   │           │       │   ├── sd35_pstar_vlm.png      (--pstar-source vlm)
+│   │           │       │   └── comparison_grid.png
+│   │           │       └── trajectories/  # Per-pair trajectory plots
+│   │           │           ├── trajectory_pca.png
+│   │           │           └── trajectory_pca_vlm.png  (--pstar-source vlm)
+│   │           └── figures/               # plot_gap_analysis.py output (plots 00–22)
 │   ├── composition_analysis_*/    # Earlier composition analysis runs
 │   ├── eccv2026/                  # Structured ablation/guidance runs
 │   └── semantic_prompt_search_*/  # Phase 0 semantic search outputs
@@ -225,7 +273,31 @@ huggingface-cli login
 
 ## 7. Experimental Pipeline
 
-The pipeline has five ordered phases. Each phase produces outputs that subsequent phases consume. Run them in the order shown. All examples assume you are in the `eccv2026/` root directory with the `eccv2026` conda environment active.
+The pipeline has five ordered phases. All examples assume you are in the `eccv2026/` root directory with the `eccv2026` conda environment active.
+
+**Two execution paths are supported:**
+
+| Path | Phases required | p* source |
+|------|-----------------|-----------|
+| **Inverter path** (full) | 0 → 1 → 2 → 3 → 4 → plots | `--pstar-source inverter` — needs trained $f_\theta$ |
+| **Training-free path** | 0 → 3 → 4 → plots | `--pstar-source pez / vlm / z2t` — no checkpoint needed |
+
+Phases 1 and 2 exist solely to produce the trained inverter checkpoint. Skip them if you are not using `--pstar-source inverter`.
+
+---
+
+### Regime quick-reference
+
+The `--regime` flag in `measure_composability_gap.py` controls the scale of Phase 3 runs.
+Each run auto-creates a timestamped output directory `experiments/inversion/gap_analysis/<regime>_<YYYYMMDD_HHMMSS>/`.
+
+| Regime | Pairs | Seeds | Records | When to use |
+|--------|------:|------:|--------:|-------------|
+| `small` | 4 | 8 | 32 | **Development / debugging.** Runs in ~1–2 h on a single A100. Use to verify the pipeline end-to-end, check that plots render, and iterate on the inverter before committing to a full run. |
+| `medium` | 4 | 16 | 64 | **Default scale.** Same 4 core pairs with 2× more seeds — improves statistical stability without adding concept-pair coverage. Use for reviewer ablations and sensitivity checks. |
+| `large` | 8 | 32 | 256 | **ECCV paper results.** Adds 4 extended pairs and 4× seeds. Required for Claims C5 (gap varies by pair) and the Expressiveness Ladder (plot 22). Runs ~6–8 h; recommended overnight. |
+
+> **Note.** Omitting `--regime` falls back to the legacy default: 4 core pairs × 8 seeds, but without a regime prefix in the output directory name.
 
 ---
 
@@ -278,7 +350,7 @@ python scripts/trajectory_dynamics_experiment.py \
 
 ---
 
-### Phase 1 — Inverter Training Data
+### Phase 1 — Inverter Training Data  *(inverter path only — skip if using pez / vlm / z2t)*
 
 **Script:** `scripts/generate_inversion_training_data.py`
 
@@ -302,7 +374,7 @@ python scripts/generate_inversion_training_data.py \
 
 ---
 
-### Phase 2 — Train the Inverter
+### Phase 2 — Train the Inverter  *(inverter path only — skip if using pez / vlm / z2t)*
 
 **Script:** `scripts/train_inverter.py`
 
@@ -349,23 +421,90 @@ python scripts/train_inverter.py \
 
 Computes terminal MSE anchored to AND: $d_T^{\text{mono}}, d_T^{p^*}, d_T^{c_1}, d_T^{c_2}$.
 
-**Expected output.** In `experiments/inversion/gap_analysis/`:
-- `per_seed_distances.json` — one row per (seed, pair) with all four gap values
-- `all_pairs_gap.json` — summary statistics per pair
-- `trajectory_distances.json` — step-wise MSE at every denoising step
-- Per-pair subdirectories with image grids comparing AND vs $p^*$ vs mono outputs
+**Output layout.** Each run auto-creates a timestamped directory and prints the path at start:
+
+```
+experiments/inversion/gap_analysis/small_20260302_143000/
+  metrics/
+    per_seed_distances.json       # one row per (pair, seed) — all gap values
+    trajectory_distances.json     # step-wise MSE at every denoising step
+    within_and_distances.json     # cross-seed AND pairwise distances (noise floor)
+    all_pairs_gap.json            # summary statistics per pair
+  pairs/
+    a_cat_a_dog/
+      gap_metrics.json
+      images/                     # generated image grids
+        superdiff_and.png
+        sd35_monolithic.png
+        sd35_c1_only.png  sd35_c2_only.png
+        sd35_pstar.png            (inverter path)
+        sd35_pstar_vlm.png        (--pstar-source vlm)
+        comparison_grid.png
+      trajectories/               # per-pair trajectory PCA/MDS plots
+        trajectory_pca.png
+    ...
+  figures/                        # written by plot_gap_analysis.py (see §8)
+```
+
+At the end of the run the script prints:
+```
+To visualize:
+  python scripts/plot_gap_analysis.py --data-dir experiments/inversion/gap_analysis/small_20260302_143000
+```
+
+**Quick iteration (small regime — no checkpoint needed):**
 
 ```bash
+# Training-free baseline — VLM caption p* source, small regime
 python scripts/measure_composability_gap.py \
-    --ckpt ckpt/inverter/best.pt \
-    --model-id stabilityai/stable-diffusion-3.5-medium \
-    --output-dir experiments/inversion/gap_analysis \
-    --seeds 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 \
-    --steps 50 \
-    --guidance 4.5 \
-    --image-size 512 \
-    --dtype float16
+    --pstar-source vlm \
+    --regime small \
+    --steps 50 --guidance 4.5 --image-size 512 --dtype bfloat16
+# → writes to experiments/inversion/gap_analysis/small_<timestamp>/
 ```
+
+**Standard paper run (medium regime, all training-free sources):**
+
+```bash
+# Step 1 — run each source separately; use --merge to accumulate into the same dir
+python scripts/measure_composability_gap.py --pstar-source vlm --regime medium \
+    --steps 50 --guidance 4.5 --dtype bfloat16
+# note the printed output dir, e.g. medium_20260302_143000, then:
+python scripts/measure_composability_gap.py --pstar-source pez --regime medium \
+    --output-dir experiments/inversion/gap_analysis/medium_20260302_143000 --merge
+python scripts/measure_composability_gap.py --pstar-source z2t --regime medium \
+    --output-dir experiments/inversion/gap_analysis/medium_20260302_143000 --merge
+```
+
+**Full run with trained inverter (requires Phase 2 checkpoint):**
+
+```bash
+# Step 1: inverter source (sets the run dir)
+python scripts/measure_composability_gap.py \
+    --pstar-source inverter \
+    --ckpt ckpt/inverter/best.pt \
+    --regime medium \
+    --steps 50 --guidance 4.5 --dtype float16
+# Step 2: add training-free sources into the same run dir
+python scripts/measure_composability_gap.py --pstar-source vlm --regime medium \
+    --output-dir experiments/inversion/gap_analysis/medium_<timestamp> --merge
+python scripts/measure_composability_gap.py --pstar-source pez --regime medium \
+    --output-dir experiments/inversion/gap_analysis/medium_<timestamp> --merge
+python scripts/measure_composability_gap.py --pstar-source z2t --regime medium \
+    --output-dir experiments/inversion/gap_analysis/medium_<timestamp> --merge
+```
+
+**ECCV paper run (large regime):**
+
+```bash
+python scripts/measure_composability_gap.py --pstar-source vlm --regime large \
+    --steps 50 --guidance 4.5 --dtype bfloat16
+# then --merge the remaining sources into the same dir as above
+```
+
+> **Note.** `--ckpt` is only required for `--pstar-source inverter`. All other sources skip the inverter load entirely.
+
+> **`--merge` flag.** When accumulating multiple p* sources across separate runs into the same timestamped directory, always pass `--output-dir <existing-run-dir> --merge`. Without `--merge`, the JSON files in `metrics/` will be overwritten.
 
 > **Key number to watch.** The ordering $d_T^{p^*} < d_T^{\text{mono}}$ and $d_T^{p^*} > 0$ is the central quantitative result of the paper. If $d_T^{p^*} \approx d_T^{\text{mono}}$, inversion has gained nothing and Claim C6 fails. If $d_T^{p^*} \approx 0$, the gap is fully closed by a single prompt, which would undermine the structural inexpressibility argument.
 
@@ -386,9 +525,10 @@ python scripts/measure_composability_gap.py \
 **Expected output.** Figures and CSVs in `experiments/inversion/gap_analysis/`.
 
 ```bash
+# Point --gap-dir at the metrics/ subfolder of your Phase 3 run dir
 python scripts/characterize_gap.py \
-    --gap-dir experiments/inversion/gap_analysis \
-    --output-dir experiments/inversion/gap_analysis \
+    --gap-dir experiments/inversion/gap_analysis/<regime>_<timestamp>/metrics \
+    --output-dir experiments/inversion/gap_analysis/<regime>_<timestamp>/figures \
     --model-id stabilityai/stable-diffusion-3.5-medium
 ```
 
@@ -440,37 +580,105 @@ python scripts/manifold_cooccurrence_vs_hybrid.py \
 
 ## 8. Visualisation Suite
 
-All visualisation scripts read from saved JSON/npy outputs. Run them *after* the corresponding experiment phase has completed.
+All visualisation scripts read from saved JSON/npy outputs.
+Run them *after* the corresponding experiment phase has completed.
 
-### Gap analysis suite — 14 plots
+### Gap analysis suite — 23 plots  `[VIS-primary]`
 
 **Script:** `scripts/plot_gap_analysis.py`
 
-Reads `per_seed_distances.json` and `trajectory_distances.json` from Phase 3.
+Reads `per_seed_distances.json`, `trajectory_distances.json`, `all_pairs_gap.json`,
+and `within_and_distances.json` from Phase 3.
+
+**Baseline sequence** (data: `per_seed_distances.json`)
 
 | Plot | Type | What it shows |
 |------|------|---------------|
-| 00 | Strip by pair | Raw dots (one per seed) + mean tick; foundation plot |
+| 00 | Strip by pair | Raw dots (one per seed) + mean tick; foundation |
 | 01 | Grouped bar | Mean ± std per pair per condition |
-| 02–05 | KDE / histograms | Distribution shape by pair and pooled |
-| 06–10 | Stacked bars + bands | When during denoising the gap accumulates |
-| 11 | Strip $p^*$ | **Key result**: $p^*$ vs mono vs solo $c_1$ vs solo $c_2$ |
-| 12 | CLIP comparison | AND↔$p^*$ vs AND↔mono cosine similarity per pair |
-| 13 | JS divergence | $JS^2(P_{p^*}, P_{\text{mono}})$: lower = $p^*$ is a better AND proxy |
+| 02 | Histogram grouped | x=distance, bars grouped by concept pair |
+| 03 | Pooled strip | All pairs combined, bold tick = pooled mean |
+| 04 | KDE pooled | Smooth of plot 03; all pairs combined |
+| 05 | KDE by pair | 4 panels, one per concept pair |
+
+**Temporal dynamics** (data: `trajectory_distances.json`)
+
+| Plot | Type | What it shows |
+|------|------|---------------|
+| 06 | Stacked bar pooled | When during denoising the gap accumulates |
+| 07 | Stacked bar by pair | Same, one group per concept pair |
+| 08 | Per-condition bands | Mean ± std temporal traces, colour = pair |
+| 09 | Individual seeds | Thin per-seed traces + bold mean |
+| 10 | Generalised | Pooled mean + ±1 std + 95 % CI per condition |
+
+**Gap validity** (data: `within_and_distances.json`)
+
+| Plot | Type | What it shows |
+|------|------|---------------|
+| 11 | Noise-floor strip | **Validity check** — within-AND distances vs per-condition gaps; ×ratio confirms gaps are structural |
+
+**p* progressive abstraction** — requires `--pstar-source` run(s) first
+
+| Plot | Type | What it shows |
+|------|------|---------------|
+| 12 | p* strip by pair | Raw seeds per p* source + mono, 4 pair panels |
+| 13 | p* grouped bars | Mean ± std per pair, bars = p* sources + mono |
+| 14 | p* histogram | Distance histogram per pair, bars by p* source |
+| 15 | p* KDE pooled | **Key visual** — solid = p* sources, dashed = baselines |
+| 16 | p* temporal | Per-step MSE all p* + mono, mean + CI bands |
+
+**p* synthesis and distributional conclusions**
+
+| Plot | Type | What it shows |
+|------|------|---------------|
+| 17 | p* terminal strip | **Key result** — terminal MSE: all p* sources vs baselines |
+| 18 | CLIP comparison | CLIP cosine AND↔p* vs AND↔mono per concept pair |
+| 19 | JS² divergence | $JS^2(P_{p^*}, P_{\text{mono}})$ per pair |
+| 20 | ECDF comparison | Non-parametric F(x) all conditions + within-AND |
+| 21 | Jeffrey's heatmap | $J(P_i, P_j)$ all condition pairs; cluster = manifold membership |
+| 22 | Expressiveness ladder | **THE paper figure** — $J(p^*, \text{within-AND})$ vs method rank |
+
+Pass the **run root directory** as `--data-dir`; the script auto-detects JSONs in `metrics/` and
+writes figures to `figures/` inside that same directory (both subdirs are created automatically).
 
 ```bash
-# All 14 plots
+# All 23 plots — reads metrics/ from run dir, writes figures/ into it
 python scripts/plot_gap_analysis.py \
-    --data-dir experiments/inversion/gap_analysis \
-    --output-dir experiments/inversion/gap_analysis/figures
+    --data-dir experiments/inversion/gap_analysis/<regime>_<timestamp>
 
 # Single plot
-python scripts/plot_gap_analysis.py --plot 11 \
-    --data-dir experiments/inversion/gap_analysis \
-    --output-dir experiments/inversion/gap_analysis/figures
+python scripts/plot_gap_analysis.py --plot 22 \
+    --data-dir experiments/inversion/gap_analysis/<regime>_<timestamp>
+
+# Override figure output location
+python scripts/plot_gap_analysis.py \
+    --data-dir experiments/inversion/gap_analysis/<regime>_<timestamp> \
+    --output-dir paper/figures/gap_analysis
+
+# Show only specific p* sources in baseline plots 00–10 (all plots 11–22 always show all):
+python scripts/plot_gap_analysis.py \
+    --data-dir experiments/inversion/gap_analysis/<regime>_<timestamp> \
+    --pstar-sources vlm pez    # show VLM and PEZ only in plots 00–10
+python scripts/plot_gap_analysis.py \
+    --data-dir experiments/inversion/gap_analysis/<regime>_<timestamp> \
+    --pstar-sources none        # hide all p* from baseline plots
 ```
 
-### Trajectory analysis suite — 14 plots
+> **`--data-dir` for legacy flat runs.** If your JSON files are directly in the run directory
+> (not in `metrics/`), `--data-dir` still works — the loader checks `{data-dir}/metrics/` first,
+> then falls back to `{data-dir}/` for backward compatibility.
+
+**p* sources** in `measure_composability_gap.py`:
+
+| Flag | Source | Needs `--ckpt`? | Method |
+|------|--------|:--------------:|--------|
+| `--pstar-source inverter` *(default)* | $p^*$ (CLIP inverter) | **Yes** | Trained MLP $f_\theta$: CLIP image → SD3.5 conditioning |
+| `--pstar-source pez` | $p^*$ (token opt.) | No | PEZ: gradient STE over discrete token embeddings |
+| `--pstar-source z2t` | $p^*$ (Zero2Text) | No | Ridge regression in CLIP embedding space (training-free) |
+| `--pstar-source vlm` | $p^*$ (VLM caption) | No | BLIP-2 caption → SD3.5 regeneration |
+| `--anchor mean` | Sensitivity check | — | Average AND anchor; adds within-AND variance; use for reviewer robustness |
+
+### Trajectory analysis suite — 14 plots  `[VIS]`
 
 **Script:** `scripts/plot_trajectory_analysis.py`
 
@@ -490,54 +698,45 @@ python scripts/plot_trajectory_analysis.py \
     --data-dir experiments/trajectory_dynamics/<YYYYMMDD_HHMMSS>
 ```
 
-### Composability histogram (Plotly)
+### Publication comparison grid  `[VIS]`
 
-**Script:** `scripts/plot_composability_histogram.py`
+**Script:** `scripts/make_comparison_figure.py`
 
-Produces violin + strip overlays for terminal distances. Outputs interactive HTML; PNG export requires Chrome (see [INSTALL.md](INSTALL.md)).
+Builds COCO real-image rows vs generated-image rows for qualitative comparison.
 
-```bash
-python scripts/plot_composability_histogram.py \
-    --data-dir experiments/inversion/gap_analysis \
-    --output-dir experiments/inversion/gap_analysis
-```
+### Superseded scripts (kept for reference only)
 
-### Clean strip chart
+The following scripts have been fully superseded by `plot_gap_analysis.py` (plots 00–22)
+and are no longer part of the active pipeline:
 
-```bash
-python scripts/plot_gap_clean.py \
-    --data-dir experiments/inversion/gap_analysis \
-    --output-dir experiments/inversion/gap_analysis/figures
-```
-
-### Time-resolved distance histogram
-
-```bash
-python scripts/plot_trajectory_histogram.py \
-    --data-dir experiments/inversion/gap_analysis \
-    --output-dir experiments/inversion/gap_analysis/figures \
-    --n-buckets 8
-```
+- `plot_composability_histogram.py` — Plotly violin/strip; replaced by plots 00, 03
+- `plot_gap_clean.py` — early strip chart prototype; replaced by plots 00, 17
+- `plot_trajectory_histogram.py` — time-resolved bars; replaced by plots 06–10
 
 ---
 
 ## 9. Expected Outputs and How to Read Them
 
-### The central result (Plot 11)
+### The central quantitative result (Plots 17 and 22)
 
-Plot 11 from `plot_gap_analysis.py` is the paper's key figure. It shows a strip chart of terminal MSE distances anchored to SuperDiff AND, with four conditions side by side:
+**Plot 17** (`plot_gap_analysis.py`) is the primary terminal-distance figure.
+It shows all p* sources alongside the baselines in a pooled strip chart:
 
 ```
-d_T^{p*}    < d_T^{mono}   ≈ d_T^{c1}   ≈ d_T^{c2}
-  │                │                │              │
-  └── inverter     └── best naive   └── single     └── single
-      reduces gap      baseline         concept A      concept B
+d_T^{within-AND}  <  d_T^{p*_vlm}  ≤  d_T^{p*_pez}  ≤  d_T^{p*_inv}  <  d_T^{mono}  ≈  d_T^{c1}  ≈  d_T^{c2}
+  │                       │                   │                │               │
+  └── AND's own        └── VLM            └── token        └── trained    └── best naive
+      variance             caption             optimisation     inverter        baseline
 ```
 
-If the ordering holds:
-- **Inversion works**: $p^*$ is meaningfully closer to AND than a monolithic prompt
-- **Gap is not trivial**: $d_T^{p^*} > 0$ means some portion of AND is structurally inexpressible
-- **Single concepts are poor proxies**: $d_T^{c_1} \approx d_T^{\text{mono}}$ means AND is not simply dominated by one concept
+If this ordering holds:
+- **Inversion partially works**: all p* sources sit between within-AND and mono
+- **Gap is structural**: $d_T^{p^*} > d_T^{\text{within-AND}}$ means AND is not fully reproducible by any single prompt
+- **Language ceiling**: if VLM (most expressive) does not reach within-AND, the gap is outside the text manifold
+
+**Plot 22** (expressiveness ladder) is the *falsification figure* for the text-manifold claim.
+Jeffrey's divergence $J(p^*, \text{within-AND})$ plotted against p* method rank shows whether
+increasingly expressive language methods close the gap monotonically.
 
 ### Trajectory divergence (Plots 01–03)
 
