@@ -30,18 +30,27 @@ def get_vel(
         x_in = _x / denom
 
         with torch.autocast("cuda", dtype=dtype):
+            # SD3 transformer uses 'hidden_states'; SD1/2 UNet uses 'sample'
+            import inspect as _insp
+            _fwd_params = list(_insp.signature(unet.forward).parameters.keys())
+            _first_arg = "hidden_states" if "hidden_states" in _fwd_params else "sample"
+
             if added_cond_kwargs is None:
-                return unet(x_in, t, encoder_hidden_states=_e).sample
+                return unet(
+                    **{_first_arg: x_in},
+                    timestep=t,
+                    encoder_hidden_states=_e,
+                ).sample
 
             cond_kwargs = {
                 key: value.to(device=device, dtype=dtype)
                 for key, value in added_cond_kwargs.items()
             }
             return unet(
-                x_in,
-                t,
+                **{_first_arg: x_in},
+                timestep=t,
                 encoder_hidden_states=_e,
-                added_cond_kwargs=cond_kwargs,
+                **cond_kwargs,
             ).sample
     # v = lambda _x, _e: unet(_x / ((sigma**2 + 1) ** 0.5), t, encoder_hidden_states=_e).sample
     embeds = torch.cat(embeddings)

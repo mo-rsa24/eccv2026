@@ -50,6 +50,11 @@ import torch
 import torch.nn.functional as F
 from PIL import Image
 
+try:
+    from taxonomy_manifest import GROUP_ORDER as MANIFEST_GROUP_ORDER, PAIR_LOOKUP_BY_SLUG
+except ImportError:
+    from scripts.taxonomy_manifest import GROUP_ORDER as MANIFEST_GROUP_ORDER, PAIR_LOOKUP_BY_SLUG
+
 # ---------------------------------------------------------------------------
 # Project root
 # ---------------------------------------------------------------------------
@@ -98,6 +103,21 @@ def _slugify(text: str) -> str:
         .replace("'", "")
         .replace("/", "")
     )
+
+
+def _resolve_requested_pairs(pair_slugs: list[str]) -> list[tuple[str, str, str]]:
+    resolved: list[tuple[str, str, str]] = []
+    seen: set[str] = set()
+    for slug in pair_slugs:
+        meta = PAIR_LOOKUP_BY_SLUG.get(slug)
+        if meta is None:
+            raise ValueError(f"Unknown taxonomy pair slug: {slug}")
+        canonical_slug = str(meta["pair_slug"])
+        if canonical_slug in seen:
+            continue
+        seen.add(canonical_slug)
+        resolved.append((str(meta["taxonomy_group_key"]), str(meta["prompt_a"]), str(meta["prompt_b"])))
+    return resolved
 
 
 def _load_models(model_id: str, device: torch.device, dtype: torch.dtype, t5_seq: int):
@@ -329,6 +349,10 @@ def main():
         choices=sorted(TAXONOMY_GROUPS.keys()),
         default=list(TAXONOMY_GROUPS.keys()),
     )
+    parser.add_argument(
+        "--pairs", nargs="+", default=None,
+        help="Canonical taxonomy pair slugs to generate, e.g. a_butterfly_a_flower_meadow.",
+    )
     args = parser.parse_args()
 
     base_out = (
@@ -339,11 +363,15 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     dtype  = torch.bfloat16  # SD 3.5 bfloat16
 
-    total_pairs = sum(len(TAXONOMY_GROUPS[g]) for g in args.groups)
+    requested_pairs = _resolve_requested_pairs(args.pairs) if args.pairs else None
+    total_pairs = len(requested_pairs) if requested_pairs is not None else sum(len(TAXONOMY_GROUPS[g]) for g in args.groups)
     print(f"\nPhase 1 taxonomy qualitative — SD 3.5 Medium")
     print(f"  Model  : {args.model}")
     print(f"  Seed   : {args.seed}   Steps: {args.steps}   Scale: {args.scale}")
-    print(f"  Groups : {', '.join(args.groups)}")
+    if requested_pairs is not None:
+        print(f"  Pairs  : {', '.join(args.pairs)}")
+    else:
+        print(f"  Groups : {', '.join(args.groups)}")
     print(f"  Pairs  : {total_pairs}  ×  4 conditions = {total_pairs * 4} images")
     print(f"  Output : {base_out}\n")
 
@@ -353,8 +381,24 @@ def main():
         transformer, vae, scheduler,
     ) = _load_models(args.model, device, dtype, args.t5_seq)
 
-    for group_name in args.groups:
-        pairs = TAXONOMY_GROUPS[group_name]
+    if requested_pairs is not None:
+        grouped_pairs: dict[str, list[tuple[str, str]]] = {}
+        for group_name, concept_a, concept_b in requested_pairs:
+            grouped_pairs.setdefault(group_name, []).append((concept_a, concept_b))
+
+        ordered_group_names = [
+            group_name for group_name in MANIFEST_GROUP_ORDER if group_name in grouped_pairs
+        ]
+        ordered_group_names.extend(
+            group_name for group_name in grouped_pairs if group_name not in ordered_group_names
+        )
+        group_iter = [
+            (group_name, grouped_pairs[group_name]) for group_name in ordered_group_names
+        ]
+    else:
+        group_iter = [(group_name, TAXONOMY_GROUPS[group_name]) for group_name in args.groups]
+
+    for group_name, pairs in group_iter:
         group_out = base_out / group_name
         print(f"{'='*60}")
         print(f"  {group_name}  ({len(pairs)} pairs)")

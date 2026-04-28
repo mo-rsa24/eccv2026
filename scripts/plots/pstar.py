@@ -40,14 +40,161 @@ except ImportError:
 
 from .utils import (
     TERM_COLOR, TERM_LABEL, TRAJ_COLOR, TRAJ_LABEL,
-    TERM_CONDITIONS, TRAJ_PSTAR_PRIORITY, PSTAR_GAP_KEY,
+    TERM_CONDITIONS, TRAJ_PSTAR_PRIORITY, PSTAR_GAP_KEY, GROUP_ORDER,
     LABEL_D_T_MSE, LABEL_D_t_MSE, LABEL_JS2,
     SCIPY_OK, stats,
-    cap_pairs, get_present_poe, get_present_pstar, pair_color_map, short_pair,
+    cap_pairs, get_present_poe, get_present_co3, get_present_pstar, pair_color_map, short_pair,
     kde_pmf, traj_stats,
     hide_top_right, save_fig,
     load_all_pairs_gap, load_within_and,
 )
+
+
+_QUAL_MANIFOLD_COLORS = {
+    "prompt_a": "#C84C5B",
+    "prompt_b": "#2B6F97",
+    "monolithic": "#3B8D5B",
+    "monolithic_naive": "#4D9E8E",
+    "monolithic_natural": "#2A9D8F",
+    "poe": "#D9872B",
+    "co3": "#5B8E7D",
+    "pstar_sdipc": "#7A5CBA",
+    "pstar_co3_sdipc": "#4D9E8E",
+    "pstar_inv": "#6D597A",
+    "superdiff_fm_ode": "#B56576",
+    "pstar_z2t": "#A06CD5",
+}
+
+_QUAL_MANIFOLD_MARKERS = {
+    "prompt_a": "o",
+    "prompt_b": "s",
+    "monolithic": "D",
+    "monolithic_naive": "D",
+    "monolithic_natural": "D",
+    "poe": "^",
+    "co3": "P",
+    "pstar_sdipc": "v",
+    "pstar_co3_sdipc": "h",
+    "pstar_inv": "X",
+    "superdiff_fm_ode": "*",
+    "pstar_z2t": "X",
+}
+
+_QUAL_LABEL_OFFSETS = {
+    "prompt_a": (10, 10),
+    "prompt_b": (10, -12),
+    "monolithic": (-16, 12),
+    "monolithic_naive": (-16, 12),
+    "monolithic_natural": (-16, 12),
+    "poe": (-18, -12),
+    "co3": (12, 14),
+    "pstar_sdipc": (12, -16),
+    "pstar_co3_sdipc": (-18, 14),
+    "pstar_inv": (-18, 0),
+    "superdiff_fm_ode": (14, 10),
+    "pstar_z2t": (14, -12),
+}
+
+_QUAL_SECTION_HEADER_BBOX = {
+    "boxstyle": "round,pad=0.22",
+    "facecolor": "#F4F6F8",
+    "edgecolor": "#D7DEE8",
+    "linewidth": 0.8,
+    "alpha": 0.98,
+}
+
+
+def _qual_condition_color(cond: str) -> str:
+    return _QUAL_MANIFOLD_COLORS.get(cond, "#4C566A")
+
+
+def _qual_condition_marker(cond: str) -> str:
+    return _QUAL_MANIFOLD_MARKERS.get(cond, "o")
+
+
+def _qual_section_header(ax: plt.Axes, text: str, y: float = 1.02) -> None:
+    ax.text(
+        0.0,
+        y,
+        text,
+        transform=ax.transAxes,
+        ha="left",
+        va="bottom",
+        fontsize=8.0,
+        fontweight="bold",
+        color="#2A2F36",
+        bbox=_QUAL_SECTION_HEADER_BBOX,
+        clip_on=False,
+        zorder=10,
+    )
+
+
+def _style_qual_manifold_axis(ax: plt.Axes, method: str) -> None:
+    prefix = "MDS" if method == "mds" else "PC"
+    ax.set_facecolor("#FBFCFD")
+    ax.grid(True, color="#E1E7EF", linewidth=0.7, alpha=0.9)
+    ax.set_axisbelow(True)
+    ax.margins(x=0.12, y=0.14)
+    ax.set_xlabel(f"{prefix} 1", fontsize=9.0)
+    ax.set_ylabel(f"{prefix} 2", fontsize=9.0)
+    ax.tick_params(axis="both", labelsize=8.0, colors="#4C566A")
+    for spine in ax.spines.values():
+        spine.set_linewidth(0.9)
+        spine.set_color("#C7D0DB")
+
+
+def _qual_endpoint_is_crowded(cond: str, endpoints: dict[str, np.ndarray]) -> bool:
+    current = endpoints[cond]
+    others = [endpoints[name] for name in endpoints if name != cond]
+    if not others:
+        return False
+    all_points = np.vstack(list(endpoints.values()))
+    span = max(float(np.ptp(all_points[:, 0])), float(np.ptp(all_points[:, 1])), 1.0)
+    min_dist = min(float(np.linalg.norm(current - other)) for other in others)
+    return min_dist < 0.16 * span
+
+
+def _annotate_qual_endpoints(
+    ax: plt.Axes,
+    cond_names: list[str],
+    projected: dict[str, np.ndarray],
+    labels: dict[str, str],
+) -> None:
+    endpoints = {cond: projected[cond][-1] for cond in cond_names}
+    for cond in cond_names:
+        endpoint = endpoints[cond]
+        color = _qual_condition_color(cond)
+        crowded = _qual_endpoint_is_crowded(cond, endpoints)
+        arrowprops = None
+        if crowded:
+            arrowprops = {
+                "arrowstyle": "-",
+                "color": color,
+                "linewidth": 0.9,
+                "shrinkA": 2,
+                "shrinkB": 3,
+                "alpha": 0.9,
+            }
+        ax.annotate(
+            labels.get(cond, cond),
+            xy=(endpoint[0], endpoint[1]),
+            xytext=_QUAL_LABEL_OFFSETS.get(cond, (8, 8)),
+            textcoords="offset points",
+            ha="center",
+            va="center",
+            fontsize=7.8,
+            fontweight="bold",
+            color=color,
+            bbox={
+                "boxstyle": "round,pad=0.16",
+                "facecolor": "white",
+                "edgecolor": color,
+                "linewidth": 0.9,
+                "alpha": 0.96,
+            },
+            arrowprops=arrowprops,
+            zorder=7,
+        )
 
 
 # ===========================================================================
@@ -82,13 +229,16 @@ def plot_11(df_term, df_traj, out_dir, data_dir=None, **kw):
         return
 
     df_within = pd.DataFrame(raw)
+    if df_within.empty or "d_within_and" not in df_within.columns:
+        print("  Skipping plot 11: within_and_distances.json is empty or missing 'd_within_and' column.")
+        return
     within_vals = df_within["d_within_and"].values
 
-    # Core conditions only: mono AND, solo c₁, solo c₂ anchored to SuperDiff AND.
+    # Core conditions only: monolithic / solos against the active logical anchor.
     # p* stays in plots 17–19 which already skip gracefully when it is absent.
-    gap_conds = list(TERM_CONDITIONS) + get_present_poe(df_term)
+    gap_conds = list(TERM_CONDITIONS) + get_present_poe(df_term) + get_present_co3(df_term)
 
-    n_cols   = 1 + len(gap_conds)   # within-AND + gap conditions
+    n_cols   = 1 + len(gap_conds)   # within-anchor + gap conditions
     rng      = np.random.default_rng(42)
     WITHIN_COLOR = "#999999"
 
@@ -98,7 +248,7 @@ def plot_11(df_term, df_traj, out_dir, data_dir=None, **kw):
 
     fig, ax = plt.subplots(figsize=(2.8 * n_cols, 5.8))
 
-    # ---- Within-AND column (x = 0) ----
+    # ---- Within-anchor column (x = 0) ----
     x       = 0.0
     jitter  = rng.uniform(-0.18, 0.18, len(within_vals))
     ax.scatter(x + jitter, within_vals, color=WITHIN_COLOR, s=38, alpha=0.48,
@@ -133,7 +283,7 @@ def plot_11(df_term, df_traj, out_dir, data_dir=None, **kw):
                 ha="center", va="bottom", fontsize=9, color=c, fontweight="bold")
 
     # Axes
-    x_labels = ["within-AND\n(noise floor)"] + [TERM_LABEL[c] for c in gap_conds]
+    x_labels = ["within-anchor\n(noise floor)"] + [TERM_LABEL[c] for c in gap_conds]
     ax.set_xticks(range(n_cols))
     ax.set_xticklabels(x_labels, fontsize=10)
     ax.set_xlim(-0.6, n_cols - 0.4)
@@ -146,10 +296,10 @@ def plot_11(df_term, df_traj, out_dir, data_dir=None, **kw):
     n_seeds  = df_term["seed"].nunique()
     n_pairs  = df_term["pair"].nunique()
     ax.set_title(
-        "Plot 11 — Gap Validation: Per-Condition Distances vs Within-AND Noise Floor\n"
-        f"Grey = pairwise $\\left\\|z_T^{{\\mathrm{{AND}}}}(s)-z_T^{{\\mathrm{{AND}}}}(s')\\right\\|_2^2$  "
+        "Plot 11 — Gap Validation: Per-Condition Distances vs Within-Anchor Noise Floor\n"
+        f"Grey = pairwise $\\left\\|z_T^{{\\mathrm{{anchor}}}}(s)-z_T^{{\\mathrm{{anchor}}}}(s')\\right\\|_2^2$  "
         f"({n_within} seed-pairs from {n_pairs} concept pairs × {n_seeds} seeds).  "
-        f"Dashed line + band = within-AND mean ± 1 std.\n"
+        f"Dashed line + band = within-anchor mean ± 1 std.\n"
         "×N = gap/noise-floor ratio.  "
         "Ratios >> 1 confirm the composability gap is structural, not stochastic.",
         fontsize=11,
@@ -382,7 +532,7 @@ def plot_15(df_term, df_traj, out_dir, **kw):
         return
 
     pstar_conds    = present_pstar
-    baseline_conds = TERM_CONDITIONS + get_present_poe(df_term)
+    baseline_conds = TERM_CONDITIONS + get_present_poe(df_term) + get_present_co3(df_term)
     all_conds      = pstar_conds + baseline_conds
 
     all_vals = df_term[all_conds].values.flatten()
@@ -393,7 +543,9 @@ def plot_15(df_term, df_traj, out_dir, **kw):
 
     # p* sources — solid lines + light fill
     for cond in pstar_conds:
-        vals = df_term[cond].values
+        vals = df_term[cond].dropna().values
+        if len(vals) < 2:
+            continue
         dens = stats.gaussian_kde(vals, bw_method="scott")(x_grid)
         c    = TERM_COLOR[cond]
         ax.plot(x_grid, dens, color=c, label=TERM_LABEL[cond], lw=2.5, ls="-")
@@ -401,14 +553,16 @@ def plot_15(df_term, df_traj, out_dir, **kw):
 
     # Baseline conditions — dashed lines + lighter fill
     for cond in baseline_conds:
-        vals = df_term[cond].values
+        vals = df_term[cond].dropna().values
+        if len(vals) < 2:
+            continue
         dens = stats.gaussian_kde(vals, bw_method="scott")(x_grid)
         c    = TERM_COLOR[cond]
         ax.plot(x_grid, dens, color=c, label=TERM_LABEL[cond],
                 lw=2.0, ls="--", alpha=0.80)
         ax.fill_between(x_grid, dens, alpha=0.07, color=c)
 
-    ax.set_xlabel("Terminal distance to SuperDiff AND (per-element MSE)", fontsize=12)
+    ax.set_xlabel("Terminal distance to the logical anchor (per-element MSE)", fontsize=12)
     ax.set_ylabel("Density", fontsize=12)
     ax.set_title(
         f"Plot 15 — Terminal Distance Distribution Across Conditions  (N = {n} per condition)",
@@ -477,7 +631,7 @@ def plot_16(df_term, df_traj, out_dir, **kw):
     ax.set_ylabel(LABEL_D_t_MSE, fontsize=12)
     pstar_names = " / ".join(TRAJ_LABEL.get(c, c) for c in present_traj_pstar)
     ax.set_title(
-        "Plot 16 — p* Temporal Trajectory: Distance from AND over Denoising Steps\n"
+        "Plot 16 — p* Temporal Trajectory: Distance from the Logical Anchor over Denoising Steps\n"
         f"Solid = p* [{pstar_names}]  ·  Dashed = baseline(s)\n"
         f"All pairs + seeds pooled  (N = {n_pairs} × {n_seeds} = {n_pairs * n_seeds} per cond)  ·  "
         "Band = ±1 std  ·  inner band = 95 % CI",
@@ -504,7 +658,7 @@ def plot_17(df_term, df_traj, out_dir, **kw):
         return
 
     # p* columns first (in priority order), then baselines
-    baseline_conds = ["d_T_mono", "d_T_c1", "d_T_c2"] + get_present_poe(df_term)
+    baseline_conds = ["d_T_mono", "d_T_c1", "d_T_c2"] + get_present_poe(df_term) + get_present_co3(df_term)
     all_conds = present_pstar + baseline_conds
     rng       = np.random.default_rng(42)
     x_pos     = {c: float(i) for i, c in enumerate(all_conds)}
@@ -538,7 +692,7 @@ def plot_17(df_term, df_traj, out_dir, **kw):
     ax.set_xticklabels([TERM_LABEL[c] for c in all_conds], fontsize=10, rotation=15, ha="right")
     ax.set_xlim(-0.6, len(all_conds) - 0.4)
     ax.set_ylim(bottom=0, top=y_top)
-    ax.set_ylabel("Terminal distance to SuperDiff AND (per-element MSE)", fontsize=11)
+    ax.set_ylabel("Terminal distance to the logical anchor (per-element MSE)", fontsize=11)
     ax.grid(axis="y", alpha=0.25)
     hide_top_right(ax)
 
@@ -608,7 +762,7 @@ def plot_25(df_term, df_traj, out_dir, **kw):
                             fontsize=10, rotation=15, ha="right")
     ax_left.set_xlim(-0.6, len(strip_conds) - 0.4)
     ax_left.set_ylim(bottom=0, top=y_top)
-    ax_left.set_ylabel("Terminal distance to SuperDiff AND (per-element MSE)", fontsize=11)
+    ax_left.set_ylabel("Terminal distance to the logical anchor (per-element MSE)", fontsize=11)
     ax_left.set_title("Plot 17 — Terminal Distance by Condition", fontsize=12)
     ax_left.grid(axis="y", alpha=0.25)
     hide_top_right(ax_left)
@@ -632,21 +786,25 @@ def plot_25(df_term, df_traj, out_dir, **kw):
     n = len(df_term)
 
     for cond in present_pstar:
-        vals = df_term[cond].values
+        vals = df_term[cond].dropna().values
+        if len(vals) < 2:
+            continue
         dens = stats.gaussian_kde(vals, bw_method="scott")(x_grid)
         c = TERM_COLOR[cond]
         ax_right.plot(x_grid, dens, color=c, label=TERM_LABEL[cond], lw=2.5, ls="-")
         ax_right.fill_between(x_grid, dens, alpha=0.12, color=c)
 
     for cond in baseline_conds:
-        vals = df_term[cond].values
+        vals = df_term[cond].dropna().values
+        if len(vals) < 2:
+            continue
         dens = stats.gaussian_kde(vals, bw_method="scott")(x_grid)
         c = TERM_COLOR[cond]
         ax_right.plot(x_grid, dens, color=c, label=TERM_LABEL[cond],
                       lw=2.0, ls="--", alpha=0.80)
         ax_right.fill_between(x_grid, dens, alpha=0.07, color=c)
 
-    ax_right.set_xlabel("Terminal distance to SuperDiff AND (per-element MSE)", fontsize=11)
+    ax_right.set_xlabel("Terminal distance to the logical anchor (per-element MSE)", fontsize=11)
     ax_right.set_ylabel("Density", fontsize=11)
     ax_right.set_title(
         f"Plot 15 — Terminal Distance Distribution Across Conditions  (N = {n} per condition)",
@@ -744,13 +902,13 @@ def plot_18(df_term, df_traj, out_dir, data_dir=None, **kw):
     ax.set_xticks(x_base)
     ax.set_xticklabels([short_pair(p) for p in pairs],
                        fontsize=10, rotation=45, ha="right")
-    ax.set_ylabel("CLIP cosine similarity to AND  (↑ better)", fontsize=11)
+    ax.set_ylabel("CLIP cosine similarity to the logical anchor  (↑ better)", fontsize=11)
     ax.set_ylim(bottom=max(0, min(all_clip_vals) * 0.90),
                 top=min(1.0, max(all_clip_vals) * 1.08))
     pstar_names = " / ".join(TERM_LABEL[pc] for pc, _ in present_gap_keys)
     ax.set_title(
-        f"Plot 18 — CLIP Similarity to AND: [{pstar_names}]  vs Monolithic\n"
-        "Higher = generated image closer to SuperDiff-AND in CLIP space.\n"
+        f"Plot 18 — CLIP Similarity to the Logical Anchor: [{pstar_names}]  vs Monolithic\n"
+        "Higher = generated image closer to the active logical anchor in CLIP space.\n"
         "Dashed lines = per-source mean.",
         fontsize=11,
     )
@@ -843,7 +1001,7 @@ def plot_19(df_term, df_traj, out_dir, **kw):
 
 
 # ===========================================================================
-# Plots 27–28 — Multi-pair grid reconstructions with p* VLM (legacy Z2T optional).
+# Plots 27–28 — Multi-pair grid reconstructions with selected p* sources.
 #
 # Data source:
 #   pairs/<pair_slug>/grid_assets.json
@@ -855,19 +1013,27 @@ _GRID_COL_ORDER = [
     "prompt_b",
     "monolithic",
     "poe",
+    "co3",
+    "pstar_sdipc",
+    "pstar_co3_sdipc",
+    "pstar_inv",
     "superdiff_fm_ode",
-    "pstar_vlm",
     "pstar_z2t",
+    "pstar_vlm",
 ]
 
 _GRID_COL_HEADER = {
     "prompt_a":         "SD3.5 A",
     "prompt_b":         "SD3.5 B",
     "monolithic":       "SD3.5 A∧B",
-    "poe":              "PoE A×B",
+    "poe":              "PoE",
+    "co3":              "CO3",
+    "pstar_sdipc":      "PoE p*",
+    "pstar_co3_sdipc":  "CO3 p*",
+    "pstar_inv":        "p* CLIP inverter",
     "superdiff_fm_ode": "SuperDiff A∧B",
-    "pstar_vlm":        "p* VLM",
     "pstar_z2t":        "p* Z2T",
+    "pstar_vlm":        "p* VLM (legacy)",
 }
 
 
@@ -882,12 +1048,15 @@ def _resolve_grid_columns_from_filter(pstar_filter):
         return list(_GRID_COL_ORDER)
 
     pstar_grid_map = {
-        "d_T_pstar_vlm": "pstar_vlm",
-        "d_T_pstar_z2t": "pstar_z2t",
+        "d_T_pstar_sdipc": ("pstar_sdipc", "pstar_co3_sdipc"),
+        "d_T_pstar": ("pstar_inv",),
+        "d_T_pstar_inv": ("pstar_inv",),
+        "d_T_pstar_z2t": ("pstar_z2t",),
+        "d_T_pstar_vlm": ("pstar_vlm",),
     }
-    allowed_pstar_grid = {
-        pstar_grid_map[c] for c in pstar_filter if c in pstar_grid_map
-    }
+    allowed_pstar_grid = set()
+    for col in pstar_filter:
+        allowed_pstar_grid.update(pstar_grid_map.get(col, ()))
     return [
         c for c in _GRID_COL_ORDER
         if (not c.startswith("pstar_")) or (c in allowed_pstar_grid)
@@ -921,6 +1090,15 @@ def _filter_available_grid_columns(assets: list, grid_cols: list, *, mode: str) 
         dropped_labels = ", ".join(_GRID_COL_HEADER.get(col_key, col_key) for col_key in dropped)
         print(f"  Hiding unavailable grid columns: {dropped_labels}")
     return kept
+
+
+def _grid_title_suffix(grid_cols: list[str]) -> str:
+    pstar_cols = [col for col in grid_cols if col.startswith("pstar_")]
+    if not pstar_cols:
+        return ""
+    if pstar_cols == ["pstar_sdipc"]:
+        return " with SD-IPC p*"
+    return " with p* sources"
 
 
 def _apply_monolithic_baseline_to_grid_asset(payload: dict, mode: str) -> dict:
@@ -974,11 +1152,21 @@ def _load_grid_assets(
         payload["_pair_dir"] = str(pair_dir)
         assets.append(payload)
 
+    group_rank = {group_key: idx for idx, group_key in enumerate(GROUP_ORDER)}
+
     def _sort_key(asset):
+        is_repr = bool(asset.get("is_representative_pair"))
+        taxonomy_group_key = asset.get("taxonomy_group_key")
+        taxonomy_rank = group_rank.get(taxonomy_group_key, 10_000)
         idx = asset.get("pair_index")
         if isinstance(idx, int):
-            return (0, idx, "")
-        return (1, 0, " + ".join(asset.get("pair", [])))
+            return (0 if is_repr else 1, taxonomy_rank, idx, "")
+        return (
+            0 if is_repr else 1,
+            taxonomy_rank,
+            10_000,
+            " + ".join(asset.get("pair", [])),
+        )
 
     assets.sort(key=_sort_key)
     if max_pairs is not None:
@@ -1060,15 +1248,6 @@ def _plot_manifold_grid_from_projected(
         squeeze=False,
     )
 
-    shared_n_steps = max(int(item["n_steps"]) for item in selected)
-    norm = Normalize(vmin=0, vmax=max(shared_n_steps - 1, 1))
-    cmap_name = "viridis"
-    end_markers = ["o", "s", "D", "^", "v", "P", "X", "*"]
-    end_colors = [
-        "#e63946", "#457b9d", "#2a9d8f", "#e9c46a",
-        "#f4a261", "#8d99ae", "#ef476f", "#118ab2",
-    ]
-
     for idx, item in enumerate(selected):
         row_idx = idx // n_cols
         col_idx = idx % n_cols
@@ -1082,89 +1261,124 @@ def _plot_manifold_grid_from_projected(
             ax.axis("off")
             continue
 
-        for cond_idx, cond in enumerate(cond_names):
+        for cond in cond_names:
             pts = projected[cond]
-            if len(pts) >= 2:
-                points = pts.reshape(-1, 1, 2)
-                segments = np.concatenate([points[:-1], points[1:]], axis=1)
-                lc = LineCollection(
-                    segments,
-                    cmap=cm.get_cmap(cmap_name),
-                    norm=norm,
-                    linewidths=2.0,
-                    alpha=0.9,
-                )
-                lc.set_array(np.arange(len(segments)))
-                ax.add_collection(lc)
+            color = _qual_condition_color(cond)
+            marker = _qual_condition_marker(cond)
 
-            marker = end_markers[cond_idx % len(end_markers)]
-            ep_color = end_colors[cond_idx % len(end_colors)]
+            if len(pts) >= 2:
+                ax.plot(
+                    pts[:, 0],
+                    pts[:, 1],
+                    color=color,
+                    linewidth=2.15,
+                    alpha=0.95,
+                    solid_capstyle="round",
+                    zorder=2,
+                )
+                tail = pts[-3:] if len(pts) >= 3 else pts[-2:]
+                ax.plot(
+                    tail[:, 0],
+                    tail[:, 1],
+                    color=color,
+                    linewidth=3.0,
+                    alpha=1.0,
+                    solid_capstyle="round",
+                    zorder=3,
+                )
+                if np.linalg.norm(pts[-1] - pts[-2]) > 0:
+                    ax.annotate(
+                        "",
+                        xy=(pts[-1, 0], pts[-1, 1]),
+                        xytext=(pts[-2, 0], pts[-2, 1]),
+                        arrowprops={
+                            "arrowstyle": "-|>",
+                            "color": color,
+                            "linewidth": 1.5,
+                            "shrinkA": 0,
+                            "shrinkB": 0,
+                            "mutation_scale": 10,
+                        },
+                        zorder=4,
+                    )
+
+            mid_idx = max(1, len(pts) // 2)
             ax.plot(
-                pts[-1, 0], pts[-1, 1],
-                marker=marker, color=ep_color, linestyle="none",
-                markersize=9, markeredgecolor="black", markeredgewidth=0.9,
+                pts[mid_idx, 0],
+                pts[mid_idx, 1],
+                marker=marker,
+                linestyle="none",
+                markersize=4.8,
+                markerfacecolor="white",
+                markeredgecolor=color,
+                markeredgewidth=1.1,
+                zorder=5,
+            )
+            ax.plot(
+                pts[-1, 0],
+                pts[-1, 1],
+                marker=marker,
+                color=color,
+                linestyle="none",
+                markersize=7.6,
+                markeredgecolor="white",
+                markeredgewidth=0.8,
                 zorder=6,
             )
 
         origin = projected[cond_names[0]][0]
-        ax.plot(origin[0], origin[1], "ko", markersize=5, zorder=5)
+        ax.plot(
+            origin[0],
+            origin[1],
+            marker="o",
+            color="black",
+            linestyle="none",
+            markersize=5.4,
+            markeredgecolor="white",
+            markeredgewidth=0.9,
+            zorder=6,
+        )
         ax.annotate(
             r"$x_T$",
             xy=(origin[0], origin[1]),
-            fontsize=10,
+            fontsize=8.0,
             fontweight="bold",
             textcoords="offset points",
             xytext=(-11, -10),
+            bbox={
+                "boxstyle": "round,pad=0.14",
+                "facecolor": "white",
+                "edgecolor": "#B8C2CC",
+                "linewidth": 0.8,
+                "alpha": 0.94,
+            },
+            zorder=7,
         )
 
-        ax_prefix = "MDS" if projection_method == "mds" else "PC"
-        ax.autoscale()
-        ax.set_xlabel(f"{ax_prefix} 1", fontsize=11)
-        ax.set_ylabel(f"{ax_prefix} 2", fontsize=11)
-        ax.grid(True, alpha=0.3)
-        ax.tick_params(axis="both", labelsize=10)
+        _style_qual_manifold_axis(ax, projection_method)
+        _annotate_qual_endpoints(ax, cond_names, projected, labels)
+        _qual_section_header(ax, "Shared-noise manifold", y=1.02)
 
+        panel_title = item.get("panel_title") or f"Pair {idx + 1}"
         if prompt_key_map:
-            key_text = "\n".join([f"{k} = {v}" for k, v in prompt_key_map.items()])
-            ax.set_title(key_text, fontsize=12, pad=6)
-        else:
-            ax.set_title(f"Pair {idx + 1}", fontsize=12, pad=6)
-
-        legend_handles = []
-        for cond_idx, cond in enumerate(cond_names):
-            marker = end_markers[cond_idx % len(end_markers)]
-            ep_color = end_colors[cond_idx % len(end_colors)]
-            legend_handles.append(
-                Line2D(
-                    [0], [0],
-                    color=cm.get_cmap(cmap_name)(0.5), lw=2.0,
-                    marker=marker, markerfacecolor=ep_color, markeredgecolor="black",
-                    markersize=7,
-                    label=labels.get(cond, cond),
-                )
-            )
-        ax.legend(handles=legend_handles, loc="best", fontsize=9, framealpha=0.9)
+            key_text = " x ".join(prompt_key_map.get(k, k) for k in ("A", "B") if k in prompt_key_map)
+            if key_text:
+                panel_title = f"{panel_title}\n({key_text})"
+        ax.set_title(panel_title, fontsize=10.4, fontweight="bold", pad=14)
 
     for idx in range(n_plots, n_rows * n_cols):
         row_idx = idx // n_cols
         col_idx = idx % n_cols
         axes[row_idx][col_idx].axis("off")
 
-    sm = cm.ScalarMappable(cmap=cmap_name, norm=norm)
-    sm.set_array([])
-    fig.tight_layout(rect=(0.0, 0.0, 0.89, 0.98))
-    cax = fig.add_axes([0.91, 0.14, 0.018, 0.74])
-    cbar = fig.colorbar(sm, cax=cax)
-    cbar.set_label("Time (steps)", fontsize=11)
-    cbar.ax.tick_params(labelsize=10)
-
-    fig.savefig(output_path, dpi=200, bbox_inches="tight")
+    fig.tight_layout(pad=1.2, rect=(0.0, 0.0, 1.0, 0.98))
+    fig.savefig(output_path, dpi=220, bbox_inches="tight")
     plt.close(fig)
     print(f"  → {output_path}")
 
 
 def plot_27(df_term, df_traj, out_dir, data_dir=None, **kw):
-    """Decoded image grid with extra p* columns (VLM; legacy Z2T optional)."""
+    """Decoded image grid with selected p* columns."""
     if data_dir is None:
         print("  Skipping plot 27: data_dir not provided.")
         return
@@ -1198,6 +1412,7 @@ def plot_27(df_term, df_traj, out_dir, data_dir=None, **kw):
     for row_idx, asset in enumerate(assets):
         pair_dir = Path(asset["_pair_dir"])
         img_map = asset.get("decoded_image_paths", {})
+        cond_labels = asset.get("condition_labels", {})
         prompt_key_map = asset.get("prompt_key_map", {})
 
         for col_idx, col_key in enumerate(grid_cols):
@@ -1219,7 +1434,12 @@ def plot_27(df_term, df_traj, out_dir, data_dir=None, **kw):
                         transform=ax.transAxes, fontsize=11, color="#888888")
 
             if row_idx == 0:
-                ax.set_title(_GRID_COL_HEADER[col_key], fontsize=14, fontweight="bold", pad=7)
+                ax.set_title(
+                    cond_labels.get(col_key, _GRID_COL_HEADER.get(col_key, col_key)),
+                    fontsize=14,
+                    fontweight="bold",
+                    pad=7,
+                )
 
         if prompt_key_map:
             key_text = "\n".join([f"{k} = {v}" for k, v in prompt_key_map.items()])
@@ -1231,10 +1451,8 @@ def plot_27(df_term, df_traj, out_dir, data_dir=None, **kw):
                 linespacing=1.17, color="#111111", clip_on=False,
             )
 
-    has_pstar = any(c.startswith("pstar_") for c in grid_cols)
     fig.suptitle(
-        "Plot 27 — Decoded Image Grid"
-        + (" with p* Sources (VLM; legacy Z2T optional)" if has_pstar else ""),
+        "Plot 27 — Decoded Image Grid" + _grid_title_suffix(grid_cols),
         fontsize=14,
     )
     fig.tight_layout(pad=0.5, rect=(0.0, 0.0, 1.0, 0.96))
@@ -1243,7 +1461,7 @@ def plot_27(df_term, df_traj, out_dir, data_dir=None, **kw):
 
 
 def plot_28(df_term, df_traj, out_dir, data_dir=None, **kw):
-    """Trajectory manifold grid with extra p* trajectories (VLM; legacy Z2T optional)."""
+    """Trajectory manifold grid with selected p* trajectories."""
     if data_dir is None:
         print("  Skipping plot 28: data_dir not provided.")
         return
@@ -1271,6 +1489,7 @@ def plot_28(df_term, df_traj, out_dir, data_dir=None, **kw):
         pair_dir = Path(asset["_pair_dir"])
         proj_method = asset.get("projection_method", "mds")
         prompt_key_map = asset.get("prompt_key_map", {})
+        cond_labels = asset.get("condition_labels", {})
         projected = {}
         labels = {}
         n_steps = 1
@@ -1292,7 +1511,7 @@ def plot_28(df_term, df_traj, out_dir, data_dir=None, **kw):
             if arr.ndim != 2:
                 continue
             flat_by_cond[cond] = arr
-            labels[cond] = _GRID_COL_HEADER.get(cond, cond)
+            labels[cond] = cond_labels.get(cond, _GRID_COL_HEADER.get(cond, cond))
 
         if flat_by_cond:
             projected, n_steps = _project_flat_trajectories(flat_by_cond, method=proj_method)
@@ -1314,7 +1533,10 @@ def plot_28(df_term, df_traj, out_dir, data_dir=None, **kw):
                 if pts.ndim != 2 or pts.shape[1] != 2:
                     continue
                 projected[cond] = pts
-                labels[cond] = labels_raw.get(cond, _GRID_COL_HEADER.get(cond, cond))
+                labels[cond] = labels_raw.get(
+                    cond,
+                    cond_labels.get(cond, _GRID_COL_HEADER.get(cond, cond)),
+                )
 
         if projected:
             pair_payload.append({
@@ -1322,6 +1544,7 @@ def plot_28(df_term, df_traj, out_dir, data_dir=None, **kw):
                 "projected": projected,
                 "labels": labels,
                 "n_steps": n_steps,
+                "panel_title": asset.get("taxonomy_group_label") or asset.get("pair_slug"),
             })
 
     if not pair_payload:

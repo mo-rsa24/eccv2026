@@ -72,26 +72,22 @@ python scripts/measure_composability_gap.py \
     --seeds 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
 
 # Add p* sources incrementally with --merge:
+python scripts/measure_composability_gap.py --pstar-source sdipc  --merge [flags]
 python scripts/measure_composability_gap.py --pstar-source pez    --merge [flags]
-python scripts/measure_composability_gap.py --pstar-source vlm    --merge [flags]
 python scripts/measure_composability_gap.py --pstar-source z2t    --merge [flags]
 
 # Mean-anchor sensitivity check (reviewer robustness):
 python scripts/measure_composability_gap.py --anchor mean [flags]
-
-# If you hit CUDA OOM on VLM runs, offload BLIP-2 captioning to CPU:
-python scripts/measure_composability_gap.py --pstar-source vlm --vlm-device cpu [flags]
 ```
 
 **Key flags:**
 
 | Flag | Description |
 |------|-------------|
-| `--pstar-source {inverter,pez,vlm,z2t,all}` | Which p* inversion method to run |
+| `--pstar-source {inverter,sdipc,pez,z2t,all}` | Which p* inversion method to run |
 | `--merge` | Accumulate new columns into existing JSONs (don't overwrite) |
 | `--anchor {seed,mean}` | Per-seed paired (default) or average-AND anchor (sensitivity check) |
 | `--pez-tokens N` | Number of PEZ soft token slots (default 16) |
-| `--vlm-model-id` | BLIP-2 model (default `Salesforce/blip2-opt-2.7b`) |
 
 ---
 
@@ -155,6 +151,36 @@ Trajectory-level evidence suite. Reads Phase 0 outputs.
 ```bash
 python scripts/plot_trajectory_analysis.py \
     --data-dir experiments/trajectory_dynamics/<YYYYMMDD_HHMMSS>
+```
+
+### [VIS] `plot_multiseed_trajectory_grid.py`  ✅ Active
+Multi-seed trajectory visualization. Assembles a composite figure showing seed-to-seed
+variability for a single taxonomy pair. Left panel: jointly projected 2D manifold of all
+seed trajectories (color and opacity-coded by seed). Right section: N vertical seed blocks,
+each with 4 condition-specific trajectories (top) and decoded image strip (bottom).
+
+**Workflow:**
+1. Generate per-seed data with `run_taxonomy_qualitative_sdxl.py` (one invocation per seed)
+2. Assemble multi-seed grid with this script
+
+```bash
+# Step 1: Generate per-seed data
+for seed in 0 7 13 42 99; do
+  python scripts/run_taxonomy_qualitative_sdxl.py \
+      --pairs group1_cooccurrence/a_butterfly__x__a_flower_meadow \
+      --seed $seed \
+      --output-dir experiments/eccv2026/multiseed/butterfly_x_flower/seed_${seed}
+done
+
+# Step 2: Assemble grid
+python scripts/plot_multiseed_trajectory_grid.py \
+    --pair-dirs \
+        experiments/eccv2026/multiseed/butterfly_x_flower/seed_0/group1_cooccurrence/a_butterfly__x__a_flower_meadow \
+        experiments/eccv2026/multiseed/butterfly_x_flower/seed_7/group1_cooccurrence/a_butterfly__x__a_flower_meadow \
+        experiments/eccv2026/multiseed/butterfly_x_flower/seed_13/group1_cooccurrence/a_butterfly__x__a_flower_meadow \
+        experiments/eccv2026/multiseed/butterfly_x_flower/seed_42/group1_cooccurrence/a_butterfly__x__a_flower_meadow \
+        experiments/eccv2026/multiseed/butterfly_x_flower/seed_99/group1_cooccurrence/a_butterfly__x__a_flower_meadow \
+    --output experiments/eccv2026/multiseed/butterfly_x_flower/multiseed_grid.png
 ```
 
 ### [VIS-phase1] `aggregate_phase1_taxonomy_study.py` + `plot_phase1_taxonomy_figures.py`  ✅ Active

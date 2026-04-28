@@ -220,11 +220,11 @@ eccv2026/
 │   │           │       │   ├── sd35_c1_only.png
 │   │           │       │   ├── sd35_c2_only.png
 │   │           │       │   ├── sd35_pstar.png          (inverter)
-│   │           │       │   ├── sd35_pstar_vlm.png      (--pstar-source vlm)
+│   │           │       │   ├── sd35_pstar_sdipc.png    (--pstar-source sdipc)
 │   │           │       │   └── comparison_grid.png
 │   │           │       └── trajectories/  # Per-pair trajectory plots
 │   │           │           ├── trajectory_pca.png
-│   │           │           └── trajectory_pca_vlm.png  (--pstar-source vlm)
+│   │           │           └── trajectory_pca_sdipc.png  (--pstar-source sdipc)
 │   │           └── figures/               # plot_gap_analysis.py output (plots 00–22)
 │   ├── composition_analysis_*/    # Earlier composition analysis runs
 │   ├── eccv2026/                  # Structured ablation/guidance runs
@@ -280,7 +280,7 @@ The pipeline has five ordered phases. All examples assume you are in the `eccv20
 | Path | Phases required | p* source |
 |------|-----------------|-----------|
 | **Inverter path** (full) | 0 → 1 → 2 → 3 → 4 → plots | `--pstar-source inverter` — needs trained $f_\theta$ |
-| **Training-free path** | 0 → 3 → 4 → plots | `--pstar-source pez / vlm / z2t` — no checkpoint needed |
+| **Training-free path** | 0 → 3 → 4 → plots | `--pstar-source sdipc / pez / z2t` — no checkpoint needed |
 
 Phases 1 and 2 exist solely to produce the trained inverter checkpoint. Skip them if you are not using `--pstar-source inverter`.
 
@@ -350,7 +350,7 @@ python scripts/trajectory_dynamics_experiment.py \
 
 ---
 
-### Phase 1 — Inverter Training Data  *(inverter path only — skip if using pez / vlm / z2t)*
+### Phase 1 — Inverter Training Data  *(inverter path only — skip if using sdipc / pez / z2t)*
 
 **Script:** `scripts/generate_inversion_training_data.py`
 
@@ -374,7 +374,7 @@ python scripts/generate_inversion_training_data.py \
 
 ---
 
-### Phase 2 — Train the Inverter  *(inverter path only — skip if using pez / vlm / z2t)*
+### Phase 2 — Train the Inverter  *(inverter path only — skip if using sdipc / pez / z2t)*
 
 **Script:** `scripts/train_inverter.py`
 
@@ -438,7 +438,7 @@ experiments/inversion/gap_analysis/small_20260302_143000/
         sd35_monolithic.png
         sd35_c1_only.png  sd35_c2_only.png
         sd35_pstar.png            (inverter path)
-        sd35_pstar_vlm.png        (--pstar-source vlm)
+        sd35_pstar_sdipc.png      (--pstar-source sdipc)
         comparison_grid.png
       trajectories/               # per-pair trajectory PCA/MDS plots
         trajectory_pca.png
@@ -455,9 +455,9 @@ To visualize:
 **Quick iteration (small regime — no checkpoint needed):**
 
 ```bash
-# Training-free baseline — VLM caption p* source, small regime
+# Training-free baseline — SD-IPC p* source, small regime
 python scripts/measure_composability_gap.py \
-    --pstar-source vlm \
+    --pstar-source sdipc \
     --regime small \
     --steps 50 --guidance 4.5 --image-size 512 --dtype bfloat16
 # → writes to experiments/inversion/gap_analysis/small_<timestamp>/
@@ -467,7 +467,7 @@ python scripts/measure_composability_gap.py \
 
 ```bash
 # Step 1 — run each source separately; use --merge to accumulate into the same dir
-python scripts/measure_composability_gap.py --pstar-source vlm --regime medium \
+python scripts/measure_composability_gap.py --pstar-source sdipc --regime medium \
     --steps 50 --guidance 4.5 --dtype bfloat16
 # note the printed output dir, e.g. medium_20260302_143000, then:
 python scripts/measure_composability_gap.py --pstar-source pez --regime medium \
@@ -486,7 +486,7 @@ python scripts/measure_composability_gap.py \
     --regime medium \
     --steps 50 --guidance 4.5 --dtype float16
 # Step 2: add training-free sources into the same run dir
-python scripts/measure_composability_gap.py --pstar-source vlm --regime medium \
+python scripts/measure_composability_gap.py --pstar-source sdipc --regime medium \
     --output-dir experiments/inversion/gap_analysis/medium_<timestamp> --merge
 python scripts/measure_composability_gap.py --pstar-source pez --regime medium \
     --output-dir experiments/inversion/gap_analysis/medium_<timestamp> --merge
@@ -497,7 +497,7 @@ python scripts/measure_composability_gap.py --pstar-source z2t --regime medium \
 **ECCV paper run (large regime):**
 
 ```bash
-python scripts/measure_composability_gap.py --pstar-source vlm --regime large \
+python scripts/measure_composability_gap.py --pstar-source sdipc --regime large \
     --steps 50 --guidance 4.5 --dtype bfloat16
 # then --merge the remaining sources into the same dir as above
 ```
@@ -658,7 +658,7 @@ python scripts/plot_gap_analysis.py \
 # Show only specific p* sources in baseline plots 00–10 (all plots 11–22 always show all):
 python scripts/plot_gap_analysis.py \
     --data-dir experiments/inversion/gap_analysis/<regime>_<timestamp> \
-    --pstar-sources vlm pez    # show VLM and PEZ only in plots 00–10
+    --pstar-sources sdipc pez    # show SD-IPC and PEZ only in plots 00–10
 python scripts/plot_gap_analysis.py \
     --data-dir experiments/inversion/gap_analysis/<regime>_<timestamp> \
     --pstar-sources none        # hide all p* from baseline plots
@@ -673,9 +673,9 @@ python scripts/plot_gap_analysis.py \
 | Flag | Source | Needs `--ckpt`? | Method |
 |------|--------|:--------------:|--------|
 | `--pstar-source inverter` *(default)* | $p^*$ (CLIP inverter) | **Yes** | Trained MLP $f_\theta$: CLIP image → SD3.5 conditioning |
+| `--pstar-source sdipc` | $p^*$ (SD-IPC) | No | Closed-form CLIP pseudo-inverse projection into SD3.5 conditioning space |
 | `--pstar-source pez` | $p^*$ (token opt.) | No | PEZ: gradient STE over discrete token embeddings |
 | `--pstar-source z2t` | $p^*$ (Zero2Text) | No | Ridge regression in CLIP embedding space (training-free) |
-| `--pstar-source vlm` | $p^*$ (VLM caption) | No | BLIP-2 caption → SD3.5 regeneration |
 | `--anchor mean` | Sensitivity check | — | Average AND anchor; adds within-AND variance; use for reviewer robustness |
 
 ### Trajectory analysis suite — 14 plots  `[VIS]`
@@ -723,16 +723,16 @@ and are no longer part of the active pipeline:
 It shows all p* sources alongside the baselines in a pooled strip chart:
 
 ```
-d_T^{within-AND}  <  d_T^{p*_vlm}  ≤  d_T^{p*_pez}  ≤  d_T^{p*_inv}  <  d_T^{mono}  ≈  d_T^{c1}  ≈  d_T^{c2}
+d_T^{within-AND}  <  d_T^{p*_{sdipc}}  ≤  d_T^{p*_{pez}}  ≤  d_T^{p*_{inv}}  <  d_T^{mono}  ≈  d_T^{c1}  ≈  d_T^{c2}
   │                       │                   │                │               │
-  └── AND's own        └── VLM            └── token        └── trained    └── best naive
-      variance             caption             optimisation     inverter        baseline
+  └── AND's own        └── closed-form    └── token        └── trained    └── best naive
+      variance             SD-IPC             optimisation     inverter        baseline
 ```
 
 If this ordering holds:
 - **Inversion partially works**: all p* sources sit between within-AND and mono
 - **Gap is structural**: $d_T^{p^*} > d_T^{\text{within-AND}}$ means AND is not fully reproducible by any single prompt
-- **Language ceiling**: if VLM (most expressive) does not reach within-AND, the gap is outside the text manifold
+- **Language ceiling**: if even SD-IPC and other prompt-recovery baselines do not reach within-AND, the gap is outside the text manifold
 
 **Plot 22** (expressiveness ladder) is the *falsification figure* for the text-manifold claim.
 Jeffrey's divergence $J(p^*, \text{within-AND})$ plotted against p* method rank shows whether

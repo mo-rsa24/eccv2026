@@ -35,6 +35,10 @@ def get_sd_models(
     _st = {"use_safetensors": True} if _TRANSFORMERS_SAFETENSORS else {}
 
     if is_sdxl:
+        # SDXL VAEs are numerically unstable in fp16 during decode and can yield
+        # NaNs / all-black images. Keep the denoiser in fp16 but upcast the VAE.
+        if getattr(vae.config, "force_upcast", False) and vae.dtype != torch.float32:
+            vae = vae.to(dtype=torch.float32)
         text_encoder = CLIPTextModel.from_pretrained(
             model_id, subfolder="text_encoder", torch_dtype=dtype, **_st
         ).to(device)
@@ -201,14 +205,17 @@ def get_sd3_text_embedding(
 
 @torch.no_grad()
 def get_image(vae, latents, nrow, ncol):
-    # Ensure latents are same dtype as VAE
-    latents = latents.to(dtype=vae.dtype)
+    # Decode on the same device/dtype as the VAE to avoid CPU/CUDA mismatches.
+    vae_device = next(vae.parameters()).device
+    if getattr(vae.config, "force_upcast", False) and vae.dtype != torch.float32:
+        vae = vae.to(dtype=torch.float32)
+    latents = latents.to(device=vae_device, dtype=vae.dtype)
 
     # Ensure latents have batch dimension
     if latents.ndim == 3:
         latents = latents.unsqueeze(0)
 
-    shift_factor = getattr(vae.config, "shift_factor", 0.0)
+    shift_factor = getattr(vae.config, "shift_factor", None) or 0.0
     image = vae.decode(latents / vae.config.scaling_factor + shift_factor, return_dict=False)[0]
     image = (image / 2 + 0.5).clamp(0, 1)
     # Don't squeeze! Keep batch dimension for permute

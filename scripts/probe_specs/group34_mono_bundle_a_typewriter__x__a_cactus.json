@@ -1,0 +1,52 @@
+{
+  "mono": [
+    {
+      "probe": "a_present",
+      "question": "Is there a typewriter in the image? Answer yes or no.",
+      "positive": true,
+      "component": "cue_presence"
+    },
+    {
+      "probe": "b_present",
+      "question": "Is there a cactus in the image? Answer yes or no.",
+      "positive": true,
+      "component": "cue_presence"
+    },
+    {
+      "probe": "distinct_entities",
+      "question": "Are there two distinct things in the image, one a typewriter and one a cactus, rather than a single merged object? Answer yes or no.",
+      "positive": true,
+      "component": "joint"
+    },
+    {
+      "probe": "both_present",
+      "question": "Does the image show both a typewriter and a cactus at the same time? Answer yes or no.",
+      "positive": true,
+      "component": "joint"
+    },
+    {
+      "probe": "merged_or_absorbed",
+      "question": "Is one of a typewriter or a cactus merged into or absorbed by the other, rather than appearing separately? Answer yes or no.",
+      "positive": false,
+      "component": "anti_collapse"
+    },
+    {
+      "probe": "one_missing",
+      "question": "Is one of a typewriter or a cactus missing from the image? Answer yes or no.",
+      "positive": false,
+      "component": "anti_omission"
+    },
+    {
+      "probe": "dominance_failure",
+      "question": "Does one concept dominate the image so strongly that the other is not independently realized as a typewriter and a cactus? Answer yes or no.",
+      "positive": false,
+      "component": "anti_collapse"
+    },
+    {
+      "probe": "hybrid_object",
+      "question": "Does the image depict a single fused or hybrid object combining a typewriter and a cactus? Answer yes or no.",
+      "positive": false,
+      "component": "anti_hybrid"
+    }
+  ]
+}

@@ -1,0 +1,1063 @@
+{
+  "run_manifest_version": 2,
+  "model_family": "sdxl",
+  "created_at": "2026-04-14T02:02:11.197781",
+  "output_dir": "/home-mscluster/mmolefe/Playground/PhD/eccv2026",
+  "layout": "multi_seed",
+  "source_roster_manifest": "experiments/eccv2026/sdxl_screening/sdxl_paper_roster.json",
+  "model_id": "stabilityai/stable-diffusion-xl-base-1.0",
+  "num_inference_steps": 50,
+  "guidance_scale": 7.5,
+  "projection": "mds",
+  "worker_index": 1,
+  "num_workers": 2,
+  "gpu_id": 1,
+  "device": "auto",
+  "height": 1024,
+  "width": 1024,
+  "seeds": [
+    42,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23
+  ],
+  "grid_seed": 42,
+  "requested_pair_count": 60,
+  "worker_pair_count": 30,
+  "worker_record_count": 720,
+  "all_requested_pairs": [
+    {
+      "taxonomy_group_key": "group1_cooccurrence",
+      "pair": [
+        "a butterfly",
+        "a flower meadow"
+      ],
+      "qualitative_pair_slug": "a_butterfly__x__a_flower_meadow"
+    },
+    {
+      "taxonomy_group_key": "group1_cooccurrence",
+      "pair": [
+        "a camel",
+        "a desert landscape"
+      ],
+      "qualitative_pair_slug": "a_camel__x__a_desert_landscape"
+    },
+    {
+      "taxonomy_group_key": "group1_cooccurrence",
+      "pair": [
+        "a deer",
+        "a forest clearing"
+      ],
+      "qualitative_pair_slug": "a_deer__x__a_forest_clearing"
+    },
+    {
+      "taxonomy_group_key": "group1_cooccurrence",
+      "pair": [
+        "a dolphin",
+        "an ocean wave"
+      ],
+      "qualitative_pair_slug": "a_dolphin__x__an_ocean_wave"
+    },
+    {
+      "taxonomy_group_key": "group1_cooccurrence",
+      "pair": [
+        "a duck",
+        "a pond"
+      ],
+      "qualitative_pair_slug": "a_duck__x__a_pond"
+    },
+    {
+      "taxonomy_group_key": "group1_cooccurrence",
+      "pair": [
+        "a flamingo",
+        "a lagoon"
+      ],
+      "qualitative_pair_slug": "a_flamingo__x__a_lagoon"
+    },
+    {
+      "taxonomy_group_key": "group1_cooccurrence",
+      "pair": [
+        "a horse",
+        "a grassy field"
+      ],
+      "qualitative_pair_slug": "a_horse__x__a_grassy_field"
+    },
+    {
+      "taxonomy_group_key": "group1_cooccurrence",
+      "pair": [
+        "a lighthouse",
+        "an ocean with stormy waves"
+      ],
+      "qualitative_pair_slug": "a_lighthouse__x__an_ocean_with_stormy_waves"
+    },
+    {
+      "taxonomy_group_key": "group1_cooccurrence",
+      "pair": [
+        "a polar bear",
+        "an iceberg"
+      ],
+      "qualitative_pair_slug": "a_polar_bear__x__an_iceberg"
+    },
+    {
+      "taxonomy_group_key": "group1_cooccurrence",
+      "pair": [
+        "a sailboat",
+        "a harbor"
+      ],
+      "qualitative_pair_slug": "a_sailboat__x__a_harbor"
+    },
+    {
+      "taxonomy_group_key": "group2_factorization",
+      "pair": [
+        "a dog",
+        "oil painting style"
+      ],
+      "qualitative_pair_slug": "a_dog__x__oil_painting_style"
+    },
+    {
+      "taxonomy_group_key": "group2_factorization",
+      "pair": [
+        "a lighthouse",
+        "watercolour style"
+      ],
+      "qualitative_pair_slug": "a_lighthouse__x__watercolour_style"
+    },
+    {
+      "taxonomy_group_key": "group2_factorization",
+      "pair": [
+        "a bicycle",
+        "sketch style"
+      ],
+      "qualitative_pair_slug": "a_bicycle__x__sketch_style"
+    },
+    {
+      "taxonomy_group_key": "group2_factorization",
+      "pair": [
+        "a teapot",
+        "claymation style"
+      ],
+      "qualitative_pair_slug": "a_teapot__x__claymation_style"
+    },
+    {
+      "taxonomy_group_key": "group2_factorization",
+      "pair": [
+        "a barn",
+        "pencil drawing style"
+      ],
+      "qualitative_pair_slug": "a_barn__x__pencil_drawing_style"
+    },
+    {
+      "taxonomy_group_key": "group2_factorization",
+      "pair": [
+        "a cactus",
+        "mosaic style"
+      ],
+      "qualitative_pair_slug": "a_cactus__x__mosaic_style"
+    },
+    {
+      "taxonomy_group_key": "group2_factorization",
+      "pair": [
+        "a camera",
+        "watercolor style"
+      ],
+      "qualitative_pair_slug": "a_camera__x__watercolor_style"
+    },
+    {
+      "taxonomy_group_key": "group2_factorization",
+      "pair": [
+        "a castle",
+        "stained glass style"
+      ],
+      "qualitative_pair_slug": "a_castle__x__stained_glass_style"
+    },
+    {
+      "taxonomy_group_key": "group2_factorization",
+      "pair": [
+        "a cat",
+        "charcoal drawing style"
+      ],
+      "qualitative_pair_slug": "a_cat__x__charcoal_drawing_style"
+    },
+    {
+      "taxonomy_group_key": "group2_factorization",
+      "pair": [
+        "a train",
+        "pixel art style"
+      ],
+      "qualitative_pair_slug": "a_train__x__pixel_art_style"
+    },
+    {
+      "taxonomy_group_key": "group3_role_separable_object_scene",
+      "pair": [
+        "a bookcase",
+        "a glacier"
+      ],
+      "qualitative_pair_slug": "a_bookcase__x__a_glacier"
+    },
+    {
+      "taxonomy_group_key": "group3_role_separable_object_scene",
+      "pair": [
+        "a candle",
+        "a waterfall"
+      ],
+      "qualitative_pair_slug": "a_candle__x__a_waterfall"
+    },
+    {
+      "taxonomy_group_key": "group3_role_separable_object_scene",
+      "pair": [
+        "a fire hydrant",
+        "a snowfield"
+      ],
+      "qualitative_pair_slug": "a_fire_hydrant__x__a_snowfield"
+    },
+    {
+      "taxonomy_group_key": "group3_role_separable_object_scene",
+      "pair": [
+        "a lamppost",
+        "a desert dune"
+      ],
+      "qualitative_pair_slug": "a_lamppost__x__a_desert_dune"
+    },
+    {
+      "taxonomy_group_key": "group3_role_separable_object_scene",
+      "pair": [
+        "a lighthouse",
+        "a desert dune"
+      ],
+      "qualitative_pair_slug": "a_lighthouse__x__a_desert_dune"
+    },
+    {
+      "taxonomy_group_key": "group3_role_separable_object_scene",
+      "pair": [
+        "a mailbox",
+        "a snowfield"
+      ],
+      "qualitative_pair_slug": "a_mailbox__x__a_snowfield"
+    },
+    {
+      "taxonomy_group_key": "group3_role_separable_object_scene",
+      "pair": [
+        "a park bench",
+        "a sand dune"
+      ],
+      "qualitative_pair_slug": "a_park_bench__x__a_sand_dune"
+    },
+    {
+      "taxonomy_group_key": "group3_role_separable_object_scene",
+      "pair": [
+        "a phone booth",
+        "a tropical beach"
+      ],
+      "qualitative_pair_slug": "a_phone_booth__x__a_tropical_beach"
+    },
+    {
+      "taxonomy_group_key": "group3_role_separable_object_scene",
+      "pair": [
+        "a picnic table",
+        "a snowstorm"
+      ],
+      "qualitative_pair_slug": "a_picnic_table__x__a_snowstorm"
+    },
+    {
+      "taxonomy_group_key": "group3_role_separable_object_scene",
+      "pair": [
+        "a rowboat",
+        "a cactus garden"
+      ],
+      "qualitative_pair_slug": "a_rowboat__x__a_cactus_garden"
+    },
+    {
+      "taxonomy_group_key": "group4_dual_object_composition",
+      "pair": [
+        "a bathtub",
+        "a streetlamp"
+      ],
+      "qualitative_pair_slug": "a_bathtub__x__a_streetlamp"
+    },
+    {
+      "taxonomy_group_key": "group4_dual_object_composition",
+      "pair": [
+        "a birdcage",
+        "a watering can"
+      ],
+      "qualitative_pair_slug": "a_birdcage__x__a_watering_can"
+    },
+    {
+      "taxonomy_group_key": "group4_dual_object_composition",
+      "pair": [
+        "a briefcase",
+        "a ceramic bowl"
+      ],
+      "qualitative_pair_slug": "a_briefcase__x__a_ceramic_bowl"
+    },
+    {
+      "taxonomy_group_key": "group4_dual_object_composition",
+      "pair": [
+        "a chessboard",
+        "a lantern"
+      ],
+      "qualitative_pair_slug": "a_chessboard__x__a_lantern"
+    },
+    {
+      "taxonomy_group_key": "group4_dual_object_composition",
+      "pair": [
+        "a drum set",
+        "a snowman"
+      ],
+      "qualitative_pair_slug": "a_drum_set__x__a_snowman"
+    },
+    {
+      "taxonomy_group_key": "group4_dual_object_composition",
+      "pair": [
+        "a feather pillow",
+        "a cast iron pan"
+      ],
+      "qualitative_pair_slug": "a_feather_pillow__x__a_cast_iron_pan"
+    },
+    {
+      "taxonomy_group_key": "group4_dual_object_composition",
+      "pair": [
+        "a lab microscope",
+        "a hay bale"
+      ],
+      "qualitative_pair_slug": "a_lab_microscope__x__a_hay_bale"
+    },
+    {
+      "taxonomy_group_key": "group4_dual_object_composition",
+      "pair": [
+        "a microwave",
+        "a potted plant"
+      ],
+      "qualitative_pair_slug": "a_microwave__x__a_potted_plant"
+    },
+    {
+      "taxonomy_group_key": "group4_dual_object_composition",
+      "pair": [
+        "a suitcase",
+        "a desk fan"
+      ],
+      "qualitative_pair_slug": "a_suitcase__x__a_desk_fan"
+    },
+    {
+      "taxonomy_group_key": "group4_dual_object_composition",
+      "pair": [
+        "a typewriter",
+        "a cactus"
+      ],
+      "qualitative_pair_slug": "a_typewriter__x__a_cactus"
+    },
+    {
+      "taxonomy_group_key": "group5_concept_prior_entanglement",
+      "pair": [
+        "fluffy",
+        "a stone"
+      ],
+      "qualitative_pair_slug": "fluffy__x__a_stone"
+    },
+    {
+      "taxonomy_group_key": "group5_concept_prior_entanglement",
+      "pair": [
+        "striped",
+        "a sphere"
+      ],
+      "qualitative_pair_slug": "striped__x__a_sphere"
+    },
+    {
+      "taxonomy_group_key": "group5_concept_prior_entanglement",
+      "pair": [
+        "small",
+        "an elephant"
+      ],
+      "qualitative_pair_slug": "small__x__an_elephant"
+    },
+    {
+      "taxonomy_group_key": "group5_concept_prior_entanglement",
+      "pair": [
+        "a transparent glass",
+        "a dog"
+      ],
+      "qualitative_pair_slug": "a_transparent_glass__x__a_dog"
+    },
+    {
+      "taxonomy_group_key": "group5_concept_prior_entanglement",
+      "pair": [
+        "a fur coat",
+        "a goldfish"
+      ],
+      "qualitative_pair_slug": "a_fur_coat__x__a_goldfish"
+    },
+    {
+      "taxonomy_group_key": "group5_concept_prior_entanglement",
+      "pair": [
+        "a winter coat",
+        "a tropical parrot"
+      ],
+      "qualitative_pair_slug": "a_winter_coat__x__a_tropical_parrot"
+    },
+    {
+      "taxonomy_group_key": "group5_concept_prior_entanglement",
+      "pair": [
+        "a wool scarf",
+        "a jellyfish"
+      ],
+      "qualitative_pair_slug": "a_wool_scarf__x__a_jellyfish"
+    },
+    {
+      "taxonomy_group_key": "group5_concept_prior_entanglement",
+      "pair": [
+        "a ballerina",
+        "a spacesuit"
+      ],
+      "qualitative_pair_slug": "a_ballerina__x__a_spacesuit"
+    },
+    {
+      "taxonomy_group_key": "group5_concept_prior_entanglement",
+      "pair": [
+        "a wedding dress",
+        "a lobster"
+      ],
+      "qualitative_pair_slug": "a_wedding_dress__x__a_lobster"
+    },
+    {
+      "taxonomy_group_key": "group5_concept_prior_entanglement",
+      "pair": [
+        "a tuxedo",
+        "a flamingo"
+      ],
+      "qualitative_pair_slug": "a_tuxedo__x__a_flamingo"
+    },
+    {
+      "taxonomy_group_key": "group6_coherent_collision",
+      "pair": [
+        "a convertible",
+        "a roadster"
+      ],
+      "qualitative_pair_slug": "a_convertible__x__a_roadster"
+    },
+    {
+      "taxonomy_group_key": "group6_coherent_collision",
+      "pair": [
+        "a coupe",
+        "a sedan"
+      ],
+      "qualitative_pair_slug": "a_coupe__x__a_sedan"
+    },
+    {
+      "taxonomy_group_key": "group6_coherent_collision",
+      "pair": [
+        "a fox",
+        "a wolf"
+      ],
+      "qualitative_pair_slug": "a_fox__x__a_wolf"
+    },
+    {
+      "taxonomy_group_key": "group6_coherent_collision",
+      "pair": [
+        "a goose",
+        "a swan"
+      ],
+      "qualitative_pair_slug": "a_goose__x__a_swan"
+    },
+    {
+      "taxonomy_group_key": "group6_coherent_collision",
+      "pair": [
+        "a leopard",
+        "a cheetah"
+      ],
+      "qualitative_pair_slug": "a_leopard__x__a_cheetah"
+    },
+    {
+      "taxonomy_group_key": "group6_coherent_collision",
+      "pair": [
+        "a lion",
+        "a leopard"
+      ],
+      "qualitative_pair_slug": "a_lion__x__a_leopard"
+    },
+    {
+      "taxonomy_group_key": "group6_coherent_collision",
+      "pair": [
+        "a pickup truck",
+        "an SUV"
+      ],
+      "qualitative_pair_slug": "a_pickup_truck__x__an_suv"
+    },
+    {
+      "taxonomy_group_key": "group6_coherent_collision",
+      "pair": [
+        "a raven",
+        "a crow"
+      ],
+      "qualitative_pair_slug": "a_raven__x__a_crow"
+    },
+    {
+      "taxonomy_group_key": "group6_coherent_collision",
+      "pair": [
+        "a sedan",
+        "an SUV"
+      ],
+      "qualitative_pair_slug": "a_sedan__x__an_suv"
+    },
+    {
+      "taxonomy_group_key": "group6_coherent_collision",
+      "pair": [
+        "a wolf",
+        "a husky"
+      ],
+      "qualitative_pair_slug": "a_wolf__x__a_husky"
+    }
+  ],
+  "selected_pairs": [
+    {
+      "taxonomy_group_key": "group1_cooccurrence",
+      "legacy_group_dirs": [
+        "group1_cooccurrence"
+      ],
+      "pair": [
+        "a camel",
+        "a desert landscape"
+      ],
+      "qualitative_pair_slug": "a_camel__x__a_desert_landscape"
+    },
+    {
+      "taxonomy_group_key": "group1_cooccurrence",
+      "legacy_group_dirs": [
+        "group1_cooccurrence"
+      ],
+      "pair": [
+        "a dolphin",
+        "an ocean wave"
+      ],
+      "qualitative_pair_slug": "a_dolphin__x__an_ocean_wave"
+    },
+    {
+      "taxonomy_group_key": "group1_cooccurrence",
+      "legacy_group_dirs": [
+        "group1_cooccurrence"
+      ],
+      "pair": [
+        "a flamingo",
+        "a lagoon"
+      ],
+      "qualitative_pair_slug": "a_flamingo__x__a_lagoon"
+    },
+    {
+      "taxonomy_group_key": "group1_cooccurrence",
+      "legacy_group_dirs": [
+        "group1_cooccurrence"
+      ],
+      "pair": [
+        "a lighthouse",
+        "an ocean with stormy waves"
+      ],
+      "qualitative_pair_slug": "a_lighthouse__x__an_ocean_with_stormy_waves"
+    },
+    {
+      "taxonomy_group_key": "group1_cooccurrence",
+      "legacy_group_dirs": [
+        "group1_cooccurrence"
+      ],
+      "pair": [
+        "a sailboat",
+        "a harbor"
+      ],
+      "qualitative_pair_slug": "a_sailboat__x__a_harbor"
+    },
+    {
+      "taxonomy_group_key": "group2_factorization",
+      "legacy_group_dirs": [
+        "group2_factorization",
+        "group2_disentangled"
+      ],
+      "pair": [
+        "a lighthouse",
+        "watercolour style"
+      ],
+      "qualitative_pair_slug": "a_lighthouse__x__watercolour_style"
+    },
+    {
+      "taxonomy_group_key": "group2_factorization",
+      "legacy_group_dirs": [
+        "group2_factorization",
+        "group2_disentangled"
+      ],
+      "pair": [
+        "a teapot",
+        "claymation style"
+      ],
+      "qualitative_pair_slug": "a_teapot__x__claymation_style"
+    },
+    {
+      "taxonomy_group_key": "group2_factorization",
+      "legacy_group_dirs": [
+        "group2_factorization",
+        "group2_disentangled"
+      ],
+      "pair": [
+        "a cactus",
+        "mosaic style"
+      ],
+      "qualitative_pair_slug": "a_cactus__x__mosaic_style"
+    },
+    {
+      "taxonomy_group_key": "group2_factorization",
+      "legacy_group_dirs": [
+        "group2_factorization",
+        "group2_disentangled"
+      ],
+      "pair": [
+        "a castle",
+        "stained glass style"
+      ],
+      "qualitative_pair_slug": "a_castle__x__stained_glass_style"
+    },
+    {
+      "taxonomy_group_key": "group2_factorization",
+      "legacy_group_dirs": [
+        "group2_factorization",
+        "group2_disentangled"
+      ],
+      "pair": [
+        "a train",
+        "pixel art style"
+      ],
+      "qualitative_pair_slug": "a_train__x__pixel_art_style"
+    },
+    {
+      "taxonomy_group_key": "group3_role_separable_object_scene",
+      "legacy_group_dirs": [
+        "group3_role_separable_object_scene",
+        "group3_feature_overlap",
+        "group3_ood"
+      ],
+      "pair": [
+        "a candle",
+        "a waterfall"
+      ],
+      "qualitative_pair_slug": "a_candle__x__a_waterfall"
+    },
+    {
+      "taxonomy_group_key": "group3_role_separable_object_scene",
+      "legacy_group_dirs": [
+        "group3_role_separable_object_scene",
+        "group3_feature_overlap",
+        "group3_ood"
+      ],
+      "pair": [
+        "a lamppost",
+        "a desert dune"
+      ],
+      "qualitative_pair_slug": "a_lamppost__x__a_desert_dune"
+    },
+    {
+      "taxonomy_group_key": "group3_role_separable_object_scene",
+      "legacy_group_dirs": [
+        "group3_role_separable_object_scene",
+        "group3_feature_overlap",
+        "group3_ood"
+      ],
+      "pair": [
+        "a mailbox",
+        "a snowfield"
+      ],
+      "qualitative_pair_slug": "a_mailbox__x__a_snowfield"
+    },
+    {
+      "taxonomy_group_key": "group3_role_separable_object_scene",
+      "legacy_group_dirs": [
+        "group3_role_separable_object_scene",
+        "group3_feature_overlap",
+        "group3_ood"
+      ],
+      "pair": [
+        "a phone booth",
+        "a tropical beach"
+      ],
+      "qualitative_pair_slug": "a_phone_booth__x__a_tropical_beach"
+    },
+    {
+      "taxonomy_group_key": "group3_role_separable_object_scene",
+      "legacy_group_dirs": [
+        "group3_role_separable_object_scene",
+        "group3_feature_overlap",
+        "group3_ood"
+      ],
+      "pair": [
+        "a rowboat",
+        "a cactus garden"
+      ],
+      "qualitative_pair_slug": "a_rowboat__x__a_cactus_garden"
+    },
+    {
+      "taxonomy_group_key": "group4_dual_object_composition",
+      "legacy_group_dirs": [
+        "group4_dual_object_composition",
+        "group3_feature_overlap",
+        "group3_ood"
+      ],
+      "pair": [
+        "a birdcage",
+        "a watering can"
+      ],
+      "qualitative_pair_slug": "a_birdcage__x__a_watering_can"
+    },
+    {
+      "taxonomy_group_key": "group4_dual_object_composition",
+      "legacy_group_dirs": [
+        "group4_dual_object_composition",
+        "group3_feature_overlap",
+        "group3_ood"
+      ],
+      "pair": [
+        "a chessboard",
+        "a lantern"
+      ],
+      "qualitative_pair_slug": "a_chessboard__x__a_lantern"
+    },
+    {
+      "taxonomy_group_key": "group4_dual_object_composition",
+      "legacy_group_dirs": [
+        "group4_dual_object_composition",
+        "group3_feature_overlap",
+        "group3_ood"
+      ],
+      "pair": [
+        "a feather pillow",
+        "a cast iron pan"
+      ],
+      "qualitative_pair_slug": "a_feather_pillow__x__a_cast_iron_pan"
+    },
+    {
+      "taxonomy_group_key": "group4_dual_object_composition",
+      "legacy_group_dirs": [
+        "group4_dual_object_composition",
+        "group3_feature_overlap",
+        "group3_ood"
+      ],
+      "pair": [
+        "a microwave",
+        "a potted plant"
+      ],
+      "qualitative_pair_slug": "a_microwave__x__a_potted_plant"
+    },
+    {
+      "taxonomy_group_key": "group4_dual_object_composition",
+      "legacy_group_dirs": [
+        "group4_dual_object_composition",
+        "group3_feature_overlap",
+        "group3_ood"
+      ],
+      "pair": [
+        "a typewriter",
+        "a cactus"
+      ],
+      "qualitative_pair_slug": "a_typewriter__x__a_cactus"
+    },
+    {
+      "taxonomy_group_key": "group5_concept_prior_entanglement",
+      "legacy_group_dirs": [
+        "group5_concept_prior_entanglement",
+        "group3_feature_overlap",
+        "group3_ood"
+      ],
+      "pair": [
+        "striped",
+        "a sphere"
+      ],
+      "qualitative_pair_slug": "striped__x__a_sphere"
+    },
+    {
+      "taxonomy_group_key": "group5_concept_prior_entanglement",
+      "legacy_group_dirs": [
+        "group5_concept_prior_entanglement",
+        "group3_feature_overlap",
+        "group3_ood"
+      ],
+      "pair": [
+        "a transparent glass",
+        "a dog"
+      ],
+      "qualitative_pair_slug": "a_transparent_glass__x__a_dog"
+    },
+    {
+      "taxonomy_group_key": "group5_concept_prior_entanglement",
+      "legacy_group_dirs": [
+        "group5_concept_prior_entanglement",
+        "group3_feature_overlap",
+        "group3_ood"
+      ],
+      "pair": [
+        "a winter coat",
+        "a tropical parrot"
+      ],
+      "qualitative_pair_slug": "a_winter_coat__x__a_tropical_parrot"
+    },
+    {
+      "taxonomy_group_key": "group5_concept_prior_entanglement",
+      "legacy_group_dirs": [
+        "group5_concept_prior_entanglement",
+        "group3_feature_overlap",
+        "group3_ood"
+      ],
+      "pair": [
+        "a ballerina",
+        "a spacesuit"
+      ],
+      "qualitative_pair_slug": "a_ballerina__x__a_spacesuit"
+    },
+    {
+      "taxonomy_group_key": "group5_concept_prior_entanglement",
+      "legacy_group_dirs": [
+        "group5_concept_prior_entanglement",
+        "group3_feature_overlap",
+        "group3_ood"
+      ],
+      "pair": [
+        "a tuxedo",
+        "a flamingo"
+      ],
+      "qualitative_pair_slug": "a_tuxedo__x__a_flamingo"
+    },
+    {
+      "taxonomy_group_key": "group6_coherent_collision",
+      "legacy_group_dirs": [
+        "group6_coherent_collision",
+        "group4_coherent_collision",
+        "group4_collision"
+      ],
+      "pair": [
+        "a coupe",
+        "a sedan"
+      ],
+      "qualitative_pair_slug": "a_coupe__x__a_sedan"
+    },
+    {
+      "taxonomy_group_key": "group6_coherent_collision",
+      "legacy_group_dirs": [
+        "group6_coherent_collision",
+        "group4_coherent_collision",
+        "group4_collision"
+      ],
+      "pair": [
+        "a goose",
+        "a swan"
+      ],
+      "qualitative_pair_slug": "a_goose__x__a_swan"
+    },
+    {
+      "taxonomy_group_key": "group6_coherent_collision",
+      "legacy_group_dirs": [
+        "group6_coherent_collision",
+        "group4_coherent_collision",
+        "group4_collision"
+      ],
+      "pair": [
+        "a lion",
+        "a leopard"
+      ],
+      "qualitative_pair_slug": "a_lion__x__a_leopard"
+    },
+    {
+      "taxonomy_group_key": "group6_coherent_collision",
+      "legacy_group_dirs": [
+        "group6_coherent_collision",
+        "group4_coherent_collision",
+        "group4_collision"
+      ],
+      "pair": [
+        "a raven",
+        "a crow"
+      ],
+      "qualitative_pair_slug": "a_raven__x__a_crow"
+    },
+    {
+      "taxonomy_group_key": "group6_coherent_collision",
+      "legacy_group_dirs": [
+        "group6_coherent_collision",
+        "group4_coherent_collision",
+        "group4_collision"
+      ],
+      "pair": [
+        "a wolf",
+        "a husky"
+      ],
+      "qualitative_pair_slug": "a_wolf__x__a_husky"
+    }
+  ],
+  "sdipc_enrichment": {
+    "created_at": "2026-04-15T12:16:56.737556",
+    "source_dir": "/home-mscluster/mmolefe/Playground/PhD/eccv2026/experiments/eccv2026/sdxl_final/sdxl_six_group_seed42_steps50_cfg7p5_frozen",
+    "copy_mode": "symlink",
+    "grid_seed": 42,
+    "seeds": [
+      42,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23
+    ],
+    "pair_count": 30,
+    "pairs": [
+      {
+        "taxonomy_group_key": "group1_cooccurrence",
+        "qualitative_pair_slug": "a_camel__x__a_desert_landscape"
+      },
+      {
+        "taxonomy_group_key": "group1_cooccurrence",
+        "qualitative_pair_slug": "a_dolphin__x__an_ocean_wave"
+      },
+      {
+        "taxonomy_group_key": "group1_cooccurrence",
+        "qualitative_pair_slug": "a_flamingo__x__a_lagoon"
+      },
+      {
+        "taxonomy_group_key": "group1_cooccurrence",
+        "qualitative_pair_slug": "a_lighthouse__x__an_ocean_with_stormy_waves"
+      },
+      {
+        "taxonomy_group_key": "group1_cooccurrence",
+        "qualitative_pair_slug": "a_sailboat__x__a_harbor"
+      },
+      {
+        "taxonomy_group_key": "group2_factorization",
+        "qualitative_pair_slug": "a_lighthouse__x__watercolour_style"
+      },
+      {
+        "taxonomy_group_key": "group2_factorization",
+        "qualitative_pair_slug": "a_teapot__x__claymation_style"
+      },
+      {
+        "taxonomy_group_key": "group2_factorization",
+        "qualitative_pair_slug": "a_cactus__x__mosaic_style"
+      },
+      {
+        "taxonomy_group_key": "group2_factorization",
+        "qualitative_pair_slug": "a_castle__x__stained_glass_style"
+      },
+      {
+        "taxonomy_group_key": "group2_factorization",
+        "qualitative_pair_slug": "a_train__x__pixel_art_style"
+      },
+      {
+        "taxonomy_group_key": "group3_role_separable_object_scene",
+        "qualitative_pair_slug": "a_candle__x__a_waterfall"
+      },
+      {
+        "taxonomy_group_key": "group3_role_separable_object_scene",
+        "qualitative_pair_slug": "a_lamppost__x__a_desert_dune"
+      },
+      {
+        "taxonomy_group_key": "group3_role_separable_object_scene",
+        "qualitative_pair_slug": "a_mailbox__x__a_snowfield"
+      },
+      {
+        "taxonomy_group_key": "group3_role_separable_object_scene",
+        "qualitative_pair_slug": "a_phone_booth__x__a_tropical_beach"
+      },
+      {
+        "taxonomy_group_key": "group3_role_separable_object_scene",
+        "qualitative_pair_slug": "a_rowboat__x__a_cactus_garden"
+      },
+      {
+        "taxonomy_group_key": "group4_dual_object_composition",
+        "qualitative_pair_slug": "a_birdcage__x__a_watering_can"
+      },
+      {
+        "taxonomy_group_key": "group4_dual_object_composition",
+        "qualitative_pair_slug": "a_chessboard__x__a_lantern"
+      },
+      {
+        "taxonomy_group_key": "group4_dual_object_composition",
+        "qualitative_pair_slug": "a_feather_pillow__x__a_cast_iron_pan"
+      },
+      {
+        "taxonomy_group_key": "group4_dual_object_composition",
+        "qualitative_pair_slug": "a_microwave__x__a_potted_plant"
+      },
+      {
+        "taxonomy_group_key": "group4_dual_object_composition",
+        "qualitative_pair_slug": "a_typewriter__x__a_cactus"
+      },
+      {
+        "taxonomy_group_key": "group5_concept_prior_entanglement",
+        "qualitative_pair_slug": "striped__x__a_sphere"
+      },
+      {
+        "taxonomy_group_key": "group5_concept_prior_entanglement",
+        "qualitative_pair_slug": "a_transparent_glass__x__a_dog"
+      },
+      {
+        "taxonomy_group_key": "group5_concept_prior_entanglement",
+        "qualitative_pair_slug": "a_winter_coat__x__a_tropical_parrot"
+      },
+      {
+        "taxonomy_group_key": "group5_concept_prior_entanglement",
+        "qualitative_pair_slug": "a_ballerina__x__a_spacesuit"
+      },
+      {
+        "taxonomy_group_key": "group5_concept_prior_entanglement",
+        "qualitative_pair_slug": "a_tuxedo__x__a_flamingo"
+      },
+      {
+        "taxonomy_group_key": "group6_coherent_collision",
+        "qualitative_pair_slug": "a_coupe__x__a_sedan"
+      },
+      {
+        "taxonomy_group_key": "group6_coherent_collision",
+        "qualitative_pair_slug": "a_goose__x__a_swan"
+      },
+      {
+        "taxonomy_group_key": "group6_coherent_collision",
+        "qualitative_pair_slug": "a_lion__x__a_leopard"
+      },
+      {
+        "taxonomy_group_key": "group6_coherent_collision",
+        "qualitative_pair_slug": "a_raven__x__a_crow"
+      },
+      {
+        "taxonomy_group_key": "group6_coherent_collision",
+        "qualitative_pair_slug": "a_wolf__x__a_husky"
+      }
+    ],
+    "generated_condition": "pstar_sdipc"
+  }
+}

@@ -58,8 +58,8 @@ Each plot builds on the previous to form a progressive statistical narrative:
     33  Cumulative KL curves — running integral ending at total KL
 
   Grid reconstruction  (data: pairs/*/grid_assets.json)
-    27  Decoded image grid     — adds p* VLM column (legacy Z2T optional)
-    28  Trajectory manifold    — adds p* VLM trajectory (legacy Z2T optional)
+    27  Decoded image grid     — selected p* columns (SD-IPC, learned inverter, legacy Z2T/VLM)
+    28  Trajectory manifold    — selected p* trajectories (SD-IPC, learned inverter, legacy Z2T/VLM)
 
 Usage
 -----
@@ -80,7 +80,7 @@ Notes
 -----
 Plot 11 requires within_and_distances.json — generated automatically by measure_composability_gap.py.
 Plots 12–19 and 25 require d_T_pstar_* in per_seed_distances.json.
-Re-run measure_composability_gap.py with --pstar-source {inverter,pez,vlm} (z2t is legacy optional).
+Re-run measure_composability_gap.py with --pstar-source {sdipc,inverter,pez} (z2t/vlm are legacy optional).
 Use --merge to accumulate multiple p* sources into the same JSON without overwriting.
 Plot 18 uses all_pairs_gap.json (CLIP scores computed in the main run).
 Plot 16 requires d_t_pstar_* in trajectory_distances.json.
@@ -106,7 +106,31 @@ from plots.distributional import plot_20, plot_21, plot_22
 from plots.distributional import (
     plot_23, plot_24, plot_29, plot_30, plot_31, plot_32, plot_33, plot_34,
 )
-from plots.utils import load_terminal, load_trajectory, PSTAR_PRIORITY, TERM_LABEL
+from plots.groupwise import (
+    plot_06_groupwise,
+    plot_11_groupwise,
+    plot_15_groupwise,
+    plot_17_groupwise,
+    plot_reachability_semantic_groupwise,
+    plot_20_groupwise,
+    plot_21_groupwise,
+)
+from plots.semantic_audit import (
+    plot_group34_boundary_audit,
+    plot_monolithic_semantic_audit,
+    plot_pair_retention_summary,
+    plot_semantic_filter_robustness,
+    plot_semantic_pass_rate_comparison,
+)
+from plots.utils import (
+    filter_semantic_baseline_scope,
+    load_terminal,
+    load_trajectory,
+    PSTAR_PRIORITY,
+    TERM_LABEL,
+)
+from plots.blip_vqa_bar import load_blip_vqa, plot_blip_vqa_grouped_bar
+from plots.joint_probe_bar import load_joint_probes, plot_joint_probe_grouped_bar
 
 
 # ===========================================================================
@@ -164,8 +188,17 @@ PLOTS = {
     "32": ("Pointwise scaffold 4/5: local KL terms",         plot_32),
     "33": ("Pointwise scaffold 5/5: cumulative KL area",     plot_33),
     # --- qualitative grid reconstructions ---
-    "27": ("Decoded image grid with p* VLM (legacy Z2T optional)  [grid]",    plot_27),
-    "28": ("Trajectory manifold grid with p* VLM (legacy Z2T optional)  [grid]", plot_28),
+    "27": ("Decoded image grid with selected p* columns  [grid]",    plot_27),
+    "28": ("Trajectory manifold grid with selected p* trajectories  [grid]", plot_28),
+}
+
+GROUPWISE_PLOTS = {
+    "06": plot_06_groupwise,
+    "11": plot_11_groupwise,
+    "15": plot_15_groupwise,
+    "17": plot_17_groupwise,
+    "20": plot_20_groupwise,
+    "21": plot_21_groupwise,
 }
 
 
@@ -198,12 +231,13 @@ def parse_args():
         metavar="SRC",
         help=(
             "Which p* sources to include in baseline plots 00–10 and grid plots 27–28.\n"
-            "  auto              — trusted defaults (inverter/pez/vlm) when present\n"
+            "  auto              — trusted defaults (sdipc/inverter/pez) when present\n"
             "  none              — hide all p* from baseline plots\n"
-            "  inverter pez z2t vlm  — show specific sources (space-separated)\n"
+            "  sdipc inverter pez z2t vlm  — show specific sources (space-separated)\n"
             "Plots 11–25 and 29–34 use the script's p* auto-detection (legacy Z2T is not in default mixes).\n"
             "Plot 26 follows baseline filtering (same behavior as plots 00–10). "
-            "Plots 27–28 apply this filter to p* VLM/legacy Z2T columns."
+            "Plots 27–28 apply this filter to supported qualitative p* columns "
+            "(SD-IPC, learned inverter, legacy Z2T/VLM)."
         ),
     )
     p.add_argument(
@@ -277,8 +311,49 @@ def parse_args():
             "Which plot(s) to generate.  Options:\n"
             "  all            — every plot (default)\n"
             f"  {group_names}\n"
-            "  06 / 13 …      — single plot number"
+            "  06 / 13 …      — single plot number\n"
+            "  blip_vqa       — BLIP-VQA concept-presence bar charts (F0 and F0b)\n"
+            "  joint_probes   — pair-type-aware joint-correctness bar charts\n"
+            "  reachability_semantic — semantics-qualified p* reachability figure\n"
+            "  semantic_audit — monolithic semantic-baseline audit by group\n"
+            "  semantic_retention — pair retention / provisional summary\n"
+            "  semantic_pass_compare — mono vs PoE semantic pass-rate comparison\n"
+            "  semantic_boundary — Group 3 vs Group 4 boundary audit\n"
+            "  semantic_robustness — full vs semantics-qualified robustness summary"
         ),
+    )
+    p.add_argument(
+        "--taxonomy-view",
+        choices=["pooled", "groupwise", "both"],
+        default="pooled",
+        help=(
+            "How to render taxonomy-aware plots 06, 11, 15, 17, 20, and 21. "
+            "'pooled' keeps the legacy outputs, 'groupwise' renders taxonomy panels "
+            "for all present groups in canonical order, and 'both' writes both forms."
+        ),
+    )
+    p.add_argument(
+        "--semantic-baseline-scope",
+        choices=["full", "seed_qualified", "pair_qualified"],
+        default="full",
+        help=(
+            "Filter scope driven by the monolithic semantic-baseline audit. "
+            "'full' keeps all records, 'seed_qualified' keeps only mono-qualified "
+            "pair-seed records inside mono-qualified pairs, and 'pair_qualified' keeps "
+            "all records from mono-qualified pairs."
+        ),
+    )
+    p.add_argument(
+        "--mono-pass-threshold",
+        type=float,
+        default=0.75,
+        help="Pair-level monolithic pass-rate threshold for semantic qualification.",
+    )
+    p.add_argument(
+        "--mono-seed-gate",
+        choices=["semantic", "high_confidence"],
+        default="semantic",
+        help="Seed-level monolithic gate used by semantic-baseline qualification.",
     )
     return p.parse_args()
 
@@ -288,6 +363,32 @@ def main():
     data_dir = Path(args.data_dir)
     out_dir  = Path(args.output_dir) if args.output_dir else data_dir / "figures"
     out_dir.mkdir(parents=True, exist_ok=True)
+    target = args.plot.strip().lower()
+
+    # Routes that do not require per_seed_distances / trajectory_distances.
+    if target == "semantic_audit":
+        print("\n[semantic_audit] Monolithic semantic-baseline audit by group")
+        plot_monolithic_semantic_audit(data_dir, out_dir)
+        print(f"\nDone. Figures written to {out_dir}/")
+        return
+
+    if target == "semantic_retention":
+        print("\n[semantic_retention] Pair retention / provisional summary")
+        plot_pair_retention_summary(data_dir, out_dir)
+        print(f"\nDone. Figures written to {out_dir}/")
+        return
+
+    if target == "semantic_pass_compare":
+        print("\n[semantic_pass_compare] Monolithic vs PoE semantic pass-rate comparison")
+        plot_semantic_pass_rate_comparison(data_dir, out_dir)
+        print(f"\nDone. Figures written to {out_dir}/")
+        return
+
+    if target == "semantic_boundary":
+        print("\n[semantic_boundary] Group 3 vs Group 4 boundary audit")
+        plot_group34_boundary_audit(data_dir, out_dir)
+        print(f"\nDone. Figures written to {out_dir}/")
+        return
 
     print(f"Loading data from {data_dir} ...")
     df_term = load_terminal(
@@ -297,10 +398,33 @@ def main():
     )
     df_traj = load_trajectory(data_dir, monolithic_baseline=args.monolithic_baseline)
     print(f"  Monolithic baseline mode: {args.monolithic_baseline}")
-    print(f"  AND anchor mode (terminal d_T_*): {args.and_anchor}")
+    print(f"  Terminal anchor mode (d_T_*): {args.and_anchor}")
     print(f"  Terminal:   {len(df_term)} records "
           f"({df_term['pair'].nunique()} pairs × {df_term['seed'].nunique()} seeds)")
     print(f"  Trajectory: {len(df_traj)} records")
+    print(f"  Taxonomy view: {args.taxonomy_view}")
+    if args.semantic_baseline_scope != "full":
+        df_term = filter_semantic_baseline_scope(
+            df_term,
+            data_dir,
+            scope=args.semantic_baseline_scope,
+            mono_pass_threshold=args.mono_pass_threshold,
+            mono_seed_gate=args.mono_seed_gate,
+        )
+        df_traj = filter_semantic_baseline_scope(
+            df_traj,
+            data_dir,
+            scope=args.semantic_baseline_scope,
+            mono_pass_threshold=args.mono_pass_threshold,
+            mono_seed_gate=args.mono_seed_gate,
+        )
+        print(
+            "  Semantic-baseline scope: "
+            f"{args.semantic_baseline_scope} "
+            f"(pair threshold={args.mono_pass_threshold:.2f}, seed gate={args.mono_seed_gate})"
+        )
+        print(f"  Filtered terminal records: {len(df_term)}")
+        print(f"  Filtered trajectory records: {len(df_traj)}")
     pstar_present = [c for c in PSTAR_PRIORITY if c in df_term.columns]
     if not pstar_present and "d_T_pstar_z2t" in df_term.columns:
         pstar_present = ["d_T_pstar_z2t"]
@@ -309,35 +433,21 @@ def main():
         print(f"  p* columns present: {src_names} — p*-dependent plots (12–19, 23–25, 29–34) can run.")
     else:
         print("  No d_T_pstar_* columns found — p*-dependent plots (12–19, 23–25, 29–34) will be skipped.")
-        print("  Re-run measure_composability_gap.py with --pstar-source {inverter,pez,vlm} (z2t is legacy optional).")
-
-    target = args.plot.strip().lower()
-    if target == "all":
-        keys = sorted(PLOTS.keys())
-    elif target in GROUPS:
-        keys = GROUPS[target]
-    else:
-        key = target.zfill(2)
-        if key not in PLOTS:
-            valid_groups = list(GROUPS.keys())
-            print(f"Unknown plot '{target}'.\n"
-                  f"Valid groups: {valid_groups}\n"
-                  f"Valid numbers: {list(PLOTS.keys())} or 'all'")
-            sys.exit(1)
-        keys = [key]
+        print("  Re-run measure_composability_gap.py with --pstar-source {sdipc,inverter,pez} (z2t/vlm are legacy optional).")
 
     # Resolve --pstar-sources into a frozenset of allowed terminal column names.
-    # Default is a trusted allowlist (inverter/pez/vlm), excluding legacy Z2T.
+    # Default is a trusted allowlist (sdipc/inverter/pez), excluding legacy Z2T/VLM.
     _SRC_COLS = {
+        "sdipc":    {"d_T_pstar_sdipc"},
         "inverter": {"d_T_pstar_inv", "d_T_pstar"},
         "pez":      {"d_T_pstar_pez"},
         "z2t":      {"d_T_pstar_z2t"},
         "vlm":      {"d_T_pstar_vlm"},
     }
-    _TRUSTED_DEFAULT = frozenset({"d_T_pstar_inv", "d_T_pstar", "d_T_pstar_pez", "d_T_pstar_vlm"})
+    _TRUSTED_DEFAULT = frozenset({"d_T_pstar_sdipc", "d_T_pstar_inv", "d_T_pstar", "d_T_pstar_pez"})
     src_arg = [s.lower() for s in args.pstar_sources]
     if src_arg == ["auto"] or src_arg == ["all"]:
-        # Exclude legacy Z2T from defaults; still available via --pstar-sources z2t.
+        # Exclude legacy Z2T/VLM from defaults; still available explicitly.
         pstar_filter = _TRUSTED_DEFAULT
     elif src_arg == ["none"]:
         pstar_filter = frozenset()             # suppress all p* from baseline plots
@@ -357,6 +467,98 @@ def main():
             print(f"  p* filter (baseline 00–10 + grid 27–28): {names}")
         else:
             print("  p* filter (baseline 00–10 + grid 27–28): none — p* hidden there")
+
+    # --- BLIP-VQA special route (separate from the numbered plots) ---
+    if target == "blip_vqa":
+        print("\n[blip_vqa] BLIP-VQA concept-presence grouped bar charts")
+        try:
+            df_blip = load_blip_vqa(data_dir)
+        except FileNotFoundError as exc:
+            print(f"  ERROR: {exc}")
+            sys.exit(1)
+        include_pstar = bool(pstar_filter)   # omit p* bar when pstar_filter is empty
+        plot_blip_vqa_grouped_bar(df_blip, out_dir, pstar=False)
+        if include_pstar:
+            plot_blip_vqa_grouped_bar(df_blip, out_dir, pstar=True)
+        else:
+            print("  p* filter is empty — skipping F0b (blip_vqa_grouped_bar_pstar.png)")
+        print(f"\nDone. Figures written to {out_dir}/")
+        return
+
+    if target == "joint_probes":
+        print("\n[joint_probes] Pair-type-aware joint-correctness grouped bar charts")
+        try:
+            _, df_joint = load_joint_probes(data_dir)
+        except FileNotFoundError as exc:
+            print(f"  ERROR: {exc}")
+            sys.exit(1)
+        include_pstar = bool(pstar_filter)
+        plot_joint_probe_grouped_bar(df_joint, out_dir, pstar=False)
+        if include_pstar:
+            plot_joint_probe_grouped_bar(df_joint, out_dir, pstar=True)
+        else:
+            print("  p* filter is empty — skipping joint_probe_grouped_bar_pstar.png")
+        print(f"\nDone. Figures written to {out_dir}/")
+        return
+
+    if target == "reachability_semantic":
+        print("\n[reachability_semantic] Semantics-qualified p* reachability figure")
+        try:
+            df_term = load_terminal(data_dir, monolithic_baseline=args.monolithic_baseline, and_anchor=args.and_anchor)
+            df_traj = load_trajectory(data_dir, monolithic_baseline=args.monolithic_baseline)
+        except SystemExit:
+            raise
+        plot_reachability_semantic_groupwise(
+            df_term,
+            df_traj,
+            out_dir,
+            data_dir=data_dir,
+            semantic_baseline_scope=args.semantic_baseline_scope,
+            mono_pass_threshold=args.mono_pass_threshold,
+            mono_seed_gate=args.mono_seed_gate,
+        )
+        print(f"\nDone. Figures written to {out_dir}/")
+        return
+
+    if target == "semantic_robustness":
+        print("\n[semantic_robustness] Full vs semantics-qualified robustness summary")
+        df_term_full = load_terminal(
+            data_dir,
+            monolithic_baseline=args.monolithic_baseline,
+            and_anchor=args.and_anchor,
+        )
+        df_traj_full = load_trajectory(data_dir, monolithic_baseline=args.monolithic_baseline)
+        df_term_qualified = filter_semantic_baseline_scope(
+            df_term_full,
+            data_dir,
+            scope="pair_qualified",
+            mono_pass_threshold=args.mono_pass_threshold,
+            mono_seed_gate=args.mono_seed_gate,
+        )
+        df_traj_qualified = filter_semantic_baseline_scope(
+            df_traj_full,
+            data_dir,
+            scope="pair_qualified",
+            mono_pass_threshold=args.mono_pass_threshold,
+            mono_seed_gate=args.mono_seed_gate,
+        )
+        plot_semantic_filter_robustness(df_term_full, df_traj_full, df_term_qualified, df_traj_qualified, out_dir)
+        print(f"\nDone. Figures written to {out_dir}/")
+        return
+
+    if target == "all":
+        keys = sorted(PLOTS.keys())
+    elif target in GROUPS:
+        keys = GROUPS[target]
+    else:
+        key = target.zfill(2)
+        if key not in PLOTS:
+            valid_groups = list(GROUPS.keys())
+            print(f"Unknown plot '{target}'.\n"
+                  f"Valid groups: {valid_groups}\n"
+                  f"Valid numbers: {list(PLOTS.keys())} or 'all'")
+            sys.exit(1)
+        keys = [key]
 
     size_preset = args.paper_size_preset
     if size_preset == "plot26_large_traj_small":
@@ -423,7 +625,13 @@ def main():
     for key in keys:
         label, fn = PLOTS[key]
         print(f"\n[{key}] {label}")
-        fn(df_term, df_traj, out_dir, **plot_kw)
+        render_pooled = args.taxonomy_view in {"pooled", "both"} or key not in GROUPWISE_PLOTS
+        render_groupwise = key in GROUPWISE_PLOTS and args.taxonomy_view in {"groupwise", "both"}
+
+        if render_pooled:
+            fn(df_term, df_traj, out_dir, **plot_kw)
+        if render_groupwise:
+            GROUPWISE_PLOTS[key](df_term, df_traj, out_dir, **plot_kw)
 
     print(f"\nDone. Figures written to {out_dir}/")
 

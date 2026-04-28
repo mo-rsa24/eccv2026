@@ -18,7 +18,7 @@ Gap analysis — baseline plots 00–10 and 26.
                               mean with ±1 std outer band and 95 % CI inner band
     26  Combined 04+06      — side-by-side KDE pooled (left) + temporal stacked bar (right)
 
-p* columns (d_T_pstar_inv, d_T_pstar_pez, d_T_pstar_z2t, d_T_pstar_vlm) are
+p* columns (d_T_pstar_sdipc, d_T_pstar_inv, d_T_pstar_pez, d_T_pstar_z2t, legacy d_T_pstar_vlm) are
 included in all plots when present in the data.  Baseline conditions (Mono,
 Solo c₁, Solo c₂) are shown with solid lines; p* sources with dashed lines.
 Run measure_composability_gap.py with --pstar-source X to add p* columns.
@@ -36,6 +36,7 @@ from .utils import (
     LABEL_D_T_MSE, LABEL_D_t_MSE, LABEL_CUM_DELTA_D_t,
     SCIPY_OK, stats,
     cap_pairs, get_present_poe, get_present_traj_poe,
+    get_present_co3, get_present_traj_co3,
     get_present_pstar, get_present_traj_pstar, apply_pstar_filter,
     pair_color_map, short_pair, traj_stats, bin_increments,
     hide_top_right, save_fig,
@@ -43,7 +44,7 @@ from .utils import (
 
 
 def _terminal_baselines(df_term):
-    return TERM_CONDITIONS + get_present_poe(df_term)
+    return TERM_CONDITIONS + get_present_poe(df_term) + get_present_co3(df_term)
 
 
 def _terminal_conditions(df_term, pstar_filter):
@@ -53,7 +54,7 @@ def _terminal_conditions(df_term, pstar_filter):
 
 
 def _traj_baselines(df_traj):
-    return TRAJ_CONDITIONS + get_present_traj_poe(df_traj)
+    return TRAJ_CONDITIONS + get_present_traj_poe(df_traj) + get_present_traj_co3(df_traj)
 
 
 def _traj_conditions(df_traj, pstar_filter):
@@ -138,12 +139,12 @@ def plot_00(df_term, df_traj, out_dir, **kw):
                frameon=True, bbox_to_anchor=(1.0, 0.93))
 
     fig.suptitle(
-        "Plot 00 — Terminal Latent Distance from SuperDiff-AND  (per Concept Pair)\n"
+        "Plot 00 — Terminal Latent Distance from the Logical Anchor  (per Concept Pair)\n"
         "Bold tick = mean across seeds.  Each dot = one seed.",
         fontsize=13,
     )
     fig.text(0.5, -0.02,
-             "Scale:  0 = identical to AND  │  ≈0.25 subtle  │  ≈0.60 noticeable  "
+             "Scale:  0 = identical to the anchor  │  ≈0.25 subtle  │  ≈0.60 noticeable  "
              "│  ≈2.0 unrelated latents (ceiling)",
              ha="center", fontsize=9, color="#888888")
 
@@ -178,7 +179,7 @@ def plot_01(df_term, df_traj, out_dir, **kw):
                        fontsize=10, rotation=45, ha="right")
     ax.set_ylabel(LABEL_D_T_MSE, fontsize=11)
     ax.set_title(
-        "Plot 01 — Terminal Latent Distance from SuperDiff-AND\n"
+        "Plot 01 — Terminal Latent Distance from the Logical Anchor\n"
         "Grouped bar: mean ± 1 std",
         fontsize=13,
     )
@@ -320,14 +321,17 @@ def plot_04(df_term, df_traj, out_dir, **kw):
     plot04_scale = max(float(kw.get("plot04_scale", 1.0)), 0.25)
     fig, ax = plt.subplots(figsize=(8 * plot04_scale, 5 * plot04_scale))
     for cond in all_conds:
-        vals = df_term[cond].values
+        vals = df_term[cond].dropna().values
+        if len(vals) < 2:
+            print(f"  plot_04: skipping '{cond}' — fewer than 2 data points for KDE.")
+            continue
         dens = stats.gaussian_kde(vals, bw_method=bw_method)(x_grid)
         ls   = "--" if cond not in baseline_conds else "-"
         ax.plot(x_grid, dens, color=TERM_COLOR[cond], label=TERM_LABEL[cond],
                 lw=2.5, ls=ls)
         ax.fill_between(x_grid, dens, alpha=0.13, color=TERM_COLOR[cond])
 
-    ax.set_xlabel("Terminal distance to SuperDiff AND (per-element MSE)", fontsize=12)
+    ax.set_xlabel("Terminal distance to the logical anchor (per-element MSE)", fontsize=12)
     ax.set_ylabel("Density", fontsize=12)
     ax.set_title(
         "Plot 04 — Terminal Distance Distribution\n"
@@ -372,7 +376,9 @@ def plot_05(df_term, df_traj, out_dir, **kw):
         x_grid   = np.linspace(all_vals.min() * 0.85, all_vals.max() * 1.08, 400)
 
         for cond in all_conds:
-            vals = sub[cond].values
+            vals = sub[cond].dropna().values
+            if len(vals) < 2:
+                continue
             dens = stats.gaussian_kde(vals, bw_method="scott")(x_grid)
             ls   = "--" if cond not in baseline_conds else "-"
             ax.plot(x_grid, dens, color=TERM_COLOR[cond], label=TERM_LABEL[cond],
@@ -450,7 +456,7 @@ def plot_06(df_term, df_traj, out_dir, **kw):
     ax.set_xlim(-0.6, n_cond - 0.4)
     ax.set_ylabel(LABEL_CUM_DELTA_D_t, fontsize=11)
     ax.set_title(
-        "Plot 06 — Temporal Divergence from AND\n"
+        "Plot 06 — Temporal Divergence from the Logical Anchor\n"
         "Opaque = early denoising steps;  transparent = late.",
         fontsize=12,
     )
@@ -496,13 +502,15 @@ def plot_26(df_term, df_traj, out_dir, **kw):
     n = len(df_term)
 
     for cond in term_conds:
-        vals = df_term[cond].values
+        vals = df_term[cond].dropna().values
+        if len(vals) < 2:
+            continue
         dens = stats.gaussian_kde(vals, bw_method=bw_method)(x_grid)
         ls = "--" if cond not in term_baselines else "-"
         ax_left.plot(x_grid, dens, color=TERM_COLOR[cond], label=TERM_LABEL[cond], lw=2.3, ls=ls)
         ax_left.fill_between(x_grid, dens, alpha=0.13, color=TERM_COLOR[cond])
 
-    ax_left.set_xlabel("Terminal distance to SuperDiff AND (per-element MSE)", fontsize=11)
+    ax_left.set_xlabel("Terminal distance to the logical anchor (per-element MSE)", fontsize=11)
     ax_left.set_ylabel("Density", fontsize=11)
     ax_left.set_title(
         f"Plot 04 — Terminal Distance Distribution\n"
@@ -561,7 +569,7 @@ def plot_26(df_term, df_traj, out_dir, **kw):
     ax_right.set_xlim(-0.6, len(traj_conds) - 0.4)
     ax_right.set_ylabel(LABEL_CUM_DELTA_D_t, fontsize=11)
     ax_right.set_title(
-        "Plot 06 — Temporal Divergence from AND\n"
+        "Plot 06 — Temporal Divergence from the Logical Anchor\n"
         "Opaque = early denoising; transparent = late.",
         fontsize=12,
     )
@@ -623,7 +631,7 @@ def plot_07(df_term, df_traj, out_dir, **kw):
     ax.set_xlim(-0.5, n_pairs - 0.5)
     ax.set_ylabel(LABEL_CUM_DELTA_D_t, fontsize=11)
     ax.set_title(
-        "Plot 07 — Temporal Divergence from AND  (stacked bar, by concept pair)\n"
+        "Plot 07 — Temporal Divergence from the Logical Anchor  (stacked bar, by concept pair)\n"
         "Opaque = early denoising steps;  transparent = late.  "
         "Bar height = mean terminal MSE d_T.",
         fontsize=12,

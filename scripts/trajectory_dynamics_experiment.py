@@ -1322,7 +1322,9 @@ def sample_sd1_with_trajectory_tracking(
     if "eta" in _inspect.signature(ddim.step).parameters:
         extra_step_kwargs["eta"] = 0.0
 
-    for i, t in enumerate(ddim.timesteps):
+    from tqdm.auto import tqdm as _tqdm
+    for i, t in _tqdm(enumerate(ddim.timesteps), total=num_inference_steps,
+                      desc=f"CFG B={batch_size}", leave=False):
         latent_model_input = ddim.scale_model_input(latents, t)
 
         with torch.no_grad():
@@ -1386,14 +1388,6 @@ def poe_sd_with_trajectory_tracking(
     a_emb      = _encode([prompt_a] * batch_size)  # (B, 77, 768)
     b_emb      = _encode([prompt_b] * batch_size)  # (B, 77, 768)
 
-    # Stack [uncond, cond_a, cond_b] — mirrors the pipeline's text_embeddings layout
-    text_embeddings = torch.cat([uncond_emb, a_emb, b_emb])  # (3B, 77, 768)
-
-    # Per-concept guidance weights (one weight per conditional embedding)
-    weights = torch.tensor(
-        [guidance_scale, guidance_scale], device=device, dtype=dtype
-    ).reshape(-1, 1, 1, 1)  # (2, 1, 1, 1)
-
     tracker = LatentTrajectoryCollector(
         num_inference_steps, batch_size,
         latents.shape[1], latents.shape[2], latents.shape[3],
@@ -1403,29 +1397,20 @@ def poe_sd_with_trajectory_tracking(
     if "eta" in _inspect.signature(ddim.step).parameters:
         extra_step_kwargs["eta"] = 0.0  # deterministic DDIM
 
-    for i, t in enumerate(ddim.timesteps):
+    from tqdm.auto import tqdm as _tqdm
+    for i, t in _tqdm(enumerate(ddim.timesteps), total=num_inference_steps,
+                      desc=f"PoE B={batch_size}", leave=False):
         # scale_model_input: no-op for DDIM but matches the pipeline for correctness
         latent_model_input = ddim.scale_model_input(latents, t)
 
-        # Sequential UNet calls per embedding — replicates _predict_composed_noise
-        noise_preds = []
+        # Three batched UNet calls — faithful PoE (Product of Experts):
+        #   noise_pred = uncond + g*(cond_a - uncond) + g*(cond_b - uncond)
         with torch.no_grad():
-            for j in range(text_embeddings.shape[0]):
-                noise_preds.append(
-                    unet(
-                        latent_model_input, t,
-                        encoder_hidden_states=text_embeddings[j : j + 1],
-                    ).sample
-                )
-        noise_preds = torch.cat(noise_preds, dim=0)  # (3B, 4, 64, 64)
-
-        # _predict_composed_noise composition:
-        #   noise_pred = uncond + (weights * (cond - uncond)).sum(dim=0)
-        noise_pred_uncond = noise_preds[:batch_size]   # (B,  4, 64, 64)
-        noise_pred_text   = noise_preds[batch_size:]   # (2B, 4, 64, 64)
-        noise_pred = noise_pred_uncond + (
-            weights * (noise_pred_text - noise_pred_uncond)
-        ).sum(dim=0, keepdim=True)                     # (B,  4, 64, 64)
+            noise_uncond = unet(latent_model_input, t, encoder_hidden_states=uncond_emb).sample  # (B,4,H,W)
+            noise_a      = unet(latent_model_input, t, encoder_hidden_states=a_emb).sample       # (B,4,H,W)
+            noise_b      = unet(latent_model_input, t, encoder_hidden_states=b_emb).sample       # (B,4,H,W)
+        noise_pred = noise_uncond + guidance_scale * (noise_a - noise_uncond) \
+                                  + guidance_scale * (noise_b - noise_uncond)  # (B,4,H,W)
 
         tracker.store_step(i, latents, noise_pred, float(i) / num_inference_steps, t.item())
 

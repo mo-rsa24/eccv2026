@@ -8,10 +8,14 @@ from typing import Callable, List, Optional, Union
 import torch
 
 from tqdm.auto import tqdm
-from transformers import CLIPFeatureExtractor, CLIPTextModel, CLIPTokenizer
+try:
+    from transformers import CLIPFeatureExtractor
+except ImportError:
+    from transformers import CLIPImageProcessor as CLIPFeatureExtractor
+from transformers import CLIPTextModel, CLIPTokenizer
 from packaging import version
+from diffusers.configuration_utils import FrozenDict
 from diffusers.models import AutoencoderKL, UNet2DConditionModel
-from diffusers.pipeline_utils import DiffusionPipeline
 from diffusers.schedulers import (
     DDIMScheduler,
     DPMSolverMultistepScheduler,
@@ -20,8 +24,21 @@ from diffusers.schedulers import (
     LMSDiscreteScheduler,
     PNDMScheduler,
 )
+from diffusers.utils import deprecate, logging
+from diffusers.utils.import_utils import is_accelerate_available
+
+try:
+    from diffusers.pipeline_utils import DiffusionPipeline
+except ImportError:
+    try:
+        from diffusers.pipelines.pipeline_utils import DiffusionPipeline
+    except ImportError:
+        from diffusers import DiffusionPipeline
+
 from .safety_checker import StableDiffusionSafetyChecker
 from . import StableDiffusionPipelineOutput
+
+logger = logging.get_logger(__name__)
 
 
 class ComposableStableDiffusionPipeline(DiffusionPipeline):

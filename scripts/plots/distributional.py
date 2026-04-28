@@ -30,7 +30,7 @@ from .utils import (
     TERM_CONDITIONS,
     LABEL_D_T_MSE, LABEL_ECDF, LABEL_JEFFREYS, LABEL_J_SOURCE_WITHIN,
     SCIPY_OK, stats,
-    get_present_poe, get_present_pstar, pair_color_map, short_pair,
+    get_present_poe, get_present_co3, get_present_pstar, pair_color_map, short_pair,
     kde_pmf, jeffreys_div, ecdf_xy,
     hide_top_right, save_fig,
     load_within_and,
@@ -96,7 +96,7 @@ def plot_20(df_term, df_traj, out_dir, data_dir=None, **kw):
 
     present_pstar  = get_present_pstar(df_term)
     pstar_conds    = present_pstar
-    baseline_conds = TERM_CONDITIONS + get_present_poe(df_term)
+    baseline_conds = TERM_CONDITIONS + get_present_poe(df_term) + get_present_co3(df_term)
 
     fig, ax = plt.subplots(figsize=(9, 5.5))
 
@@ -104,10 +104,10 @@ def plot_20(df_term, df_traj, out_dir, data_dir=None, **kw):
     if within_vals is not None:
         wx, wy = ecdf_xy(within_vals)
         ax.step(wx, wy, color="#888888", lw=2.2, ls="--", where="post",
-                label="Within-AND (noise floor)", zorder=5)
+                label="Within-anchor (noise floor)", zorder=5)
         ax.axvspan(np.percentile(within_vals, 5), np.percentile(within_vals, 95),
                    color="#888888", alpha=0.07, zorder=1,
-                   label="Within-AND 5–95 pct")
+                   label="Within-anchor 5–95 pct")
         ax.axvline(np.median(within_vals), color="#888888", lw=0.8,
                    ls=":", alpha=0.50)
 
@@ -137,10 +137,10 @@ def plot_20(df_term, df_traj, out_dir, data_dir=None, **kw):
     pstar_names = " / ".join(TERM_LABEL[c] for c in pstar_conds) if pstar_conds else "—"
     n = len(df_term)
     ax.set_title(
-        "Plot 20 — ECDF: Distance from AND  (all conditions + within-AND)\n"
-        f"Solid = p* [{pstar_names}]  ·  Dashed = baselines  ·  Grey = within-AND\n"
+        "Plot 20 — ECDF: Distance from the Logical Anchor  (all conditions + within-anchor)\n"
+        f"Solid = p* [{pstar_names}]  ·  Dashed = baselines  ·  Grey = within-anchor\n"
         f"All pairs pooled  (N = {n} per condition).  "
-        "Left shift ≈ closer to AND.  Overlap with grey ≈ gap closed.",
+        "Left shift ≈ closer to the anchor.  Overlap with grey ≈ gap closed.",
         fontsize=11,
     )
     ax.legend(fontsize=9, loc="lower right", ncol=2)
@@ -180,10 +180,10 @@ def plot_21(df_term, df_traj, out_dir, data_dir=None, **kw):
     # then baselines.  Labels align with matrix axes.
     cond_registry = []
     if within_vals is not None:
-        cond_registry.append(("Within-AND", "#888888", within_vals))
+        cond_registry.append(("Within-anchor", "#888888", within_vals))
     for c in present_pstar:
         cond_registry.append((TERM_LABEL[c], TERM_COLOR[c], df_term[c].values))
-    for c in TERM_CONDITIONS + get_present_poe(df_term):
+    for c in TERM_CONDITIONS + get_present_poe(df_term) + get_present_co3(df_term):
         cond_registry.append((TERM_LABEL[c], TERM_COLOR[c], df_term[c].values))
 
     n_conds = len(cond_registry)
@@ -237,8 +237,8 @@ def plot_21(df_term, df_traj, out_dir, data_dir=None, **kw):
     ax.set_title(
         "Plot 21 — Jeffrey's Divergence Heatmap  (all pairs pooled)\n"
         f"{LABEL_JEFFREYS}  ·  symmetric  ·  diagonal = 0\n"
-        "p* clustering with within-AND (small J) → gap closed;  "
-        "clustering with mono → AND outside text manifold.",
+        "p* clustering with within-anchor (small J) → gap closed;  "
+        "clustering with mono → logical anchor outside text manifold.",
         fontsize=11,
     )
     fig.tight_layout()
@@ -249,7 +249,7 @@ def plot_21(df_term, df_traj, out_dir, data_dir=None, **kw):
 # Plot 22 — Expressiveness ladder: J(p* source, within-AND) vs method rank.
 #
 #   x-axis: p* sources in increasing language-expressiveness order
-#           (CLIP inverter ≺ token opt. ≺ Zero2Text ≺ VLM caption)
+#           (CLIP inverter ≺ token opt. ≺ Zero2Text ≺ SD-IPC; legacy VLM omitted from defaults)
 #   y-axis: Jeffrey's divergence from within-AND distribution (↓ = gap closed)
 #
 #   Each line = one concept pair; bold black = pooled mean.
@@ -277,6 +277,9 @@ def plot_22(df_term, df_traj, out_dir, data_dir=None, **kw):
     present_pstar = get_present_pstar(df_term)
     if not present_pstar:
         print("  Skipping plot 22: no d_T_pstar_* columns found.")
+        return
+    if len(present_pstar) < 2:
+        print("  Skipping plot 22: need at least two p* source families for an expressiveness ladder.")
         return
 
     df_within = pd.DataFrame(raw)
@@ -351,11 +354,11 @@ def plot_22(df_term, df_traj, out_dir, data_dir=None, **kw):
     ax.set_xlim(-0.4, n_pstar - 0.6)
 
     ax.set_title(
-        "Plot 22 — Expressiveness Ladder: Jeffrey's Divergence from Within-AND\n"
+        "Plot 22 — Expressiveness Ladder: Jeffrey's Divergence from Within-Anchor\n"
         "Each line = concept pair  ·  Bold = pooled mean  ·  "
         "Dashed horizontals = baseline divergences\n"
         "Downward slope → more expressive p* closes the gap.  "
-        "Plateau above baselines → AND outside the text-conditioned latent manifold.",
+        "Plateau above baselines → the logical anchor remains outside the text-conditioned latent manifold.",
         fontsize=11,
     )
     ax.legend(fontsize=9, loc="upper right", ncol=2)
@@ -430,8 +433,8 @@ def plot_23(df_term, df_traj, out_dir, data_dir=None, **kw):
     ax.set_xticklabels(labels, fontsize=11)
     ax.set_ylabel(r"$D_{\mathrm{KL}}(P\|Q)$", fontsize=11)
     ax.set_title(
-        "Plot 23 — p* vs SuperDiff-AND KL Divergence  (p* sources only)\n"
-        "AND proxy = within-AND pairwise distance distribution.  Lower = closer.",
+        "Plot 23 — p* vs Logical-Anchor KL Divergence  (p* sources only)\n"
+        "Anchor proxy = within-anchor pairwise distance distribution.  Lower = closer.",
         fontsize=11,
     )
     ax.grid(axis="y", alpha=0.25)
@@ -490,7 +493,7 @@ def plot_29(df_term, df_traj, out_dir, data_dir=None, **kw):
         return
     within_vals, present_pstar, _, _, _, _, src_vals = prepared
 
-    labels = ["Within-AND"] + [TERM_LABEL[c] for c in present_pstar]
+    labels = ["Within-anchor"] + [TERM_LABEL[c] for c in present_pstar]
     colors = ["#1F77B4"] + [TERM_COLOR[c] for c in present_pstar]
     all_series = [within_vals] + [src_vals[c] for c in present_pstar]
 
@@ -510,7 +513,7 @@ def plot_29(df_term, df_traj, out_dir, data_dir=None, **kw):
 
     ax.set_yticks(y_pos)
     ax.set_yticklabels(labels, fontsize=10)
-    ax.set_xlabel(r"$d_T$  (terminal distance to SuperDiff-AND)", fontsize=11)
+    ax.set_xlabel(r"$d_T$  (terminal distance to the logical anchor)", fontsize=11)
     ax.set_title(
         "Plot 29 — Pointwise Scaffold (1/5): Raw pooled $d_T$ samples\n"
         "Dots = per-seed observations.  Vertical ticks = sample means.\n"

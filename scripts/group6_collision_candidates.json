@@ -1,0 +1,60 @@
+{
+  "manifest_version": 1,
+  "replacement_group_key": "group6_coherent_collision",
+  "replacement_group_label": "Group 6 - Coherent Collision",
+  "archived_group_key": "group7_archived_near_neighbor_collision",
+  "archived_group_label": "Group 7 - Archived Near-Neighbor Collision",
+  "screening_seed": 42,
+  "target_pair_count": 10,
+  "notes": "Starter candidate pool for replacing the paper-facing Group 6 with visually distinct collision pairs.",
+  "candidate_pairs": [
+    {
+      "pair": ["a cat", "a dog"],
+      "rationale": "Canonical cross-species collision where hybridization or dominance is obvious."
+    },
+    {
+      "pair": ["a lion", "a horse"],
+      "rationale": "Large-animal collision with clear anatomical mismatch."
+    },
+    {
+      "pair": ["a cow", "a horse"],
+      "rationale": "Farm-animal collision with different head and torso priors."
+    },
+    {
+      "pair": ["a lion", "a dog"],
+      "rationale": "Predator-domestic animal collision."
+    },
+    {
+      "pair": ["a tiger", "a dog"],
+      "rationale": "Striped big-cat collision against a familiar domestic animal."
+    },
+    {
+      "pair": ["a wolf", "a horse"],
+      "rationale": "Predator-prey style collision with distinct forms."
+    },
+    {
+      "pair": ["a rabbit", "a dog"],
+      "rationale": "Small-large mammal collision."
+    },
+    {
+      "pair": ["a cat", "a lion"],
+      "rationale": "Same family but still visibly distinguishable at object level."
+    },
+    {
+      "pair": ["a sheep", "a horse"],
+      "rationale": "Distinct wool prior versus smooth equine body prior."
+    },
+    {
+      "pair": ["a sneaker", "a high heel"],
+      "rationale": "Competing footwear concepts where monolithic rendering should support two distinct objects but PoE may collapse category identity."
+    },
+    {
+      "pair": ["a teapot", "a kettle"],
+      "rationale": "Closely competing kitchenware concepts that are distinct enough for mono but prone to object-slot collision."
+    },
+    {
+      "pair": ["a mug", "a wine glass"],
+      "rationale": "Everyday vessel collision with clear shape and category differences."
+    }
+  ]
+}

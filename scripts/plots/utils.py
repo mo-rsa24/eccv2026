@@ -16,6 +16,34 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 try:
+    from taxonomy_manifest import (
+        GROUP_LABEL_BY_KEY,
+        GROUP_ORDER,
+        get_pair_taxonomy_from_row,
+    )
+except ImportError:
+    from scripts.taxonomy_manifest import (
+        GROUP_LABEL_BY_KEY,
+        GROUP_ORDER,
+        get_pair_taxonomy_from_row,
+    )
+
+try:
+    from semantic_baseline_common import (
+        build_audit_from_joint_probe_file,
+        resolve_joint_probe_path,
+        resolve_semantic_audit_path,
+        select_qualified_pair_slugs,
+    )
+except ImportError:
+    from scripts.semantic_baseline_common import (
+        build_audit_from_joint_probe_file,
+        resolve_joint_probe_path,
+        resolve_semantic_audit_path,
+        select_qualified_pair_slugs,
+    )
+
+try:
     from scipy import stats
     SCIPY_OK = True
 except ImportError:
@@ -34,45 +62,57 @@ TERM_COLOR = {
     "d_T_c1":        "#4E79A7",   # blue
     "d_T_c2":        "#59A14F",   # green
     "d_T_poe":       "#F28E2B",   # orange
+    "d_T_co3":       "#B07AA1",   # mauve   — CO3 logical composition
     # p* variants — ordered by increasing language expressiveness
     "d_T_pstar":     "#9467BD",   # purple  (backward-compat alias for inverter)
+    "d_T_pstar_sdipc":     "#E8A838", # amber   — SD-IPC closed-form projection from PoE
+    "d_T_pstar_co3_sdipc": "#76B7B2", # teal    — SD-IPC closed-form projection from CO3
     "d_T_pstar_inv": "#9467BD",   # purple  — trained CLIP inverter
-    "d_T_pstar_pez": "#17BECF",   # teal    — discrete token optimisation (PEZ / VGD)
+    "d_T_pstar_pez": "#17BECF",   # cyan    — discrete token optimisation (PEZ / VGD)
     "d_T_pstar_z2t": "#E377C2",   # magenta — Zero2Text ridge regression
-    "d_T_pstar_vlm": "#E8A838",   # amber   — VLM natural-language caption (LLaVA/BLIP-2)
+    "d_T_pstar_vlm": "#C9A227",   # gold    — legacy VLM caption rerun
 }
 TERM_LABEL = {
     "d_T_mono":      "Monolithic",
     "d_T_c1":        "Solo c₁",
     "d_T_c2":        "Solo c₂",
     "d_T_poe":       "PoE",
-    "d_T_pstar":     "p* (inverter)",
-    "d_T_pstar_inv": "p* (CLIP inverter)",
-    "d_T_pstar_pez": "p* (token opt.)",
-    "d_T_pstar_z2t": "p* (Zero2Text)",
-    "d_T_pstar_vlm": "p* (VLM caption)",
+    "d_T_co3":       "CO3",
+    "d_T_pstar":     "PoE p* (inverter)",
+    "d_T_pstar_sdipc":     "PoE p*",
+    "d_T_pstar_co3_sdipc": "CO3 p*",
+    "d_T_pstar_inv": "PoE p* (CLIP inverter)",
+    "d_T_pstar_pez": "PoE p* (token opt.)",
+    "d_T_pstar_z2t": "PoE p* (Zero2Text)",
+    "d_T_pstar_vlm": "p* (VLM caption, legacy)",
 }
 TRAJ_COLOR = {
     "d_t_mono":      "#E15759",
     "d_t_c1":        "#4E79A7",
     "d_t_c2":        "#59A14F",
     "d_t_poe":       "#F28E2B",
+    "d_t_co3":       "#B07AA1",
     "d_t_pstar":     "#9467BD",
+    "d_t_pstar_sdipc":     "#E8A838",
+    "d_t_pstar_co3_sdipc": "#76B7B2",
     "d_t_pstar_inv": "#9467BD",
     "d_t_pstar_pez": "#17BECF",
     "d_t_pstar_z2t": "#E377C2",
-    "d_t_pstar_vlm": "#E8A838",
+    "d_t_pstar_vlm": "#C9A227",
 }
 TRAJ_LABEL = {
     "d_t_mono":      "Monolithic",
     "d_t_c1":        "Solo c₁",
     "d_t_c2":        "Solo c₂",
     "d_t_poe":       "PoE",
-    "d_t_pstar":     "p* (inverter)",
-    "d_t_pstar_inv": "p* (CLIP inverter)",
-    "d_t_pstar_pez": "p* (token opt.)",
-    "d_t_pstar_z2t": "p* (Zero2Text)",
-    "d_t_pstar_vlm": "p* (VLM caption)",
+    "d_t_co3":       "CO3",
+    "d_t_pstar":     "PoE p* (inverter)",
+    "d_t_pstar_sdipc":     "PoE p*",
+    "d_t_pstar_co3_sdipc": "CO3 p*",
+    "d_t_pstar_inv": "PoE p* (CLIP inverter)",
+    "d_t_pstar_pez": "PoE p* (token opt.)",
+    "d_t_pstar_z2t": "PoE p* (Zero2Text)",
+    "d_t_pstar_vlm": "p* (VLM caption, legacy)",
 }
 
 TERM_CONDITIONS = ["d_T_mono", "d_T_c1", "d_T_c2"]
@@ -81,19 +121,21 @@ TRAJ_CONDITIONS = ["d_t_mono", "d_t_c1", "d_t_c2"]
 # Canonical priority for auto-detection: most expressive → least expressive.
 # Primary path excludes legacy Z2T from defaults.
 PSTAR_PRIORITY = [
-    "d_T_pstar_vlm",
+    "d_T_pstar_sdipc",
+    "d_T_pstar_co3_sdipc",  # SD-IPC projection from CO3 image
     "d_T_pstar_pez",
     "d_T_pstar_inv",
     "d_T_pstar",     # backward-compat alias — shown only if _inv is absent
 ]
-# Legacy-only source kept for backward compatibility with older JSONs.
-PSTAR_PRIORITY_LEGACY = ["d_T_pstar_z2t"]
+# Legacy-only sources kept for backward compatibility with older JSONs.
+PSTAR_PRIORITY_LEGACY = ["d_T_pstar_vlm", "d_T_pstar_z2t"]
 # Parallel list for trajectory records
 TRAJ_PSTAR_PRIORITY = [p.replace("d_T_", "d_t_") for p in PSTAR_PRIORITY]
 TRAJ_PSTAR_PRIORITY_LEGACY = [p.replace("d_T_", "d_t_") for p in PSTAR_PRIORITY_LEGACY]
 
 # Corresponding gap key in all_pairs_gap.json for each terminal pstar column
 PSTAR_GAP_KEY = {
+    "d_T_pstar_sdipc": "gap_and_pstar_sdipc",
     "d_T_pstar_vlm": "gap_and_pstar_vlm",
     "d_T_pstar_pez": "gap_and_pstar_pez",
     "d_T_pstar_z2t": "gap_and_pstar_z2t",
@@ -105,27 +147,31 @@ PSTAR_GAP_KEY = {
 PAIR_PALETTE = ["#F28E2B", "#76B7B2", "#B07AA1", "#9C755F"]
 
 # Time bins for stacked temporal bar charts
-# 5 equal-width windows; sum of incremental heights = terminal MSE (since d_0 = 0)
-STEP_BINS  = [(0, 10), (10, 20), (20, 30), (30, 40), (40, 50)]
-BIN_LABELS = ["0–10", "10–20", "20–30", "30–40", "40–50"]
-BIN_ALPHAS = [0.92, 0.74, 0.55, 0.36, 0.18]   # opaque = early, transparent = late
+# 3 phase windows aligned to early/mid/late denoising decomposition:
+#   Early (0–17): high-noise structural divergence
+#   Mid   (17–34): refinement phase
+#   Late  (34–50): low-noise fine-detail resolution
+# Sum of incremental heights = terminal MSE (since d_0 = 0)
+STEP_BINS  = [(0, 17), (17, 34), (34, 50)]
+BIN_LABELS = ["Early (0–17)", "Mid (17–34)", "Late (34–50)"]
+BIN_ALPHAS = [0.92, 0.55, 0.18]   # opaque = early, transparent = late
 
 # Axis-label math strings (shared across baseline/p* /distributional plots)
 LABEL_D_T_MSE = (
     r"Per-element MSE  "
-    r"$d_T=\frac{1}{N}\left\|z_T^{\mathrm{cond}}-z_T^{\mathrm{AND}}\right\|_2^2$"
+    r"$d_T=\frac{1}{N}\left\|z_T^{\mathrm{cond}}-z_T^{\mathrm{anchor}}\right\|_2^2$"
 )
 LABEL_D_t_MSE = (
     r"Per-element MSE  "
-    r"$d_t=\frac{1}{N}\left\|z_t^{\mathrm{cond}}-z_t^{\mathrm{AND}}\right\|_2^2$"
+    r"$d_t=\frac{1}{N}\left\|z_t^{\mathrm{cond}}-z_t^{\mathrm{anchor}}\right\|_2^2$"
 )
-LABEL_CUM_DELTA_D_t = r"Cumulative $\Delta d_t$ from AND  (incremental per time bin)"
+LABEL_CUM_DELTA_D_t = r"Cumulative $\Delta d_t$ from logical anchor  (incremental per time bin)"
 LABEL_ECDF = r"Cumulative probability  $P(d_T \leq x)$"
 LABEL_JEFFREYS = r"$J(P,Q)=D_{\mathrm{KL}}(P\|Q)+D_{\mathrm{KL}}(Q\|P)$"
 LABEL_JS2 = r"$\mathrm{JS}^2(P_{p^*}, P_{\mathrm{mono}})$  ($\downarrow$ better)"
 LABEL_J_SOURCE_WITHIN = (
-    r"$J(P_{\mathrm{source}}, P_{\mathrm{within\!-\!AND}})$  "
-    r"($\downarrow$ closer to AND)"
+    r"$J(P_{\mathrm{source}}, P_{\mathrm{within\!-\!anchor}})$  "
+    r"($\downarrow$ closer to the logical anchor)"
 )
 
 
@@ -148,34 +194,42 @@ def get_present_pstar(df: pd.DataFrame) -> list:
     """Return pstar columns present in df, in canonical priority order.
     Suppresses the legacy 'd_T_pstar' alias when 'd_T_pstar_inv' is also present."""
     present = [c for c in PSTAR_PRIORITY if c in df.columns]
-    if not present:
-        # Fallback for older runs that only contain legacy Z2T.
-        present = [c for c in PSTAR_PRIORITY_LEGACY if c in df.columns]
+    present += [c for c in PSTAR_PRIORITY_LEGACY if c in df.columns]
     if "d_T_pstar_inv" in present and "d_T_pstar" in present:
         present.remove("d_T_pstar")
     return present
 
 
 def get_present_poe(df: pd.DataFrame) -> list:
-    """Return terminal PoE column if present."""
-    return ["d_T_poe"] if "d_T_poe" in df.columns else []
+    """PoE is the anchor (distance = 0 by construction); exclude from conditions."""
+    return []
 
 
 def get_present_traj_pstar(df: pd.DataFrame) -> list:
     """Return trajectory pstar columns present in df, in canonical priority order.
     Suppresses the legacy 'd_t_pstar' alias when 'd_t_pstar_inv' is also present."""
     present = [c for c in TRAJ_PSTAR_PRIORITY if c in df.columns]
-    if not present:
-        # Fallback for older runs that only contain legacy Z2T.
-        present = [c for c in TRAJ_PSTAR_PRIORITY_LEGACY if c in df.columns]
+    present += [c for c in TRAJ_PSTAR_PRIORITY_LEGACY if c in df.columns]
     if "d_t_pstar_inv" in present and "d_t_pstar" in present:
         present.remove("d_t_pstar")
     return present
 
 
 def get_present_traj_poe(df: pd.DataFrame) -> list:
-    """Return trajectory PoE column if present."""
-    return ["d_t_poe"] if "d_t_poe" in df.columns else []
+    """PoE is the anchor (distance = 0 by construction); exclude from conditions."""
+    return []
+
+
+def get_present_co3(df: pd.DataFrame) -> list:
+    """Return terminal CO3 column if present."""
+    return ["d_T_co3"] if "d_T_co3" in df.columns else []
+
+
+def get_present_traj_co3(df: pd.DataFrame) -> list:
+    """Return trajectory CO3 column if present.
+    CO3 is endpoint-only, so this is expected to be absent from trajectory data;
+    the function is provided for symmetry and graceful no-op behaviour."""
+    return ["d_t_co3"] if "d_t_co3" in df.columns else []
 
 
 def apply_pstar_filter(pstar_cols: list, pstar_filter) -> list:
@@ -211,8 +265,104 @@ def short_pair(pair: str) -> str:
     return " + ".join(strip_article(p) for p in pair.split(" + "))
 
 
+def enrich_taxonomy_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
+
+    def _lookup(row: pd.Series):
+        meta = get_pair_taxonomy_from_row(row.to_dict())
+        row_is_repr = row.get("is_representative_pair", False)
+        if pd.isna(row_is_repr):
+            row_is_repr = False
+        if meta is None:
+            return pd.Series(
+                {
+                    "pair_slug": row.get("pair_slug") or row.get("slug"),
+                    "taxonomy_group_key": row.get("taxonomy_group_key") or row.get("pair_group"),
+                    "taxonomy_group_label": row.get("taxonomy_group_label"),
+                    "is_representative_pair": bool(row_is_repr),
+                }
+            )
+        return pd.Series(
+            {
+                "pair_slug": row.get("pair_slug") or row.get("slug") or meta["pair_slug"],
+                "taxonomy_group_key": row.get("taxonomy_group_key") or meta["taxonomy_group_key"],
+                "taxonomy_group_label": (
+                    row.get("taxonomy_group_label") or meta["taxonomy_group_label"]
+                ),
+                "is_representative_pair": bool(row_is_repr or meta["is_representative_pair"]),
+            }
+        )
+
+    extra = df.apply(_lookup, axis=1)
+    for col in extra.columns:
+        df[col] = extra[col]
+    if "taxonomy_group_label" in df.columns:
+        df["taxonomy_group_label"] = df["taxonomy_group_label"].fillna(
+            df["taxonomy_group_key"].map(GROUP_LABEL_BY_KEY)
+        )
+    return df
+
+
+def enrich_taxonomy_records(records: list[dict]) -> list[dict]:
+    enriched = []
+    for rec in records:
+        rec = dict(rec)
+        meta = get_pair_taxonomy_from_row(rec)
+        if meta is not None:
+            rec.setdefault("pair_slug", meta["pair_slug"])
+            rec.setdefault("taxonomy_group_key", meta["taxonomy_group_key"])
+            rec.setdefault("taxonomy_group_label", meta["taxonomy_group_label"])
+            rec.setdefault("is_representative_pair", meta["is_representative_pair"])
+        if rec.get("taxonomy_group_label") is None and rec.get("taxonomy_group_key") in GROUP_LABEL_BY_KEY:
+            rec["taxonomy_group_label"] = GROUP_LABEL_BY_KEY[rec["taxonomy_group_key"]]
+        enriched.append(rec)
+    return enriched
+
+
+def taxonomy_group_values(df: pd.DataFrame) -> list[str]:
+    if "taxonomy_group_key" not in df.columns:
+        return []
+    present = set(df["taxonomy_group_key"].dropna().tolist())
+    return [key for key in GROUP_ORDER if key in present]
+
+
+def active_logical_anchor_label(df: pd.DataFrame | None, fallback: str = "logical anchor") -> str:
+    if df is None or getattr(df, "empty", True):
+        return fallback
+    if "logical_anchor_label" in df.columns:
+        vals = [str(v).strip() for v in df["logical_anchor_label"].dropna().unique().tolist() if str(v).strip()]
+        if vals:
+            return vals[0]
+    if "logical_anchor" in df.columns:
+        vals = [str(v).strip() for v in df["logical_anchor"].dropna().unique().tolist() if str(v).strip()]
+        if vals:
+            return vals[0]
+    return fallback
+
+
+def within_anchor_column(df: pd.DataFrame | None) -> str:
+    if df is None or getattr(df, "empty", True):
+        return "d_within_and"
+    if "d_within_poe" in df.columns:
+        return "d_within_poe"
+    return "d_within_and"
+
+
+def canonical_condition_name(metric_key: str) -> str:
+    return (
+        metric_key.replace("d_T_", "")
+        .replace("d_t_", "")
+        .replace("gap_and_", "")
+    )
+
+
 def kde_pmf(vals: np.ndarray, x_grid: np.ndarray) -> np.ndarray:
-    """Gaussian KDE (Scott bandwidth) normalised to a sum-to-one PMF."""
+    """Gaussian KDE (Scott bandwidth) normalised to a sum-to-one PMF.
+    Returns a uniform PMF if fewer than 2 data points (KDE undefined)."""
+    if len(vals) < 2:
+        uniform = np.ones(len(x_grid), dtype=float)
+        return uniform / uniform.sum()
     d = np.maximum(stats.gaussian_kde(vals, bw_method="scott")(x_grid), 1e-12)
     return d / d.sum()
 
@@ -393,7 +543,8 @@ def load_terminal(
         sys.exit(f"Not found: {p}\nRun measure_composability_gap.py first.")
     df = pd.DataFrame(json.loads(p.read_text()))
     df = _apply_and_anchor_terminal(df, and_anchor)
-    return _apply_monolithic_baseline_terminal(df, monolithic_baseline)
+    df = _apply_monolithic_baseline_terminal(df, monolithic_baseline)
+    return enrich_taxonomy_dataframe(df)
 
 
 def load_trajectory(data_dir: Path, monolithic_baseline: str = "auto") -> pd.DataFrame:
@@ -401,7 +552,8 @@ def load_trajectory(data_dir: Path, monolithic_baseline: str = "auto") -> pd.Dat
     if not p.exists():
         sys.exit(f"Not found: {p}\nRun measure_composability_gap.py first.")
     df = pd.DataFrame(json.loads(p.read_text()))
-    return _apply_monolithic_baseline_trajectory(df, monolithic_baseline)
+    df = _apply_monolithic_baseline_trajectory(df, monolithic_baseline)
+    return enrich_taxonomy_dataframe(df)
 
 
 def load_all_pairs_gap(data_dir: Path, monolithic_baseline: str = "auto"):
@@ -409,11 +561,60 @@ def load_all_pairs_gap(data_dir: Path, monolithic_baseline: str = "auto"):
     if not p.exists():
         return None
     rows = json.loads(p.read_text())
-    return _apply_monolithic_baseline_gap(rows, monolithic_baseline)
+    rows = _apply_monolithic_baseline_gap(rows, monolithic_baseline)
+    return enrich_taxonomy_records(rows)
 
 
 def load_within_and(data_dir: Path):
     p = _resolve_json(data_dir, "within_and_distances.json")
     if not p.exists():
         return None
-    return json.loads(p.read_text())
+    return enrich_taxonomy_records(json.loads(p.read_text()))
+
+
+def load_semantic_baseline_audit(data_dir: Path) -> dict | None:
+    audit_path = resolve_semantic_audit_path(data_dir)
+    if audit_path.exists():
+        return json.loads(audit_path.read_text())
+
+    joint_probe_path = resolve_joint_probe_path(data_dir)
+    if joint_probe_path.exists():
+        return build_audit_from_joint_probe_file(joint_probe_path)
+    return None
+
+
+def filter_semantic_baseline_scope(
+    df: pd.DataFrame,
+    data_dir: Path,
+    scope: str = "full",
+    mono_pass_threshold: float = 0.75,
+    mono_seed_gate: str = "semantic",
+) -> pd.DataFrame:
+    if scope == "full" or df.empty:
+        return df
+
+    audit = load_semantic_baseline_audit(data_dir)
+    if audit is None:
+        print(
+            "Warning: semantic-baseline audit is unavailable; "
+            f"keeping full dataset for scope '{scope}'."
+        )
+        return df
+
+    qualified_pairs, qualified_seed_pairs = select_qualified_pair_slugs(
+        audit,
+        scope=scope,
+        mono_pass_threshold=mono_pass_threshold,
+        mono_seed_gate=mono_seed_gate,
+    )
+    if scope == "pair_qualified":
+        return df[df["pair_slug"].isin(qualified_pairs)].copy()
+    if scope == "seed_qualified":
+        qualified_pairs = set(qualified_pairs)
+        qualified_seed_pairs = set(qualified_seed_pairs)
+        mask = [
+            (pair_slug in qualified_pairs) and ((pair_slug, seed) in qualified_seed_pairs)
+            for pair_slug, seed in zip(df["pair_slug"], df["seed"])
+        ]
+        return df[pd.Series(mask, index=df.index)].copy()
+    return df

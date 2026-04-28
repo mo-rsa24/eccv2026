@@ -29,13 +29,124 @@ This draft adapts Phase~1 of a broader research programme into a compact NeurIPS
 
 \section{Introduction}
 
-This document is a focused Phase~1 draft for a NeurIPS submission trajectory. The main body is intentionally concentrated in Sections~3--6, where the composability gap is defined and the planned analyses are described in paper form.
+Recent progress in generative modeling has led to impressive results across domains, including natural language[cite], music generaetion[cite], image synthesis[cite], and natural language processing[cite]. 
+Diffusion models have become a dominant approach for high-fidelity image generation, producing diverse, high-quality samples at scale \citep{ho2020denoising, dhariwal2021diffusion, rombach2022high, ho2022classifierfree}.
+Their capabilities are particularly evident in text-to-image (T2I) generation, where models translate natural language prompts into realistic images and can generate scenes containing multiple objects, attributes, and relations.
+
+Text-to-image models allow the generation of complex scenes involving multiple objects, attributes, and relations. 
+This compositional capability shows that rich scene structure can be specified through natural language prompts and realized within a single generative model. 
+Composable image generation instead constructs such scenes by combining pretrained conditional components at inference time, enabling the synthesis of complex scenes without relying solely on a single jointly conditioned model.
+This enables generation beyond the training distribution, including compositions that are rare or absent in the data. 
+This is important in settings where certain concept combinations are underrepresented, such as uncommon object co-occurrences in natural images, novel attribute combinations in synthetic scenes, or rare co-morbid conditions in medical imaging.
+
+In practice, composing pretrained diffusion models at inference time does not consistently produce samples that realize all conditions in a single coherent image. 
+The resulting outputs often exhibit characteristic failure modes, including incorrect attribute binding, violations of spatial or relational structure, omission of one of the concepts, and hybrid images in which concepts are blended rather than cleanly composed.
+These failures point to a deeper issue: composition in diffusion models is not well-defined. 
+While logical composition provides a mechanism for combining conditions, there is no general principle that determines how multiple concepts should be jointly realized in a coherent scene. 
+In practice, different compositions can correspond to many plausible outcomes, and there is no formal framework that specifies which of these should be preferred or how semantic alignment should be enforced. 
+For example, composing ``man'' and ``umbrella'' may yield multiple valid interpretations, yet a coherent composition often requires resolving implicit structure, such as the man holding the umbrella. 
+Current compositional methods do not explicitly account for such structure, and therefore lack a consistent notion of what correct composition entails. 
+This motivates the need to systematically characterize the behavior of compositional generation under different conditions, rather than assuming that combining concepts will produce a well-defined outcome.
+
+In this work, we distinguish between semantic composition, defined through a single joint prompt, and logical composition, defined through the combination of pretrained diffusion models. 
+We conduct a controlled empirical study of compositional behavior in diffusion models by comparing how different composition strategies realize the same concepts.
+We define the \emph{composability gap} as the divergence in the generative trajectories produced by semantic composition and inference-time composition.
+Our central hypothesis is that this gap is \emph{structured rather than uniform}, with agreement when concepts are compatible or separable in an underlying latent space, and divergence when they interfere or compete for shared structure.
+
+To make this structure explicit, it is necessary to characterize how pairs of concepts differ in ways that affect compositional behavior. 
+In particular, compositional failure depends on factors such as whether concepts co-occur in the data, how their representations overlap, and whether they compete for shared degrees of freedom. 
+This motivates grouping concept pairs into regimes with predictable compositional outcomes.
+We operationalize this through a pair descriptor \( \Gamma(c_1, c_2) = (S, O, I, C) \), capturing joint support, representation overlap, score interference, and degree-of-freedom competition. 
+This representation induces a natural ordering of compositional difficulty, allowing us to systematically study when composition succeeds and when it fails.
+Practically, our findings clarify when plug-and-play compositional methods faithfully realize intended scene specifications and when they instead induce unintended biases.
+\begin{figure*}[t]
+    \centering
+    \IfFileExists{figures/trajectory_3x2_sdxl.png}{
+        \includegraphics[width=0.96\textwidth]{figures/trajectory_3x2_sdxl.png}
+    }{
+        \fbox{\parbox[c][0.34\textheight][c]{0.92\textwidth}{\centering Missing figure asset: \texttt{figures/trajectory\_3x2\_sdxl.png}\\Run \texttt{scripts/render\_taxonomy\_paper\_figure.py --mode figure1 --seed 42}.}}
+    }
+    \caption{Six-group shared-noise taxonomy overview from the frozen SDXL final root. Each panel shows one representative pair from the canonical taxonomy: G1 co-occurrence, G2 factorization, G3 object-scene, G4 dual-object, G5 prior entanglement, and G6 coherent collision. Within each panel, the upper axis is a two-dimensional MDS projection of the denoising trajectories for solo $A$, solo $B$, the monolithic prompt $A \wedge B$, and logical composition by PoE, all starting from the same initial latent $x_T$. The panel is qualitative rather than inferential: it introduces the visual logic of the six-group taxonomy before the paper turns to decoded endpoints and later quantitative analysis.}
+    \label{fig:taxonomy_semantic_overview}
+\end{figure*}
+
+We further test whether images generated by logical composition can be reproduced by deriving a single joint prompt from those images and rerunning text-to-image generation with that prompt to recover the same composition. 
+This determines whether compositions produced by logical composition are also reachable through standard prompting or require inference-time composition.
+
+This distinction is important because it separates failures due to prompt expressivity from failures inherent to composition. 
+If a composition can be recovered through prompting, then the discrepancy arises from how the prompt specifies the scene. 
+If it cannot, then logical composition is producing structures that standard prompting does not reliably realize. This provides a diagnostic tool for interpreting compositional failures and situates them within the proposed taxonomy of concept interactions.
 
 \section{Related Work}
 
-The full related-work discussion is deferred to a later draft. For the present version, we only retain the citations needed to situate score-space composition, latent diffusion, and SD-IPC-based reachability analysis within the Phase~1 problem setting.
+\paragraph{Compositional Generative Modeling.}
+Recent work [cite] has argued for constructing generative systems by composing multiple models rather than relying on a single monolithic model. 
+In this view, each component captures a subset of the data distribution, and composition enables generalization to novel combinations that may be underrepresented or absent during training. 
+This framework provides a principled motivation for inference-time composition and highlights its potential for out-of-distribution generation.
+However, it primarily focuses on the benefits of composition and does not characterize when such compositions faithfully realize the intended joint structure.
 
-\section{Problem Statement}
+\paragraph{Product-Based Composition and Conditional Formulations.}
+Compositional generation is commonly formulated through product-based constructions that combine multiple distributions into a joint model. 
+A simple formulation is the \emph{product of distributions}, defined as
+\begin{equation}
+\hat p(x) \propto \prod_{i=1}^n p_i(x),
+\end{equation}
+where each $p_i(x)$ represents a distribution associated with a concept or constraint. 
+While intuitive, this formulation restricts the support of $\hat p(x)$ to the intersection of the supports of the individual distributions, limiting its ability to generate compositions that are not already present in each component.
+
+A more principled approach treats composition as conditional generation over concepts. 
+Let $c_1, \dots, c_n$ denote concepts, and consider the joint conditional distribution
+\begin{equation}
+p(x \mid c_1, \dots, c_n) \propto p(x)\prod_{i=1}^n p(c_i \mid x).
+\end{equation}
+Assuming conditional independence of concepts given $x$, and using Bayes' rule, this can be rewritten as
+\begin{equation}
+p(x \mid c_1, \dots, c_n) \propto p(x)\prod_{i=1}^n \frac{p(x \mid c_i)}{p(x)}.
+\end{equation}
+This formulation provides a probabilistic interpretation of composition and enables combining multiple conditions within a unified framework.
+
+In diffusion models, this corresponds to combining conditional score functions during sampling. 
+Using a classifier-free guidance formulation, the composed score can be written as
+\begin{equation}
+\hat{\epsilon}(x_t, t) = \epsilon_\theta(x_t, t) + \sum_{i=1}^n w_i \left( \epsilon_\theta(x_t, t \mid c_i) - \epsilon_\theta(x_t, t) \right),
+\end{equation}
+which can be interpreted as approximating the score of the composed distribution.
+
+More generally, energy-based formulations express composition as a product-of-experts,
+\begin{equation}
+p_{\text{compose}}(x) \propto \prod_{i=1}^n p_\theta^{(i)}(x) \propto \exp\left(-\sum_{i=1}^n E_\theta^{(i)}(x)\right),
+\end{equation}
+allowing heterogeneous components to jointly define the target distribution. 
+While these formulations provide flexible mechanisms for combining constraints, they implicitly assume that such compositions correspond to the intended joint semantics, an assumption that remains largely unexamined.
+
+Recent work modifies product-based composition to address empirical failures such as concept imbalance and mode dominance. 
+In text-to-image models, composition is typically implemented by combining conditional scores of individual concepts,
+\begin{equation}
+\tilde{\epsilon}_t = \epsilon_t^\phi + \sum_{k} \lambda_k \left(\epsilon_t^{c_k} - \epsilon_t^\phi \right),
+\end{equation}
+where $\epsilon_t^\phi$ denotes the unconditional score and $\lambda_k$ controls the strength of concept $c_k$. 
+Although simple and model-agnostic, this linear combination does not in general correspond to the score of a valid joint distribution, which can lead to incorrect or imbalanced compositions.
+
+To address this, \citep{dutta2026steer} propose a corrected distribution
+\begin{equation}
+\tilde p(x \mid C) \propto \frac{p(x \mid C)}{\prod_i p(x \mid c_i)},
+\end{equation}
+which suppresses regions where the joint distribution overlaps with individual concept distributions, encouraging samples that satisfy all conditions more evenly. 
+These approaches can be understood through the Tweedie denoising perspective, where score combinations act by shifting the predicted clean sample at each timestep rather than explicitly constructing a joint distribution. 
+However, such local score modifications do not guarantee consistency with any coherent joint distribution, which can result in distorted or incomplete compositions.
+
+\paragraph{Theoretical Analyses and Failure Modes of Diffusion Composition.}
+Recent work has begun to study both the theoretical properties and empirical behavior of compositional diffusion models \citep{bradley2025mechanisms, du2024compositional, dutta2026steer}. 
+Projective composition provides a formal characterization of when score combination recovers a desired joint distribution, identifying conditions such as factorized conditionals and independence assumptions under which composition is valid \citep{bradley2025mechanisms}. 
+These analyses explain several empirical successes of compositional methods, but also highlight that such conditions are often violated in practice.
+
+Empirically, compositional generation exhibits consistent failure modes, including concept omission, imbalance, and hybridization, where generated samples fail to jointly realize all conditions \citep{dutta2026steer}. 
+Prior work attributes these failures to phenomena such as mode overlap and competition between concepts, where the composed distribution is dominated by individual components rather than their conjunction. 
+Correction-based approaches attempt to mitigate these issues by modifying the sampling process, for example through gradient-based or Tweedie-based updates that steer samples toward balanced joint modes \citep{dutta2026steer}. 
+
+While these works provide both theoretical insights and practical improvements, they do not offer a unified characterization of when and why compositional discrepancies arise, nor how such behavior relates to standard semantic prompting.
+
+\section{Problem Setup}
 
 Recent work on compositional generation has shown that pretrained generative models can be combined at inference time by composing conditional score functions rather than relying on a single joint prompt \citep{NEURIPS2020_49856ed4,du2024compositional,liu2022compositional}. In latent diffusion models, the simplest form of this idea is a Bayes-style composition rule:
 \begin{equation}
@@ -53,31 +164,129 @@ which implicitly defines a product-of-experts (PoE) distribution
 \end{equation}
 This construction treats composition as logical conjunction implemented directly in score space.
 
-The central difficulty is that logical composition and semantic composition need not be equivalent. A monolithic prompt such as ``$c_1$ and $c_2$'' asks the model to generate an image that is semantically plausible under the language-conditioned training distribution. PoE composition instead enforces simultaneous agreement with single-concept conditionals, regardless of whether the resulting joint configuration is well supported by the data manifold. As argued by \citet{mechanisms2025projective}, Bayes-style composition is well behaved when a compatible joint distribution is already represented or when the relevant factors are sufficiently separable, but it can become ill-defined or degenerate when neither condition holds.
+Throughout the paper, \emph{semantic composition} means generation from a single joint text prompt, such as ``$c_1$ and $c_2$,'' while \emph{logical composition} means score-level conjunction via the Bayes-style PoE rule above. The empirical object of interest is the \emph{composability gap}: the discrepancy between the latent trajectories and endpoints reached by those two mechanisms under the same initial noise. If the model represents a compatible joint mode, or if the relevant factors are sufficiently separable, then this gap should remain small; when neither condition holds, logical composition may become unstable or degenerate \citep{mechanisms2025projective}.
 
-Phase~1 studies this mismatch as a \emph{composability gap}: the discrepancy between the latent trajectory and endpoint reached by semantic composition and those reached by logical score composition. The working claim is that the size of this gap depends on the structural relationship between the concepts being composed, rather than being a uniform property of the operator alone \citep{du2023reduce,du2024compositional,mechanisms2025projective}.
+The paper now organizes that gap around a frozen six-group SDXL taxonomy: manifold-supported co-occurrence, feature-space factorization, role-separable object-scene composition, dual-object composition without natural support, concept-prior entanglement, and coherent collision. The composability gap is not only a latent-space abstraction --- it produces measurable output-level failures. The paper therefore proceeds in two layers: a qualitative layer built directly from the frozen final SDXL root, followed by a quantitative layer once probe and reachability evaluations have been regenerated on the same six-group taxonomy. BLIP-VQA \citep{li2022blip} remains a useful output-level diagnostic, but cue presence is not the same as correct joint composition: a fused hybrid can score highly on both marginals. Section~4 therefore complements Figure~\ref{fig:blip_vqa_intro} with a pair-type-aware probe score that targets joint correctness directly.
 
-To organize the problem, Phase~1 partitions concept pairs into four regimes. First, \emph{co-occurring concepts} serve as a positive-control regime in which the training distribution is expected to already support the joint configuration. Second, \emph{feature-space disentanglement} captures pairs whose factors are expected to act on distinct components, so composition can succeed through approximate factorization rather than direct co-occurrence. Third, \emph{feature overlap} covers pairs with weaker support and weaker factor separation, producing a harder intermediate regime. Fourth, \emph{adversarial collision} captures pairs that compete for the same semantic role or object slot, making clean factorization implausible. This taxonomy provides the organizing lens for the experiments: the objective is not merely to show that semantic and logical composition can differ, but to test whether the gap follows a consistent ordering across these structurally distinct regimes.
+\begin{figure*}[t]
+    \centering
+    \IfFileExists{figures/blip_vqa_grouped_bar.png}{
+        \includegraphics[width=0.96\textwidth]{figures/blip_vqa_grouped_bar.png}
+    }{
+        \fbox{\parbox[c][0.30\textheight][c]{0.92\textwidth}{\centering
+            Missing figure: \texttt{figures/blip\_vqa\_grouped\_bar.png}\\
+            Run \texttt{eval\_blip\_vqa.py} then
+            \texttt{plot\_gap\_analysis.py --plot blip\_vqa --pstar-sources none}.
+        }}
+    }
+    \caption{BLIP-VQA cue-presence scores by composition condition, stratified by
+    taxonomy group. For each condition (solo $A$, solo $B$, monolithic $A\wedge B$, PoE),
+    two bars show the mean probability that the generated image contains concept $c_1$
+    (solid) and concept $c_2$ (hatched), averaged over 24 seeds and 6 pairs per group;
+    error bars show standard error over pairs. $y$-axis is fixed at $[0,1]$ in this figure
+    and in Figure~\ref{fig:blip_vqa_reachability} for direct comparison. This figure is
+    intentionally diagnostic rather than definitive: hybrids can still achieve high
+    marginal cue-presence scores for both concepts. Figure~\ref{fig:joint_probe_groupwise}
+    therefore introduces the corrected pair-type-aware joint-correctness score used for
+    the main output-level comparison in Section~4.}
+    \label{fig:blip_vqa_intro}
+\end{figure*}
 
 \section{Experiments}
 
-\subsection{Dataset and Concept Pair Taxonomy}
+\subsection{Evaluation Set and Concept Pair Taxonomy}
 
-The evaluation set is constructed as a controlled collection of concept pairs rather than a conventional labeled dataset. Phase~1 selects four taxonomy groups, with six concept pairs per group and twenty-four shared-noise seeds per pair, yielding $6 \times 24 = 144$ pair-seed records per group and $576$ total pair-seed records across the study.
+\paragraph{Design Principle.}
+The evaluation set is a controlled collection of concept pairs designed to test the structural conditions under which logical score composition should align with, or diverge from, semantic composition. Following \citet{mechanisms2025projective}, Bayes-style composition is expected to behave well under two broad conditions: either the joint distribution is supported in the training data, or the relevant conditionals approximately factorize in a suitable representation. The taxonomy is therefore constructed to span regimes in which these conditions hold, weaken, or fail strongly, so that the composability gap can be studied as a structured phenomenon rather than through isolated examples. The canonical SDXL paper roster uses six taxonomy groups, with ten concept pairs per group and twenty-four shared-noise seeds per pair, yielding $10 \times 24 = 240$ pair-seed records per group and $1440$ total pair-seed records across the study.
 
-Group~1 contains co-occurring concepts such as camels in deserts or butterflies over flower meadows. These pairs are expected to have meaningful support in the training distribution and therefore provide a regime in which semantic and logical composition should remain relatively close. Group~2 contains feature-space-disentangled pairs, typically object-style combinations, where success is expected to arise from approximate factorization across different feature dimensions rather than explicit co-occurrence.
+\paragraph{Taxonomy Groups.}
+The canonical paper taxonomy uses six pair regimes, each defined by a different structural relationship between data support, role separation, prior strength, and degree-of-freedom competition.
 
-Group~3 captures feature-overlap pairs that neither co-occur reliably nor appear cleanly disentangled in a proxy feature space. Following the Phase~1 setup, this group is operationalized with CLIP-proxy alignment heuristics: concept embeddings are centered against a background embedding, and pairs with low-to-moderate positive alignment are treated as structurally difficult but not maximally adversarial. Group~4 contains adversarial-collision pairs such as cat--dog or cat--bear, where the concepts compete for the same semantic slot and are therefore expected to produce the largest mismatch between monolithic prompting and PoE composition.
+\paragraph{Group~1: Manifold-Supported Co-occurrence.}
+These pairs correspond to concept combinations for which the model is expected to already represent a usable joint mode, such as camel--desert or boat--ocean. Semantic composition and PoE should therefore remain close, since composition recovers an already supported configuration rather than requiring substantial extrapolation. This group serves as the positive control for data-supported composition.
 
-The taxonomy is the key unit of experimental interpretation. Phase~1 is designed to determine whether the composability gap is minimal in Groups~1--2, larger and more variable in Group~3, and strongest in Group~4.
+\paragraph{Group~2: Feature-Space Factorization.}
+These pairs need not co-occur frequently in the training distribution, but are chosen so that the concepts act on approximately distinct components, as in object--style combinations such as dog--watercolor or car--cubist painting. Here the expected agreement between semantic composition and PoE comes from structural separability in representation space rather than from direct empirical co-occurrence. This group serves as the positive control for representation-supported composition.
+
+\paragraph{Group~3: Role-Separable Object-Scene Composition.}
+These pairs combine an object-like concept with a scene-like concept in settings where the roles remain semantically separable but the joint scene is still structurally strained. This group acts as the intermediate regime: the model often has enough structure to stage both concepts, but the semantic and logical trajectories can separate once the object must be situated in an unusual environment.
+
+\paragraph{Group~4: Dual-Object Composition.}
+These pairs ask the model to stage two distinct objects that do not naturally share a manifold-supported scene template. The challenge is not semantic similarity, but scene construction without a strong prior for the joint configuration. This group probes whether logical composition can maintain two unsupported but still distinct object identities.
+
+\paragraph{Group~5: Concept-Prior Entanglement.}
+These pairs deliberately combine prompts for which learned priors tend to hijack composition, such as material, clothing, or descriptive attributes that strongly pull the model toward a familiar host concept. The expected failures are prior dominance and attribute leakage rather than simple object-object blending.
+
+\paragraph{Group~6: Coherent Collision.}
+These pairs compete for the same semantic role, object identity, or visual slot, such as near-synonymous animals or vehicle types. In this regime, semantic composition and PoE are expected to diverge through hybridization, suppression, or collapse because the relevant degrees of freedom are not plausibly separable.
+
+\paragraph{Expected Ordering and Analytic Role.}
+Taken together, the taxonomy defines an ordered difficulty ladder with an interpretive overlay rather than a hard scalar ranking:
+\[
+\{ \text{G1}, \text{G2} \} \prec \text{G3} \prec \{ \text{G4}, \text{G5}, \text{G6} \}.
+\]
+Groups~1--2 act as the easier regimes, Group~3 is the intermediate regime, and Groups~4--6 are the hard regimes with different mechanisms of failure. The purpose of the taxonomy is not to collapse these groups into a single axis, but to test whether the composability gap changes in a structured way across qualitatively different kinds of semantic incompatibility. Figure~\ref{fig:taxonomy_semantic_overview} gives the shared-noise manifold overview; Figure~\ref{fig:representative_endpoints_overview} shows the corresponding decoded endpoints; Figure~\ref{fig:representative_seed_sheet} shows how those representative behaviors vary across seeds.
+
+Because the observable form of a correct composition differs across pair types, we do
+not treat all output probes as interchangeable. Singleton controls are scored against
+their intended marginal target only, while joint conditions are scored with
+pair-type-aware BLIP-VQA probes: co-instantiation-sensitive groups require distinctness
+and anti-collapse checks, whereas factorized groups require factor preservation without a
+separability penalty. Figure~\ref{fig:joint_probe_groupwise} reports the resulting joint
+correctness score and serves as the primary image-level comparison between semantic
+composition and PoE in the main text.
+
+\begin{figure*}[t]
+    \centering
+    \IfFileExists{figures/joint_probe_grouped_bar.png}{
+        \includegraphics[width=0.96\textwidth]{figures/joint_probe_grouped_bar.png}
+    }{
+        \fbox{\parbox[c][0.30\textheight][c]{0.92\textwidth}{\centering
+            Missing figure: \texttt{figures/joint\_probe\_grouped\_bar.png}\\
+            Run \texttt{eval\_joint\_probes.py} then
+            \texttt{plot\_gap\_analysis.py --plot joint\_probes --pstar-sources none}.
+        }}
+    }
+    \caption{Pair-type-aware joint-correctness score by composition condition, stratified
+    by taxonomy group. Singleton controls ($A$ and $B$) are scored against their intended
+    marginal target only. Joint conditions (monolithic $A \wedge B$ and PoE) use
+    pair-type-aware probe bundles: object-object groups score concept presence, distinct
+    co-instantiation, and anti-collapse, while Group~2 scores factor preservation without
+    a separability penalty. Bar heights are simple means over the relevant probes, with
+    error bars showing standard error over pairs. Unlike Figure~\ref{fig:blip_vqa_intro},
+    this score is designed to penalize fused hybrids in the harder object-object and
+    collision-like regimes while preserving
+    high scores for successful factorized compositions in Group~2.}
+    \label{fig:joint_probe_groupwise}
+\end{figure*}
+
+\begin{figure*}[t]
+    \centering
+    \IfFileExists{figures/representative_endpoints_3x2.png}{
+        \includegraphics[width=0.96\textwidth]{figures/representative_endpoints_3x2.png}
+    }{
+        \fbox{\parbox[c][0.22\textheight][c]{0.92\textwidth}{\centering Missing figure asset: \texttt{figures/representative\_endpoints\_3x2.png}\\Run \texttt{scripts/render\_taxonomy\_paper\_figure.py --mode figure1\_endpoints --seed 42}.}}
+    }
+    \caption{Representative decoded endpoints for the same six canonical pairs shown in Figure~\ref{fig:taxonomy_semantic_overview}. Each panel contains solo $A$, solo $B$, the monolithic prompt $A \wedge B$, and PoE under the same seed. Reading Figures~\ref{fig:taxonomy_semantic_overview} and \ref{fig:representative_endpoints_overview} together makes the qualitative claim precise: manifold geometry and decoded behavior move together across the six-group taxonomy.}
+    \label{fig:representative_endpoints_overview}
+\end{figure*}
+
+\begin{figure*}[t]
+    \centering
+    \IfFileExists{figures/representative_seed_sheet_poe.png}{
+        \includegraphics[width=0.96\textwidth]{figures/representative_seed_sheet_poe.png}
+    }{
+        \fbox{\parbox[c][0.26\textheight][c]{0.92\textwidth}{\centering Missing figure asset: \texttt{figures/representative\_seed\_sheet\_poe.png}\\Run \texttt{scripts/render\_taxonomy\_paper\_figure.py --mode figure\_seed\_sheet --seeds 42 1 7 13 --seed-condition poe}.}}
+    }
+    \caption{Representative PoE seed sheet from the frozen final SDXL root. Rows follow the canonical group order G1 through G6; columns show multiple shared-noise seeds for the representative pair in each group. This figure is included to demonstrate that the taxonomy-level behaviors are not single-seed anecdotes: some groups remain visually stable across seeds, whereas others show structured variability that is itself part of the phenomenon.}
+    \label{fig:representative_seed_sheet}
+\end{figure*}
 
 \subsection{Hyperparameters and Shared-Noise Protocol}
 
-All Phase~1 runs use Stable Diffusion~1.4 as the primary latent diffusion model \citep{rombach2022high}. For every concept pair and seed, all generation conditions begin from the same initial latent state $x_T$, so any difference between conditions is attributable to the composition rule rather than stochastic initialization. The core comparison is between semantic composition from a monolithic joint prompt and logical composition from PoE guidance.
+The canonical paper-facing qualitative runs use Stable Diffusion XL for the frozen six-group roster. For every concept pair and seed, all generation conditions begin from the same initial latent state $x_T$, so any difference between conditions is attributable to the composition rule rather than stochastic initialization. The core comparison is between semantic composition from a monolithic joint prompt and logical composition from PoE guidance.
 
 The denoising schedule uses $50$ steps throughout Phase~1. The same shared-noise protocol is applied to solo $c_1$, solo $c_2$, the monolithic prompt, and PoE, but group-level inference is performed only after aggregating repeated seeds within each concept pair. Concretely, the concept pair is the formal unit of inference, while the twenty-four seeds act as repeated measurements for estimating pair-level summaries.
-
-Phase~1 also includes a reachability test using SD-IPC \citep{clip_inverter}. For each pair-seed record, the decoded PoE image is projected back into the Stable Diffusion conditioning space to obtain a continuous pseudo-prompt $p^\star$. Stable Diffusion~1.4 is then rerun from the same initial noise using $p^\star$, allowing the regenerated trajectory to be compared directly against the original PoE trajectory on the same shared-noise axis.
 
 \subsection{Expected Results: Latent Trajectory Dynamics}
 
@@ -91,43 +300,134 @@ d_T^{(p,s)}=d_t^{(p,s)}\big|_{t=T}
 \end{equation}
 measures the final latent mismatch between the two composition mechanisms. Pair-level summaries are then formed by averaging over the $24$ seeds for each concept pair before any group-wise comparison is made.
 
-The expected result is an ordered taxonomy effect. Groups~1 and~2 should exhibit the smallest pair-level terminal gaps because these regimes correspond either to supported co-occurrence or to approximate feature factorization. Group~3 should show a broader and more variable range of pair-level gaps, reflecting partial structural incompatibility. Group~4 is expected to show the largest and most systematic separation, consistent with hybridization, dominance, or collapse when both concepts compete for the same semantic role.
+The expected result is an ordered taxonomy effect. Groups~1 and~2 should exhibit the smallest pair-level terminal gaps because these regimes correspond either to supported co-occurrence or to approximate feature factorization. Group~3 should show an intermediate but heterogeneous range of pair-level gaps. Groups~4, 5, and~6 should show the strongest and most systematic separation, but for different reasons: unsupported dual-object staging, prior hijack, and semantic collision.
 
-The same ordering is expected to appear in the temporal profiles $\bar d_t^{(p)}$. The semantic-logical discrepancy may be detectable before decoding, with trajectories separating during denoising rather than only at the final image. Phase~1 specifically anticipates that divergence will become more pronounced in later low-noise steps, where the model must resolve fine-grained object identity and attribute details under conflicting compositional pressures.
+The same ordering is expected to appear in the temporal profiles $\bar d_t^{(p)}$. The semantic-logical discrepancy may be detectable before decoding, with trajectories separating during denoising rather than only at the final image. Figures~\ref{fig:taxonomy_semantic_overview}, \ref{fig:representative_endpoints_overview}, and \ref{fig:representative_seed_sheet} therefore appear before the group-stratified statistics: together they show how the six-group taxonomy looks in latent geometry, decoded outputs, and seed-level robustness.
 
-Figure~\ref{fig:trajectory_manifold} is included as an illustrative trajectory manifold view. It is not treated as a formal result in this draft, but it visualizes the expected fan-out pattern in which shared-noise trajectories that begin at the same latent origin separate into different endpoint regions under monolithic prompting and PoE composition.
-
-\begin{figure}[t]
+\begin{figure*}[t]
     \centering
-    \includegraphics[width=0.9\linewidth]{../../../experiments/eccv2026/grid_figure/trajectory_2x2.png}
-    \caption{Illustrative metric-MDS projections of shared-noise denoising trajectories for representative concept pairs. The figure is included as a qualitative guide to the expected fan-out geometry rather than as a completed empirical result.}
-    \label{fig:trajectory_manifold}
-\end{figure}
+    \IfFileExists{figures/plot_17_pstar_strip_groupwise.png}{
+        \includegraphics[width=0.96\textwidth]{figures/plot_17_pstar_strip_groupwise.png}
+    }{
+        \fbox{\parbox[c][0.38\textheight][c]{0.92\textwidth}{\centering Missing figure asset: \texttt{figures/plot\_17\_pstar\_strip\_groupwise.png}\\Run \texttt{scripts/plot\_gap\_analysis.py -{}-taxonomy-view groupwise -{}-plot 17}.}}
+    }
+    \caption{Group-stratified terminal composability gap. Each panel corresponds to one taxonomy
+    group. The $x$-axis enumerates conditions: solo $c_1$, solo
+    $c_2$, Mono (semantic), PoE (logical). The $y$-axis is the terminal latent distance $d_T$
+    (MSE relative to the PoE anchor). Under the six-group taxonomy, the expected pattern is
+    small Mono--PoE gap in the easier regimes (G1 and G2), broader intermediate behavior in
+    G3, and the strongest separations in the hard regimes G4--G6.}
+    \label{fig:terminal_gap_groupwise}
+\end{figure*}
+
+\begin{figure*}[t]
+    \centering
+    \IfFileExists{figures/plot_11_within_and_noise_floor_groupwise.png}{
+        \includegraphics[width=0.96\textwidth]{figures/plot_11_within_and_noise_floor_groupwise.png}
+    }{
+        \fbox{\parbox[c][0.38\textheight][c]{0.92\textwidth}{\centering Missing figure asset: \texttt{figures/plot\_11\_within\_and\_noise\_floor\_groupwise.png}\\Run \texttt{scripts/plot\_gap\_analysis.py -{}-taxonomy-view groupwise -{}-plot 11}.}}
+    }
+    \caption{Within-AND noise floor validation by group. The within-AND distribution (grey, leftmost in each panel) captures irreducible stochastic variation between two PoE runs from different seeds under the shared-noise protocol --- the minimum achievable distance. All composition conditions (solo $c_1$, solo $c_2$, Mono, PoE) exceed this floor across all groups, confirming that the measured composability gaps are structural rather than stochastic. Ratio annotations ($\times N$) show how many times each condition's mean exceeds the within-AND floor; this multiplier is expected to remain modest for G1--G2 and to increase in the harder regimes.}
+    \label{fig:noise_floor_groupwise}
+\end{figure*}
+
+\begin{figure*}[t]
+    \centering
+    \IfFileExists{figures/plot_06_stacked_bar_groupwise.png}{
+        \includegraphics[width=0.96\textwidth]{figures/plot_06_stacked_bar_groupwise.png}
+    }{
+        \fbox{\parbox[c][0.38\textheight][c]{0.92\textwidth}{\centering Missing figure asset: \texttt{figures/plot\_06\_stacked\_bar\_groupwise.png}\\Run \texttt{scripts/plot\_gap\_analysis.py -{}-taxonomy-view groupwise -{}-plot 06}.}}
+    }
+    \caption{Group-stratified temporal gap accumulation. Each panel shows a stacked bar per condition (solo $c_1$, solo $c_2$, Mono, PoE), with bar segments representing cumulative step-wise divergence $\Delta d_t$ in three denoising phases: early (steps 0--17, opaque), mid (17--34, mid-tone), and late (34--50, faint). Bar height equals terminal $d_T$. The expected pattern is late-phase dominance in the easier regimes, mixed behavior in G3, and stronger early-phase divergence in the hard regimes where the model must resolve unsupported staging, prior hijack, or semantic collision.}
+    \label{fig:temporal_dynamics_groupwise}
+\end{figure*}
 
 \subsection{Expected Results: Reachability Analysis}
 
-The reachability analysis asks whether the endpoint produced by logical composition can be recovered by returning to the model through language-conditioned generation. For each pair-seed record, the SD-IPC pseudo-prompt rerun produces a regenerated trajectory $\{z_t^{\star,(p,s)}\}$, which is compared against the original PoE trajectory $\{z_t^{\mathrm{poe},(p,s)}\}$ using
+Given that the composability gap is real, structured, and output-measurable, a natural
+question arises: can the endpoint produced by logical composition be recovered by returning
+to the model through language-conditioned generation? We answer this using SD-IPC
+\citep{clip_inverter}: for each pair-seed record, the decoded PoE image is projected back
+into the Stable Diffusion conditioning space to obtain a continuous pseudo-prompt $p^\star$,
+and Stable Diffusion~1.4 is rerun from the same shared-noise latent $x_T$. If the gap is
+closable from language, the $p^\star$ trajectory should return to the PoE basin. Formally,
+the regenerated trajectory $\{z_t^{\star,(p,s)}\}$ is compared against the original PoE
+trajectory $\{z_t^{\mathrm{poe},(p,s)}\}$ using
 \begin{equation}
 d_t^{\star,(p,s)}=\frac{1}{N}\left\|z_t^{\star,(p,s)}-z_t^{\mathrm{poe},(p,s)}\right\|_2^2,
 \qquad
 d_T^{\star,(p,s)}=d_t^{\star,(p,s)}\big|_{t=T}.
 \end{equation}
 
+In the current SDXL workflow this reachability analysis is a second-wave figure family:
+the canonical six-group final root is already available, but the corresponding $p^\star$
+reruns and summary metrics have not yet been regenerated for the frozen roster. The figure
+slots below are therefore intentional placeholders for the six-group version of the analysis.
+
+\begin{figure*}[t]
+    \centering
+    \IfFileExists{figures/trajectory_3x2_sdipc.png}{
+        \includegraphics[width=0.96\textwidth]{figures/trajectory_3x2_sdipc.png}
+    }{
+        \fbox{\parbox[c][0.26\textheight][c]{0.92\textwidth}{\centering
+            Missing figure: \texttt{figures/trajectory\_3x2\_sdipc.png}\\
+            Requires Wave~2 reachability assets, then run \texttt{render\_taxonomy\_paper\_figure.py --mode figure2 --seed 42}.
+        }}
+    }
+    \caption{Planned six-group SD-IPC $p^\star$ rerun. This figure extends Figure~\ref{fig:taxonomy_semantic_overview} with a fifth condition (PoE $p^\star$) once the reachability assets are regenerated for the frozen six-group roster. Its role is to ask the closure question qualitatively before the distributional reachability summary.}
+    \label{fig:taxonomy_sdipc_closure}
+\end{figure*}
+
 Under the $50$-step schedule, each residual curve is also summarized over three denoising phases:
-\begin{align}
-\Delta_{\mathrm{early}}^{\star,(p,s)} &= d_{17}^{\star,(p,s)} - d_{0}^{\star,(p,s)}, \\
-\Delta_{\mathrm{mid}}^{\star,(p,s)} &= d_{34}^{\star,(p,s)} - d_{17}^{\star,(p,s)}, \\
-\Delta_{\mathrm{late}}^{\star,(p,s)} &= d_{50}^{\star,(p,s)} - d_{34}^{\star,(p,s)}.
-\end{align}
-Image-level CLIP cosine similarity between the regenerated image and the original PoE image is reported as a secondary output-space measure.
+The qualitative picture from two representative pairs generalizes across all 24 pairs and
+24 seeds per group. Figure~\ref{fig:ecdf_reachability_groupwise} shows the empirical
+distribution of terminal distances $d_T^\star$ per group: a left shift of the $p^\star$
+ECDF toward the PoE ECDF indicates gap closure; persistent right displacement indicates
+that the PoE target is not accessible from language.
 
-The expected result is again taxonomy dependent. In Groups~1 and~2, where the original composability gap is predicted to be small, the $p^\star$ rerun should remain relatively close to the PoE basin and produce small terminal residuals. In Groups~3 and~4, the rerun is expected to drift away from the PoE trajectory, indicating that the logical target is not fully recoverable through SD-IPC-conditioned generation alone. Early residual growth would suggest failure to enter the PoE basin from the outset, whereas late residual growth would indicate only partial alignment followed by terminal breakdown.
+\begin{figure*}[t]
+    \centering
+    \IfFileExists{figures/plot_20_ecdf_groupwise.png}{
+        \includegraphics[width=0.96\textwidth]{figures/plot_20_ecdf_groupwise.png}
+    }{
+        \fbox{\parbox[c][0.38\textheight][c]{0.92\textwidth}{\centering Missing figure asset: \texttt{figures/plot\_20\_ecdf\_groupwise.png}\\Run \texttt{scripts/plot\_gap\_analysis.py -{}-taxonomy-view groupwise -{}-plot 20}.}}
+    }
+    \caption{Group-stratified reachability via $p^\star$ (ECDF view). Each panel shows the empirical cumulative distribution of terminal distances $d_T$ for solo $c_1$ (dashed), solo $c_2$ (dashed), Mono (solid), PoE (solid), SD-IPC rerun $p^\star$ (solid), and within-AND (grey). A left shift of the $p^\star$ ECDF toward the PoE ECDF indicates gap closure; persistent right displacement indicates that the PoE composition target is not reachable through standard text-conditioned generation even when the conditioning signal is derived directly from the PoE image. Under the six-group taxonomy, the expected pattern is the strongest closure in the easier regimes, partial closure in G3, and the weakest closure in the hard regimes G4--G6.}
+    \label{fig:ecdf_reachability_groupwise}
+\end{figure*}
 
-At the group level, successful gap closure would appear as a left shift of the $d_T^\star$ distribution toward zero and weaker phase-wise residual accumulation than the original monolithic-to-PoE baseline. The Phase~1 expectation, however, is that closure will be limited in the harder regimes, especially for adversarial-collision pairs. In that case, reachability analysis would support the claim that PoE composition can steer sampling toward targets that a single recovered conditioning signal does not reproduce faithfully.
+The distributional result is consistent with the corrected output-level evidence
+introduced earlier in Figure~\ref{fig:joint_probe_groupwise}. Figure~\ref{fig:blip_vqa_reachability}
+returns to the simpler BLIP-VQA cue-presence diagnostic from Figure~\ref{fig:blip_vqa_intro},
+now extended with the PoE $p^\star$ condition. For the easier regimes, $p^\star$ is
+expected to preserve higher cue presence than in the hard regimes. We treat this as supportive evidence rather
+than the primary closure metric, because cue presence alone can still over-credit
+hybrids.
+
+\begin{figure*}[t]
+    \centering
+    \IfFileExists{figures/blip_vqa_grouped_bar_pstar.png}{
+        \includegraphics[width=0.96\textwidth]{figures/blip_vqa_grouped_bar_pstar.png}
+    }{
+        \fbox{\parbox[c][0.30\textheight][c]{0.92\textwidth}{\centering
+            Missing figure: \texttt{figures/blip\_vqa\_grouped\_bar\_pstar.png}\\
+            Run \texttt{eval\_blip\_vqa.py} then
+            \texttt{plot\_gap\_analysis.py --plot blip\_vqa --pstar-sources sdipc}.
+        }}
+    }
+    \caption{BLIP-VQA cue-presence scores extended with PoE $p^\star$ (SD-IPC). Same
+    format and $y$-axis scale as Figure~\ref{fig:blip_vqa_intro}; the rightmost bar group
+    in each panel adds $p^\star$. In the six-group taxonomy, the expected pattern is that
+    cue presence under $p^\star$ remains strongest in the easier regimes and weaker in the
+    hard regimes. This figure should be read as a supportive marginal diagnostic; the main
+    output-level comparison remains the pair-type-aware score in
+    Figure~\ref{fig:joint_probe_groupwise}.}
+    \label{fig:blip_vqa_reachability}
+\end{figure*}
 
 \section{Discussion}
 
-If the expected ordering across taxonomy groups is observed, Phase~1 would support a structural interpretation of the composability gap. The key point would not be merely that monolithic prompting and PoE differ, but that the magnitude and timing of their divergence depend on the compatibility structure of the concepts themselves. Minimal gaps in Groups~1--2 would indicate that logical composition behaves comparably to semantic composition when the joint configuration is already supported or when the factors remain sufficiently separable. Larger gaps in Groups~3--4 would indicate that logical composition departs from semantic composition most strongly when those structural conditions fail.
+If the expected ordering across taxonomy groups is observed, Phase~1 would support a structural interpretation of the composability gap. The key point would not be merely that monolithic prompting and PoE differ, but that the magnitude and timing of their divergence depend on the compatibility structure of the concepts themselves. Minimal gaps in Groups~1--2 would indicate that logical composition behaves comparably to semantic composition when the joint configuration is already supported or when the factors remain sufficiently separable. Larger gaps in Groups~4--6 would indicate that logical composition departs most strongly from semantic composition when the scene must be invented, a prior hijacks composition, or the concepts collide for the same role.
 
 The reachability analysis sharpens that interpretation. If SD-IPC reruns remain close to PoE in the easier regimes but fail to recover PoE trajectories in the harder regimes, then the mismatch cannot be attributed only to poor prompt wording. Instead, the expected result would be that some logically composed targets sit outside the region that standard text-conditioned generation reproduces reliably, even when the recovered conditioning signal is derived directly from the PoE image.
 
@@ -135,11 +435,59 @@ This Phase~1 discussion remains deliberately bounded. It does not attempt to res
 
 \section{Conclusion}
 
-Phase~1 formulates semantic composition and logical composition as distinct mechanisms in latent diffusion models and proposes a controlled way to compare them. The central expectation is that the composability gap is structured: it should remain small for co-occurring or approximately factorized concept pairs, widen for partially overlapping pairs, and become largest for adversarial collisions.
+Phase~1 formulates semantic composition and logical composition as distinct mechanisms in latent diffusion models and proposes a controlled way to compare them. The central expectation is that the composability gap is structured: it should remain small for co-occurring or approximately factorized concept pairs, widen for partially overlapping pairs, and become largest for coherent collisions.
 
 The anticipated contribution of the trajectory analysis is to show that this gap is visible in latent dynamics rather than only in decoded outputs. The anticipated contribution of the reachability analysis is to show that SD-IPC-based conditioning does not fully recover the PoE endpoint in the hardest regimes. Taken together, these expected findings motivate Phase~1 as the empirical foundation for later work on why the gap arises and how it might eventually be reduced.
 
 \bibliographystyle{plainnat}
 \bibliography{references}
+
+\appendix
+
+\section{Supplementary Figures}
+
+\begin{figure*}[t]
+    \centering
+    \IfFileExists{figures/plot_10_generalised.png}{
+        \includegraphics[width=0.96\textwidth]{figures/plot_10_generalised.png}
+    }{
+        \fbox{\parbox[c][0.30\textheight][c]{0.92\textwidth}{\centering Missing figure asset: \texttt{figures/plot\_10\_generalised.png}\\Run \texttt{scripts/plot\_gap\_analysis.py -{}-plot 10}.}}
+    }
+    \caption{Pooled per-step latent trajectory curves (all groups combined). Each panel shows one condition (solo $c_1$, solo $c_2$, Mono, PoE) with the mean $d_t$ trajectory (bold line), $\pm 1$ standard deviation outer band, and 95\% CI inner band, pooled over all 24 concept pairs and 24 seeds. This figure documents the aggregate temporal shape of divergence accumulation without group stratification; the group-stratified breakdown is in Figure~\ref{fig:temporal_dynamics_groupwise}.}
+    \label{fig:pooled_trajectories}
+\end{figure*}
+
+\begin{figure*}[t]
+    \centering
+    \IfFileExists{figures/plot_03_pooled_strip.png}{
+        \includegraphics[width=0.96\textwidth]{figures/plot_03_pooled_strip.png}
+    }{
+        \fbox{\parbox[c][0.30\textheight][c]{0.92\textwidth}{\centering Missing figure asset: \texttt{figures/plot\_03\_pooled\_strip.png}\\Run \texttt{scripts/plot\_gap\_analysis.py -{}-plot 03}.}}
+    }
+    \caption{Pooled per-pair terminal distance strip chart. Each jittered point is one seed record; bold tick marks indicate per-pair means. Conditions are solo $c_1$, solo $c_2$, Mono, and PoE. Color encodes concept pair identity. This figure exposes the pair-level variability underlying the group averages in Figure~\ref{fig:terminal_gap_groupwise} and allows readers to verify that within-group variation is modest relative to between-group differences.}
+    \label{fig:pooled_strip}
+\end{figure*}
+
+\begin{figure*}[t]
+    \centering
+    \IfFileExists{figures/plot_21_jeffreys_heatmap_groupwise.png}{
+        \includegraphics[width=0.96\textwidth]{figures/plot_21_jeffreys_heatmap_groupwise.png}
+    }{
+        \fbox{\parbox[c][0.38\textheight][c]{0.92\textwidth}{\centering Missing figure asset: \texttt{figures/plot\_21\_jeffreys\_heatmap\_groupwise.png}\\Run \texttt{scripts/plot\_gap\_analysis.py -{}-taxonomy-view groupwise -{}-plot 21}.}}
+    }
+    \caption{Jeffreys divergence heatmap by group. Each panel (one per taxonomy group) shows the pairwise Jeffreys divergence $J(P_i, P_j)$ between all condition distributions over terminal distance $d_T$, including within-AND, solo $c_1$, solo $c_2$, Mono, PoE, and $p^\star$. The Mono--PoE cell is expected to darken from G1 to G4, confirming the ordered gap structure at the distributional level. The $p^\star$--PoE cell should be lighter than Mono--PoE, indicating partial gap closure.}
+    \label{fig:jeffreys_heatmap_groupwise}
+\end{figure*}
+
+\begin{figure*}[t]
+    \centering
+    \IfFileExists{figures/plot_15_pstar_kde_groupwise.png}{
+        \includegraphics[width=0.96\textwidth]{figures/plot_15_pstar_kde_groupwise.png}
+    }{
+        \fbox{\parbox[c][0.38\textheight][c]{0.92\textwidth}{\centering Missing figure asset: \texttt{figures/plot\_15\_pstar\_kde\_groupwise.png}\\Run \texttt{scripts/plot\_gap\_analysis.py -{}-taxonomy-view groupwise -{}-plot 15}.}}
+    }
+    \caption{Group-stratified KDE of terminal distance distributions. Each panel shows smoothed density estimates for all conditions; $p^\star$ sources are drawn with solid lines and baseline conditions (solo $c_1$, solo $c_2$, Mono, PoE) with dashed lines. This figure provides the distributional shape (unimodality, spread, tails) underlying the ECDF in Figure~\ref{fig:ecdf_reachability_groupwise}. KDE bandwidth is estimated via Scott's rule; readers who prefer a non-parametric view should refer to Figure~\ref{fig:ecdf_reachability_groupwise}.}
+    \label{fig:kde_groupwise}
+\end{figure*}
 
 \end{document}
